@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>계산기 모음</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.4rem;
+        }
+
+        .search-box {
+            max-width: 400px;
+            margin: 0 auto 30px auto;
+            text-align: center;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1.1rem;
+        }
+
+        .filter-buttons {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .filter-buttons button {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            background-color: #4285f4;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .filter-buttons button:hover {
+            background-color: #3367d6;
+        }
+
+        .filter-buttons button.active {
+            background-color: #fbbc05;
+            color: #222;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-section {
+            margin-bottom: 50px;
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ccc;
+            color: #444;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-image {
+            height: 170px;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover .card-image img {
+            transform: scale(1.05);
+        }
+
+        .card-content {
+            padding: 16px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .card-category {
+            font-size: 1rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .card-button {
+            display: inline-block;
+            padding: 10px 16px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .card-button:hover {
+            background-color: #388e3c;
+        }
+
+        @media (max-width: 768px) {
+            .card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-buttons button {
+                font-size: 0.75rem;
+                padding: 5px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>계산기 모음</h1>
+        <p>필요한 계산기를 빠르게 찾아보세요</p>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="계산기 이름 검색..." onkeyup="searchCards()">
+    </div>
+
+    <div class="filter-buttons">
+        <button onclick="toggleFilter(this, 'all')">전체</button>
+        <button onclick="toggleFilter(this, '기본 계산기')">기본 계산기</button>
+        <button onclick="toggleFilter(this, '고급 계산기')">고급 계산기</button>
+        <button onclick="toggleFilter(this, '급여 등 계산기')">급여 등 계산기</button>
+        <button onclick="toggleFilter(this, '건강 계산기')">건강 계산기</button>
+    </div>
+
+    <div class="container">
+        <!-- 기본 계산기 -->
+        <div class="category-section">
+            <div class="category-title">기본 계산기</div>
+            <div class="card-grid">
+                <div class="card" data-category="기본 계산기">
+                    <div class="card-image">
+                        <img src="images/calcu_basic_A.png" alt="calcu_basic_A">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">calcu_basic_A</div>
+                        <div class="card-category">기본 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="기본 계산기">
+                    <div class="card-image">
+                        <img src="images/calcu_basic_B.png" alt="calcu_basic_B">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">calcu_basic_B</div>
+                        <div class="card-category">기본 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="기본 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=디데일" alt="디데일 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">디데일 계산기</div>
+                        <div class="card-category">기본 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="기본 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=증감율" alt="증감율 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">증감율 계산기</div>
+                        <div class="card-category">기본 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="기본 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=나이" alt="나이 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">나이 계산기</div>
+                        <div class="card-category">기본 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- 고급 계산기 -->
+            <div class="category-section">
+            <div class="category-title">고급 계산기</div>
+            <div class="card-grid">
+                <div class="card" data-category="고급 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=방정식" alt="방정식 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">방정식 계산기</div>
+                        <div class="card-category">고급 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="고급 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=사채전환" alt="사채 및 전환사채 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">사채 및 전환사채 계산기</div>
+                        <div class="card-category">고급 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="고급 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=이자" alt="이자 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">이자 계산기</div>
+                        <div class="card-category">고급 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="고급 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=양력음력" alt="양력 음력 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">양력 음력 계산기</div>
+                        <div class="card-category">고급 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- 급여 등 계산기 -->
+            <div class="category-section">
+            <div class="category-title">급여 등 계산기</div>
+            <div class="card-grid">
+                <div class="card" data-category="급여 등 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=급여" alt="급여 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">급여 계산기</div>
+                        <div class="card-category">급여 등 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="급여 등 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=퇴직급여" alt="퇴직급여 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">퇴직급여 계산기</div>
+                        <div class="card-category">급여 등 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="급여 등 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=4대보험" alt="4대 보험 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">4대 보험 계산기</div>
+                        <div class="card-category">급여 등 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- 건강 계산기 -->
+            <div class="category-section">
+            <div class="category-title">건강 계산기</div>
+            <div class="card-grid">
+                <div class="card" data-category="건강 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=비만도" alt="비만도 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">비만도 계산기</div>
+                        <div class="card-category">건강 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="건강 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=배란일" alt="배란일 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">배란일 계산기</div>
+                        <div class="card-category">건강 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+                <div class="card" data-category="건강 계산기">
+                    <div class="card-image">
+                        <img src="https://via.placeholder.com/300x180.png?text=BMI" alt="나의 체질량지수 계산기">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">나의 체질량지수 계산기</div>
+                        <div class="card-category">건강 계산기</div>
+                        <a href="#" class="card-button">이동</a>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+    </div>
+
+    <script>
+        let lastCategory = null;
+
+        function filterCards(category) {
+            const cards = document.querySelectorAll('.card');
+            const searchKeyword = document.getElementById('searchInput').value.toLowerCase();
+
+            cards.forEach(card => {
+                const cardCategory = card.getAttribute('data-category');
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+
+                const categoryMatch = category === 'all' || cardCategory === category;
+                const searchMatch = title.includes(searchKeyword);
+
+                card.style.display = categoryMatch && searchMatch ? 'block' : 'none';
+            });
+        }
+
+        function searchCards() {
+            const activeCategoryBtn = document.querySelector('.filter-buttons button.active');
+            const activeCategory = activeCategoryBtn ? activeCategoryBtn.textContent : 'all';
+            filterCards(activeCategory);
+        }
+
+        function toggleFilter(button, category) {
+            const buttons = document.querySelectorAll('.filter-buttons button');
+
+            if (lastCategory === category) {
+                lastCategory = null;
+                buttons.forEach(btn => btn.classList.remove('active'));
+                filterCards('all');
+            } else {
+                lastCategory = category;
+                buttons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                filterCards(category);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
