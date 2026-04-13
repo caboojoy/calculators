@@ -53,8 +53,8 @@ body {
     font-size: 1.2rem;
     text-align: right;
     color: #666;
-    padding-bottom: px;
-    
+    padding-bottom: 0px;
+
 }
 
 .settings {
@@ -69,13 +69,17 @@ body {
 }
 
 .setting-block {
-    width: 48%;
+    width: 30%;
     display: flex;
     flex-direction: column;
+    margin-right: 3%;
 }
 
+/* 라벨 텍스트를 진하게 설정 */
 .setting-block label {
-    margin-bottom: 10px;
+    font-weight: bold; /* 텍스트를 진하게 설정 */
+    font-size: 1rem; /* 기본 크기 유지 */
+    color: inherit; /* 부모 요소의 색상 상속 */
 }
 
 #decimal-places, #rounding-method {
@@ -132,7 +136,7 @@ button:hover {
 button[data-value],
 button[data-action="appendDoubleZero"],
 button[data-action="appendDecimal"] {
-    background-color: #d4d4d4;
+    background-color: #ffffff;
     color: #000;
 }
 
@@ -140,22 +144,7 @@ button[data-action="appendDecimal"] {
 button[data-value]:hover,
 button[data-action="appendDoubleZero"]:hover,
 button[data-action="appendDecimal"]:hover {
-    background-color: #e0e0e0;
-}
-
-/* 숫자 외 기능 버튼 */
-button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]) {
-    background-color: #5a5a5a;
-}
-
-/* 숫자 외 기능 버튼 hover */
-button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):hover {
-    background-color: #6c6c6c;
-}
-
-/* 버튼 클릭 효과 */
-button:active {
-    transform: scale(0.96);
+    background-color: #f0f0f0;
 }
 
 /* 숫자와 사칙연산 기호 버튼을 진하게 */
@@ -167,3 +156,40 @@ button[data-action="operate"] {
     font-size: 1.4rem;
     
 }
+
+/* 숫자 외 기능 버튼 (= 버튼 제외) */
+button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):not([data-action="calculate"]) {
+    background-color: #5a5a5a;
+}
+
+/* 숫자 외 기능 버튼 hover (= 버튼 제외) */
+button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):not([data-action="calculate"]):hover {
+    background-color: #6c6c6c;
+}
+
+/* = 버튼 색상 변경 */
+button[data-action="calculate"] {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+/* = 버튼 hover 효과 */
+button[data-action="calculate"]:hover {
+    background-color: #f0f0f0;
+}
+/* 버튼 클릭 효과 */
+button:active {
+    transform: scale(0.96);
+}
+
+
+
+#color-select {
+    width: 100%;
+    padding: 7px;
+    border-radius: 5px;
+    border: none;
+    font-size: 1rem;
+    background-color: white;
+}
+

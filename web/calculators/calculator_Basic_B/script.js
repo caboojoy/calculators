@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
         init() {
             this.bindEvents();
             this.mainDisplay.value = '0';
+            this.taxRate = 10; // 기본 세율 10%
+            this.loadColorPreference();
         },
 
         bindEvents() {
@@ -30,16 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
             // 키보드 이벤트 바인딩 추가
             document.addEventListener('keydown', (e) => this.handleKeyPress(e));
             
-            // 라운딩 설정 이벤트
+            // 라운딩 설정 이벤트 (계산 결과 표시 중이면 새 설정으로 재포맷)
             this.decimalPlaces.addEventListener('change', () => {
-                this.updateDisplay();
+                if (this.calculationComplete) {
+                    const val = parseFloat(this.mainDisplay.value.replace(/,/g, ''));
+                    if (!isNaN(val)) this.updateDisplay(this.formatNumber(val, true));
+                }
                 this.mainDisplay.focus();
             });
 
             this.roundingMethod.addEventListener('change', () => {
-                this.updateDisplay();
+                if (this.calculationComplete) {
+                    const val = parseFloat(this.mainDisplay.value.replace(/,/g, ''));
+                    if (!isNaN(val)) this.updateDisplay(this.formatNumber(val, true));
+                }
                 this.mainDisplay.focus();
             });
+
+            // 🔽 색상 변경 이벤트 추가
+            document.getElementById('color-select').addEventListener('change', (e) => {
+                this.changeCalculatorColor(e.target.value);
+            });
+
         }, // 쉼표 추가
         
         updateDisplay(value = this.mainDisplay.value) {
@@ -89,18 +103,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
         }, // 쉼표 추가
 
-        formatNumber(num) {
-            let places = -1; // 항상 '전체' 옵션 (소수점 자릿수 제한 해제)
+        // isResult=true일 때만 소수점 자릿수 설정 적용 (입력 중에는 적용 안 함)
+        formatNumber(num, isResult = false) {
+            let places = isResult ? parseInt(this.decimalPlaces.value) : -1;
             const method = this.roundingMethod.value;
-        
+
             // 입력된 값을 그대로 유지 (천 단위 구분자가 포함될 수 있음)
             let originalNum = num.toString().replace(/,/g, ""); // 천 단위 구분자 제거
-        
+
             // 숫자로 변환 (NaN 방지)
             let parsedNum = parseFloat(originalNum);
-        
-            // 반올림, 올림, 버림 적용
-            if (places !== -1 && !isNaN(places)) {
+            if (isNaN(parsedNum)) return originalNum;
+
+            // 반올림, 올림, 버림 적용 (결과값이고 자릿수 설정이 있는 경우만)
+            if (isResult && places !== -1 && !isNaN(places)) {
                 const factor = Math.pow(10, places);
                 if (method === "round") {
                     parsedNum = Math.round(parsedNum * factor) / factor;
@@ -110,26 +126,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     parsedNum = Math.ceil(parsedNum * factor) / factor;
                 }
             }
-        
+
             // 정수부 및 소수부 분리
             let numStr = parsedNum.toString();
             let [intPart, fracPart] = numStr.split('.');
-        
+
             // 천 단위 구분자 추가
             intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        
+
             // 소수부 처리
-            if (originalNum.includes(".")) { // 사용자가 소수점을 입력한 경우
+            if (originalNum.includes(".") || fracPart !== undefined) {
                 if (places === 0) {
                     return intPart; // 소수점 자릿수가 0이면 정수부만 반환
-                } else if (places === -1) { // '전체'일 경우 원래 입력값 유지
+                } else if (places === -1) { // 입력 모드 또는 '전체': 원래 입력값 유지
                     return fracPart !== undefined ? `${intPart}.${fracPart}` : `${intPart}.`;
                 } else if (fracPart !== undefined) {
-                    return `${intPart}.${fracPart.slice(0, places)}`;
+                    // 소수점 자릿수에 맞게 조정 (부족하면 0으로 채움)
+                    fracPart = fracPart.length > places
+                        ? fracPart.slice(0, places)
+                        : fracPart.padEnd(places, '0');
+                    return `${intPart}.${fracPart}`;
                 } else {
-                    return `${intPart}.`; // 소수점만 입력된 경우 그대로 유지
+                    // 소수 자릿수가 설정되어 있으면 0으로 채움
+                    return places > 0 ? `${intPart}.${'0'.repeat(places)}` : intPart;
                 }
             } else {
+                // 결과값이고 소수점 자릿수가 설정된 경우 0으로 채움
+                if (isResult && places > 0) {
+                    return `${intPart}.${'0'.repeat(places)}`;
+                }
                 return intPart; // 정수만 입력된 경우
             }
         },
@@ -190,26 +215,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.subDisplay.innerText = '';
                 this.calculationComplete = false;
             }
-        
+
             let currentValue = this.mainDisplay.value.replace(/,/g, ''); // 천 단위 구분자 제거
-        
+
             // 연산자로 끝나는 경우 "0."을 추가
             if (/[\+\-\×\÷]$/.test(currentValue)) {
                 currentValue += '0.';
-            } 
-            // 소수점이 없는 경우에만 소수점 추가
-            else if (!currentValue.includes('.')) {
-                if (currentValue === '' || this.isNewInput) {
-                    currentValue = '0.';
-                } else {
-                    currentValue += '.';
+            } else {
+                // 마지막 피연산자에만 소수점 중복 여부 확인 (수식 전체 검사 금지)
+                const parts = currentValue.split(/[\+\-\×\÷]/);
+                const lastPart = parts[parts.length - 1];
+                if (!lastPart.includes('.')) {
+                    if (currentValue === '' || this.isNewInput) {
+                        currentValue = '0.';
+                    } else {
+                        currentValue += '.';
+                    }
                 }
             }
-        
+
             this.isNewInput = false;
-        
-            // ✅ 천 단위 구분자가 유지된 상태로 표시
-            this.mainDisplay.value = this.formatNumber(currentValue);
+
+            // updateDisplay를 사용해 수식 전체를 올바르게 포맷
+            this.mainDisplay.value = currentValue;
+            this.updateDisplay(currentValue);
         },
 
         clearAll() {
@@ -343,8 +372,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     result = Math.ceil(result * Math.pow(10, places)) / Math.pow(10, places);
                 }
                 
-                // 천 단위 구분자 적용 후 표시
-                this.updateDisplay(this.formatNumber(result));
+                // 천 단위 구분자 적용 후 표시 (isResult=true: 소수점 자릿수 설정 적용)
+                this.updateDisplay(this.formatNumber(result, true));
                 this.isNewInput = true;
                 this.calculationComplete = true;
         
@@ -357,14 +386,15 @@ document.addEventListener('DOMContentLoaded', () => {
         memoryAdd() {
             try {
                 let expression = this.mainDisplay.value;
-        
+
                 if (/[\+\-\×\÷]/.test(expression)) {
                     expression = expression.replace(/×/g, '*').replace(/÷/g, '/').replace(/,/g, '');
                     let value = Function('"use strict";return (' + expression + ')')();
-        
+
                     if (!isNaN(value) && isFinite(value)) {
                         this.memory += value;
-                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory)}`;
+                        this.updateDisplay(this.formatNumber(value, true)); // memorySub와 일관성 유지
+                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory, true)}`;
                         this.isNewInput = true;
                         this.calculationComplete = true;
                     } else {
@@ -374,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let value = parseFloat(this.mainDisplay.value.replace(/,/g, ''));
                     if (!isNaN(value)) {
                         this.memory += value;
-                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory)}`;
+                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory, true)}`;
                         this.isNewInput = true;
                         this.calculationComplete = false;
                     }
@@ -396,9 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
                     if (!isNaN(value) && isFinite(value)) {
                         this.memory -= value; // 계산 결과를 메모리에서 빼기
-                        this.updateDisplay(value.toString()); // 화면에 계산 결과 표시
+                        this.updateDisplay(this.formatNumber(value, true)); // 화면에 계산 결과 표시
                         // 서브 디스플레이에 메모리 상태 표시
-                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory)}`; 
+                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory, true)}`;
                         this.isNewInput = true; // 새로운 입력 준비
                         this.calculationComplete = true;
                     } else {
@@ -409,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let value = parseFloat(this.mainDisplay.value.replace(/,/g, ''));
                     if (!isNaN(value)) {
                         this.memory -= value;
-                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory)}`;
+                        this.subDisplay.innerText = `M: ${this.formatNumber(this.memory, true)}`;
                         this.isNewInput = true;
                         this.calculationComplete = false;
                     } else {
@@ -446,37 +476,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
 
-        updateTaxRate() {
-            this.taxRate = parseFloat(this.taxRateInput.value) || 0;
-        },
-
         taxPlus() {
             try {
-                let displayValue = this.mainDisplay?.value?.trim(); // null 체크 및 공백 제거
-                
+                let displayValue = this.mainDisplay?.value?.trim();
+
                 // 빈 값 또는 잘못된 값이면 오류 방지
                 if (!displayValue || isNaN(displayValue.replace(/,/g, ''))) {
                     this.mainDisplay.value = '0';
                     return;
                 }
-                
-                let value = parseFloat(displayValue.replace(/,/g, '')); // 천 단위 구분 기호 제거 후 숫자로 변환
-        
-                // ✅ 세율이 설정되지 않았다면 기본값을 10%로 설정
-                if (this.taxRate === undefined) {
-                    this.taxRate = 10;
-                }
-        
+
+                let value = parseFloat(displayValue.replace(/,/g, ''));
+
                 if (!isNaN(value)) {
-                    let taxAmount = value * (this.taxRate / 100); // 소수점 자리 버림 없이 계산
-                    let result = value + taxAmount; // 세금 포함된 최종 금액
-        
-                    // 소수점 2자리로 반올림
-                    result = Math.round(result * 100) / 100;
-                    taxAmount = Math.round(taxAmount * 100) / 100;
-        
-                    this.updateDisplay(result.toLocaleString()); // 천 단위 적용
-                    this.subDisplay.innerText = `세금: ${taxAmount.toLocaleString()}`; // 천 단위 표시
+                    let taxAmount = value * (this.taxRate / 100);
+                    let result = value + taxAmount;
+
+                    this.updateDisplay(this.formatNumber(result, true));
+                    this.subDisplay.innerText = `세금: ${this.formatNumber(taxAmount, true)}`;
                     this.isNewInput = true;
                     this.calculationComplete = true;
                 } else {
@@ -490,32 +507,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         taxMinus() {
             try {
-                let displayValue = this.mainDisplay?.value?.trim(); // null 체크 및 공백 제거
-                
+                let displayValue = this.mainDisplay?.value?.trim();
+
                 // 빈 값 또는 잘못된 값이면 오류 방지
                 if (!displayValue || isNaN(displayValue.replace(/,/g, ''))) {
                     this.mainDisplay.value = '0';
                     return;
                 }
-                
-                let value = parseFloat(displayValue.replace(/,/g, '')); // 천 단위 구분 기호 제거 후 숫자로 변환
-                
-                // 세율이 정의되어 있지 않으면 기본값으로 10% 설정
-                if (this.taxRate === undefined) {
-                    this.taxRate = 10;
-                }
-        
+
+                let value = parseFloat(displayValue.replace(/,/g, ''));
+
                 if (!isNaN(value)) {
                     // 세금 포함 금액에서 원래 금액 계산
-                    let originalValue = value / (1 + this.taxRate / 100); // 소수점 자리 버림 없이 계산
+                    let originalValue = value / (1 + this.taxRate / 100);
                     let taxAmount = value - originalValue;
-        
-                    // 소수점 2자리로 반올림
-                    originalValue = Math.round(originalValue * 100) / 100;
-                    taxAmount = Math.round(taxAmount * 100) / 100;
-        
-                    this.updateDisplay(originalValue.toLocaleString()); // 천 단위 적용
-                    this.subDisplay.innerText = `세금: ${taxAmount.toLocaleString()}`; // 천 단위 표시
+
+                    this.updateDisplay(this.formatNumber(originalValue, true));
+                    this.subDisplay.innerText = `세금: ${this.formatNumber(taxAmount, true)}`;
                     this.isNewInput = true;
                     this.calculationComplete = true;
                 } else {
@@ -631,7 +639,51 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (['(', ')', '[', ']', '{', '}'].includes(key)) {
                 this.append(key);
             }
-        }
+        },
+
+        // 🔽 새로운 메서드 추가
+        changeCalculatorColor(color) {
+            document.querySelector('.calculator').style.backgroundColor = color;
+            localStorage.setItem('calculatorColor', color); // 선택한 배경색 저장
+        
+            // 라벨 요소들 선택
+            const labels = document.querySelectorAll('label[for="decimal-places"], label[for="rounding-method"], label[for="color-select"]');
+        
+            // 테마 색상에 따라 라벨 텍스트 색상 변경
+            if (color === '#333') {
+                // 기본 그레이 테마일 경우 밝은 텍스트 유지
+                labels.forEach(label => {
+                    label.style.color = 'white'; // 흰색 텍스트
+                });
+                localStorage.setItem('labelTextColor', 'white'); // 흰색 저장
+            } else {
+                // 다른 테마일 경우 어두운 텍스트로 변경
+                labels.forEach(label => {
+                    label.style.color = '#333333'; // 어두운 회색 텍스트
+                });
+                localStorage.setItem('labelTextColor', '#333333'); // 어두운 회색 저장
+            }
+        },
+        
+        loadColorPreference() {
+            const savedColor = localStorage.getItem('calculatorColor');
+            const savedTextColor = localStorage.getItem('labelTextColor');
+        
+            if (savedColor) {
+                document.querySelector('.calculator').style.backgroundColor = savedColor;
+                document.getElementById('color-select').value = savedColor;
+            }
+        
+            if (savedTextColor) {
+                // 저장된 텍스트 색상이 있을 경우 적용
+                const labels = document.querySelectorAll('label[for="decimal-places"], label[for="rounding-method"], label[for="color-select"]');
+                labels.forEach(label => {
+                    label.style.color = savedTextColor;
+                });
+            }
+        },
+
+
     };
 
     calculator.init();

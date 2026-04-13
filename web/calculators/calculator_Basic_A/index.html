@@ -1,92 +1,97 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>계산기 SYW-25A1</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="calculator" tabindex="0">
-        <!-- <h1 class="calculator-title">계산기 SYW-25A1</h1>  -->
-        <div class="display">
-            <input type="text" id="main-display" readonly maxlength="14" aria-label="메인 디스플레이">
-            <div id="sub-display" aria-live="polite"></div>
-            
-        </div>
-        <div class="settings">
-            <div class="setting-block">
-                <label for="decimal-places">소수점 자릿수:</label>
-                <select id="decimal-places">
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <!-- <option value="-1">전체</option> -->
-                </select>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>계산기 SYW-25A1</title>
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="calculator" tabindex="0">
+            <!-- <h1 class="calculator-title">계산기 SYW-25A1</h1>  -->
+            <div class="display">
+                <input
+                    type="text"
+                    id="main-display"
+                    readonly
+                    maxlength="14"
+                    aria-label="메인 디스플레이"
+                />
+                <div id="sub-display" aria-live="polite"></div>
             </div>
-            <div class="setting-block">
-                <label for="rounding-method">반올림 방식:</label>
-                <select id="rounding-method">
-                    <option value="none">없음</option>
-                    <option value="round">내림</option>
-                    <option value="floor">반올림</option>
-                    <option value="ceil">올림</option>
-                </select>
+            <div class="settings">
+                <div class="setting-block">
+                    <label for="decimal-places">소수점 자릿수</label>
+                    <select id="decimal-places">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="-1">전체</option>
+                    </select>
+                </div>
+                <div class="setting-block">
+                    <label for="rounding-method">반올림 방식</label>
+                    <select id="rounding-method">
+                        <option value="none">없음</option>
+                        <option value="floor">내림</option>
+                        <option value="round">반올림</option>
+                        <option value="ceil">올림</option>
+                    </select>
+                </div>
+                <!-- 색상 선택 드롭다운 -->
+                <div class="setting-block">
+                    <label for="color-select">테마 색상</label>
+                    <select id="color-select">
+                        <option value="#333">그레이</option>
+                        <option value="#F8AFA6">파스텔 코랄</option>
+                        <option value="#D5A5C6">파스텔 퍼플</option>
+                        <option value="#7BAACF">파스텔 블루</option>
+                        <option value="#A8D5BA">파스텔 민트</option>
+                    </select>
+                </div>
             </div>
-            <!-- 🔽 색상 선택 드롭다운 추가 -->
-            <div class="setting-block">
-                <label for="color-select">테마 색상:</label>
-                <select id="color-select">
-                    <option value="#333">기본 (그레이)</option>
-                    <option value="#F8AFA6">파스텔 코랄</option>
-                    <option value="#D3A5C6">파스텔 퍼플</option>
-                    <option value="#857CA1">파스텔 바이올렛</option>
-                    <option value="#7BAACF">파스텔 블루</option>
-                    <option value="#A8D5BA">파스텔 민트</option>
-                </select>
-            </div>
+            <div class="buttons">
+                <button data-action="grandTotal">GT</button>
+                <button data-action="taxPlus">Tax+</button>
+                <button data-action="taxMinus">Tax-</button>
+                <button data-action="toggleSign">±</button>
+                <button data-action="percentage">%</button>
 
-        </div>
-        <div class="buttons">
-            <button data-action="squareRoot">√</button>
-            <button data-action="taxPlus">Tax+</button>
-            <button data-action="taxMinus">Tax-</button>
-            <button data-action="toggleSign">±</button>
-            <button data-action="percentage">%</button>
-            
-            <button data-action="memoryAdd">M+</button>
-            <button data-action="memorySub">M-</button>
-            <button data-action="memoryRecall">MR</button>
-            <button data-action="memoryClear">MC</button>
-            <button data-action="toggleBracket">( )</button>
-            
-            <button data-action="toggleAreaConversion" class="small-text">평형/m²</button>
-            <button data-action="append" data-value="7">7</button>
-            <button data-action="append" data-value="8">8</button>
-            <button data-action="append" data-value="9">9</button>
-            <button data-action="operate" data-value="/">÷</button>
+                <button data-action="memoryAdd">M+</button>
+                <button data-action="memorySub">M-</button>
+                <button data-action="memoryRecall">MR</button>
+                <button data-action="memoryClear">MC</button>
+                <button data-action="toggleBracket">( )</button>
 
-            <button data-action="clearEntry">CE</button>
-            <button data-action="append" data-value="4">4</button>
-            <button data-action="append" data-value="5">5</button>
-            <button data-action="append" data-value="6">6</button>
-            <button data-action="operate" data-value="*">×</button>
-            
-            <button data-action="clearAll">AC</button>
-            <button data-action="append" data-value="1">1</button>
-            <button data-action="append" data-value="2">2</button>
-            <button data-action="append" data-value="3">3</button>
-            <button data-action="operate" data-value="-">-</button>
-            
-            <button data-action="append" data-value="0">0</button>
-            <button data-action="appendDoubleZero">00</button>
-            <button data-action="appendDecimal">.</button>            
-            <button data-action="calculate">=</button>
-            <button data-action="operate" data-value="+">+</button>
+                <button data-action="toggleAreaConversion" class="small-text">
+                    평형/m²
+                </button>
+                <button data-action="append" data-value="7">7</button>
+                <button data-action="append" data-value="8">8</button>
+                <button data-action="append" data-value="9">9</button>
+                <button data-action="operate" data-value="/">÷</button>
+
+                <button data-action="clearEntry">CE</button>
+                <button data-action="append" data-value="4">4</button>
+                <button data-action="append" data-value="5">5</button>
+                <button data-action="append" data-value="6">6</button>
+                <button data-action="operate" data-value="*">×</button>
+
+                <button data-action="clearAll">AC</button>
+                <button data-action="append" data-value="1">1</button>
+                <button data-action="append" data-value="2">2</button>
+                <button data-action="append" data-value="3">3</button>
+                <button data-action="operate" data-value="-">-</button>
+
+                <button data-action="append" data-value="0">0</button>
+                <button data-action="appendDoubleZero">00</button>
+                <button data-action="appendDecimal">.</button>
+                <button data-action="calculate">=</button>
+                <button data-action="operate" data-value="+">+</button>
+            </div>
         </div>
-    </div>
-    <script src="script.js"></script>
-</body>
+        <script src="script.js"></script>
+    </body>
 </html>

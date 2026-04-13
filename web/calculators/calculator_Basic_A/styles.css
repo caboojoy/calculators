@@ -53,8 +53,7 @@ body {
     font-size: 1.2rem;
     text-align: right;
     color: #666;
-    padding-bottom: px;
-    
+    padding-bottom: 0px;
 }
 
 .settings {
@@ -75,11 +74,16 @@ body {
     margin-right: 3%;
 }
 
+/* 라벨 텍스트를 진하게 설정 */
 .setting-block label {
-    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 1rem;
+    color: inherit;
 }
 
-#decimal-places, #rounding-method {
+#decimal-places,
+#rounding-method,
+#color-select {
     width: 100%;
     padding: 7px;
     border-radius: 5px;
@@ -104,10 +108,8 @@ button {
     cursor: pointer;
     border-radius: 8px;
     transition: background-color 0.25s ease, transform 0.1s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
-
-
 
 button:hover {
     background-color: #5a5a5a;
@@ -137,7 +139,7 @@ button:hover {
 button[data-value],
 button[data-action="appendDoubleZero"],
 button[data-action="appendDecimal"] {
-    background-color: #d4d4d4;
+    background-color: #ffffff;
     color: #000;
 }
 
@@ -145,22 +147,7 @@ button[data-action="appendDecimal"] {
 button[data-value]:hover,
 button[data-action="appendDoubleZero"]:hover,
 button[data-action="appendDecimal"]:hover {
-    background-color: #e0e0e0;
-}
-
-/* 숫자 외 기능 버튼 */
-button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]) {
-    background-color: #5a5a5a;
-}
-
-/* 숫자 외 기능 버튼 hover */
-button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action="appendDecimal"]):hover {
-    background-color: #6c6c6c;
-}
-
-/* 버튼 클릭 효과 */
-button:active {
-    transform: scale(0.96);
+    background-color: #f0f0f0;
 }
 
 /* 숫자와 사칙연산 기호 버튼을 진하게 */
@@ -170,15 +157,33 @@ button[data-action="appendDecimal"],
 button[data-action="operate"] {
     font-weight: bold;
     font-size: 1.7rem;
-    
-}
-#color-select {
-    width: 100%;
-    padding: 7px;
-    border-radius: 5px;
-    border: none;
-    font-size: 1rem;
-    background-color: white;
 }
 
+/* 숫자 외 기능 버튼 */
+button:not([data-value]):not([data-action="appendDoubleZero"]):not(
+        [data-action="appendDecimal"]
+    ) {
+    background-color: #5a5a5a;
+}
 
+/* 숫자 외 기능 버튼 hover */
+button:not([data-value]):not([data-action="appendDoubleZero"]):not(
+        [data-action="appendDecimal"]
+    ):hover {
+    background-color: #6c6c6c;
+}
+
+/* 버튼 클릭 효과 */
+button:active {
+    transform: scale(0.96);
+}
+
+/* 에러 표시 스타일 */
+.error {
+    color: #ff3333;
+}
+
+/* 괄호 불균형 표시 */
+.bracket-warning {
+    border: 1px solid #ff9900;
+}
