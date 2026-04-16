@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>D-DAY 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="header-top">
+      <div class="title">D-DAY</div>
+      <div class="today-badge">오늘 <span id="todayDisplay">—</span></div>
+    </div>
+    <p class="subtitle">날짜를 입력하면 디데이를 자동으로 계산합니다</p>
+  </header>
+
+  <!-- Input -->
+  <div class="input-card">
+    <h2>+ 새 디데이 추가</h2>
+    <div class="input-row">
+      <div class="field">
+        <label>이름 (선택)</label>
+        <input type="text" id="inputName" placeholder="예: 생일, 시험, 여행..." maxlength="30">
+      </div>
+      <div class="field">
+        <label>날짜 *</label>
+        <input type="date" id="inputDate">
+      </div>
+      <button class="add-btn" onclick="addDday()">추가</button>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="rec-section">
+    <div class="rec-title">⚡ 추천 디데이</div>
+    <div class="rec-chips" id="recChips"></div>
+  </div>
+
+  <!-- Sort bar -->
+  <div class="sort-bar" id="sortBar">
+    <span class="sort-label">정렬</span>
+    <button class="sort-btn active" data-sort="near" onclick="setSort('near')">📅 가까운 순</button>
+    <button class="sort-btn" data-sort="added" onclick="setSort('added')">🔢 추가한 순</button>
+    <button class="sort-btn" data-sort="asc" onclick="setSort('asc')">⏳ 날짜 오름차순</button>
+    <button class="sort-btn" data-sort="desc" onclick="setSort('desc')">⏰ 날짜 내림차순</button>
+    <button class="sort-btn" data-sort="name" onclick="setSort('name')">🔤 이름 순</button>
+  </div>
+
+  <!-- List -->
+  <div id="ddayList" class="dday-list"></div>
+
+  <!-- Tools Section -->
+  <div class="tools-section">
+    <div class="tools-header">🛠️ 날짜 계산 도구</div>
+    <div class="tool-tabs">
+      <button class="tool-tab active" onclick="switchTab('ndays')">📆 N일째 날</button>
+      <button class="tool-tab" onclick="switchTab('dminus')">⏪ D-N일</button>
+      <button class="tool-tab" onclick="switchTab('between')">📏 며칠째?</button>
+      <button class="tool-tab" onclick="switchTab('military')">🪖 전역일 계산</button>
+    </div>
+
+    <div class="tool-panel active" id="tab-ndays">
+      <p class="tool-desc">기준일에서 <b>N일째</b> 되는 날짜를 계산합니다. (기준일 = 1일째)</p>
+      <div class="tool-row">
+        <div class="field"><label>기준일</label><input type="date" id="nd-base" oninput="calcNdays()"></div>
+        <div class="field-sm"><label>N일째</label><input type="number" id="nd-n" min="1" placeholder="100" oninput="calcNdays()"></div>
+      </div>
+      <div class="tool-result" id="nd-result"><span class="empty-result">기준일과 일수를 입력하세요</span></div>
+    </div>
+
+    <div class="tool-panel" id="tab-dminus">
+      <p class="tool-desc">특정 날짜 기준으로 <b>N일 전/후</b>가 언제인지 계산합니다.</p>
+      <div class="tool-row">
+        <div class="field"><label>기준일</label><input type="date" id="dm-base" oninput="calcDminus()"></div>
+        <div class="field-sm"><label>N일</label><input type="number" id="dm-n" min="0" placeholder="30" oninput="calcDminus()"></div>
+        <div class="field" style="flex:0 0 130px"><label>방향</label>
+          <select class="mil-select" id="dm-dir" onchange="calcDminus()">
+            <option value="before">N일 전</option>
+            <option value="after">N일 후</option>
+          </select>
+        </div>
+      </div>
+      <div class="tool-result" id="dm-result"><span class="empty-result">기준일과 일수를 입력하세요</span></div>
+    </div>
+
+    <div class="tool-panel" id="tab-between">
+      <p class="tool-desc">시작일부터 목표일까지 <b>며칠째</b>인지, 사이 간격을 계산합니다.</p>
+      <div class="tool-row">
+        <div class="field"><label>시작일</label><input type="date" id="bw-start" oninput="calcBetween()"></div>
+        <div class="field"><label>목표일</label><input type="date" id="bw-end" oninput="calcBetween()"></div>
+      </div>
+      <div class="tool-result" id="bw-result"><span class="empty-result">시작일과 목표일을 입력하세요</span></div>
+    </div>
+
+    <div class="tool-panel" id="tab-military">
+      <p class="tool-desc">입대일과 군종을 선택하면 <b>전역일</b>을 자동 계산합니다.</p>
+      <div class="tool-row">
+        <div class="field"><label>입대일</label><input type="date" id="mil-enlist" oninput="calcMilitary()"></div>
+        <div class="field"><label>군종</label>
+          <select class="mil-select" id="mil-type" onchange="calcMilitary()">
+            <option value="18">육군 / 해병대 (18개월)</option>
+            <option value="20">해군 (20개월)</option>
+            <option value="21">공군 (21개월)</option>
+            <option value="21s">사회복무요원 (21개월)</option>
+            <option value="24">상근예비역 (24개월)</option>
+          </select>
+        </div>
+      </div>
+      <div id="mil-result"></div>
+    </div>
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
