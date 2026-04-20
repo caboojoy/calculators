@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>배란일 계산기 · Luna Cycle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose:       #E8A0A0;
+    --rose-deep:  #C97D7D;
+    --rose-light: #F5DADA;
+    --sage:       #8FB09C;
+    --sage-light: #C8DDD0;
+    --gold:       #D4A847;
+    --gold-light: #F0DFA0;
+    --cream:      #FDF8F4;
+    --warm-white: #FFFAF7;
+    --text:       #3A2E2E;
+    --text-mid:   #6B5555;
+    --text-soft:  #9E8080;
+    --border:     #EDD8D8;
+    --shadow:     rgba(180,120,120,0.12);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Nunito',sans-serif; background:var(--cream); color:var(--text); min-height:100vh; overflow-x:hidden; }
+  body::before { content:''; position:fixed; top:-200px; right:-200px; width:600px; height:600px; background:radial-gradient(circle,rgba(232,160,160,.18) 0%,transparent 70%); pointer-events:none; z-index:0; }
+  body::after  { content:''; position:fixed; bottom:-150px; left:-150px; width:500px; height:500px; background:radial-gradient(circle,rgba(143,176,156,.15) 0%,transparent 70%); pointer-events:none; z-index:0; }
+
+  /* Header */
+  header { text-align:center; padding:44px 20px 28px; position:relative; z-index:1; animation:fadeDown .8s ease both; }
+  .logo-moon { font-size:34px; display:block; margin-bottom:6px; animation:moonFloat 4s ease-in-out infinite; }
+  @keyframes moonFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  header h1 { font-family:'Cormorant Garamond',serif; font-size:clamp(26px,5vw,40px); font-weight:500; letter-spacing:.04em; }
+  header h1 span { color:var(--rose-deep); font-style:italic; }
+  header p { margin-top:6px; font-size:13px; color:var(--text-soft); letter-spacing:.05em; }
+
+  /* Container */
+  .container { max-width:920px; margin:0 auto; padding:0 16px 80px; position:relative; z-index:1; }
+
+  /* Tab Bar */
+  .tab-bar { display:flex; background:var(--warm-white); border-radius:16px; border:1px solid var(--border); padding:4px; margin-bottom:24px; gap:3px; box-shadow:0 4px 20px var(--shadow); }
+  .tab-btn { flex:1; padding:10px 6px; border:none; background:transparent; border-radius:12px; cursor:pointer; font-family:'Nunito',sans-serif; font-size:13px; font-weight:600; color:var(--text-soft); transition:all .2s; white-space:nowrap; }
+  .tab-btn .tab-label { margin-left:4px; }
+  .tab-btn.active { background:var(--rose-light); color:var(--rose-deep); }
+  .tab-btn:hover:not(.active) { background:var(--cream); }
+  @media(max-width:480px) { .tab-btn .tab-label { display:none; } .tab-btn { padding:10px; } }
+
+  /* Card */
+  .card { background:var(--warm-white); border-radius:22px; border:1px solid var(--border); box-shadow:0 8px 40px var(--shadow); padding:32px 36px; margin-bottom:24px; }
+  @media(max-width:600px) { .card { padding:22px 18px; border-radius:18px; } }
+  .card-title { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:600; color:var(--text); margin-bottom:22px; display:flex; align-items:center; gap:8px; }
+  .card-title .dot { width:8px; height:8px; background:var(--rose); border-radius:50%; flex-shrink:0; }
+
+  /* Inputs */
+  .input-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:18px; }
+  .field { display:flex; flex-direction:column; gap:7px; }
+  .field label { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-soft); }
+  .field input[type=date] { padding:13px 15px; border:1.5px solid var(--border); border-radius:12px; font-family:'Nunito',sans-serif; font-size:15px; color:var(--text); background:var(--cream); outline:none; transition:border-color .2s,box-shadow .2s; -webkit-appearance:none; }
+  .field input[type=date]:focus { border-color:var(--rose); box-shadow:0 0 0 4px rgba(232,160,160,.15); }
+  .hint { font-size:11px; color:var(--text-soft); margin-top:1px; }
+  .range-row { display:flex; align-items:center; gap:12px; margin-top:4px; }
+  .range-row input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:4px; border-radius:4px; background:var(--border); outline:none; border:none; padding:0; box-shadow:none; }
+  .range-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--rose-deep); cursor:pointer; box-shadow:0 2px 8px rgba(201,125,125,.4); transition:transform .15s; }
+  .range-row input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
+  .range-val { font-size:15px; font-weight:700; color:var(--rose-deep); min-width:34px; text-align:center; }
+
+  /* Warning */
+  .warning { display:none; background:#FFF3CD; border:1px solid #F0C040; border-radius:10px; padding:12px 16px; font-size:13px; color:#7D5A00; margin-top:14px; align-items:center; gap:8px; }
+  .warning.show { display:flex; animation:fadeUp .3s ease both; }
+
+  /* Buttons */
+  .btn-save { display:block; width:100%; margin-top:18px; padding:13px; background:var(--rose-light); border:1.5px solid var(--rose); border-radius:12px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; color:var(--rose-deep); cursor:pointer; transition:all .2s; }
+  .btn-save:hover { background:var(--rose); color:#fff; }
+  .btn-primary { display:inline-flex; align-items:center; gap:8px; padding:13px 22px; background:var(--rose-light); border:1.5px solid var(--rose); border-radius:12px; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700; color:var(--rose-deep); cursor:pointer; transition:all .2s; }
+  .btn-primary:hover { background:var(--rose); color:#fff; }
+
+  /* Result chips */
+  .results-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(175px,1fr)); gap:14px; margin-bottom:24px; opacity:0; pointer-events:none; transition:opacity .4s; }
+  .results-grid.visible { opacity:1; pointer-events:auto; }
+  .result-chip { border-radius:18px; padding:18px; text-align:center; transition:transform .2s; }
+  .result-chip:hover { transform:translateY(-3px); }
+  .result-chip .chip-icon { font-size:24px; margin-bottom:5px; }
+  .result-chip .chip-label { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; margin-bottom:5px; }
+  .result-chip .chip-date { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:600; }
+  .result-chip .chip-day { font-size:11px; margin-top:3px; }
+  .chip-ovulation { background:var(--gold-light); border:1.5px solid var(--gold); }
+  .chip-ovulation .chip-label { color:#8A6600; } .chip-ovulation .chip-date { color:#7A5A00; }
+  .chip-fertile   { background:var(--sage-light); border:1.5px solid var(--sage); }
+  .chip-fertile .chip-label   { color:#3D6A50; } .chip-fertile .chip-date   { color:#2D5A40; }
+  .chip-next      { background:var(--rose-light); border:1.5px solid var(--rose); }
+  .chip-next .chip-label      { color:#8A4040; } .chip-next .chip-date      { color:#7A3030; }
+
+  /* Calendar wrap */
+  .cal-wrap { transition:opacity .4s; opacity:0; }
+  .cal-wrap.visible { opacity:1; }
+  .cal-header-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; gap:10px; flex-wrap:wrap; }
+  .cal-nav { display:flex; align-items:center; gap:8px; }
+  .cal-nav button { background:var(--warm-white); border:1.5px solid var(--border); border-radius:10px; width:34px; height:34px; cursor:pointer; font-size:16px; color:var(--text-mid); display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  .cal-nav button:hover { background:var(--rose-light); border-color:var(--rose); }
+  .cal-nav-title { font-family:'Cormorant Garamond',serif; font-size:19px; font-weight:600; color:var(--text); min-width:120px; text-align:center; }
+  .multi-toggle { padding:7px 14px; background:var(--cream); border:1.5px solid var(--border); border-radius:20px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; color:var(--text-soft); cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .multi-toggle.active { background:var(--sage-light); border-color:var(--sage); color:#3D6A50; }
+
+  /* Calendar grid */
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .cal-dow { text-align:center; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-soft); padding:5px 0 10px; }
+  .cal-dow:first-child  { color:var(--rose-deep); }
+  .cal-dow:nth-child(7) { color:#6B8EB0; }
+  .cal-day { position:relative; aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:default; font-size:14px; font-weight:500; color:var(--text); transition:transform .15s; min-height:40px; }
+  .cal-day.other-month { color:#CCC; }
+  .cal-day.today { font-weight:700; }
+  .cal-day.today::after { content:''; position:absolute; bottom:4px; width:4px; height:4px; border-radius:50%; background:var(--rose-deep); }
+  .cal-day.period   { background:var(--rose-light); color:#8A3030; font-weight:600; border-radius:10px; }
+  .cal-day.fertile  { background:var(--sage-light); color:#2D5A40; font-weight:600; border-radius:10px; }
+  .cal-day.ovulation { background:var(--gold-light) !important; color:#7A5A00 !important; font-weight:700; border:2px solid var(--gold); border-radius:10px !important; z-index:1; }
+  .cal-day.ovulation .ov-icon { font-size:9px; line-height:1; margin-bottom:1px; }
+
+  /* Multi-month */
+  .multi-cal-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media(max-width:700px) { .multi-cal-grid { grid-template-columns:1fr; } }
+  .mini-cal-title { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:600; text-align:center; margin-bottom:10px; color:var(--text); }
+  .mini-cal .cal-grid { gap:3px; }
+  .mini-cal .cal-day { font-size:12px; min-height:30px; border-radius:8px; }
+  .mini-cal .cal-day.period   { border-radius:8px; }
+  .mini-cal .cal-day.fertile  { border-radius:8px; }
+  .mini-cal .cal-day.ovulation { border-radius:8px !important; }
+  .mini-cal .cal-dow { font-size:10px; padding:3px 0 7px; }
+
+  /* Legend */
+  .legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:18px; justify-content:center; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-mid); }
+  .legend-dot { width:12px; height:12px; border-radius:4px; }
+
+  /* Summary */
+  .summary-note { margin-top:20px; padding:14px 18px; background:linear-gradient(135deg,rgba(232,160,160,.12),rgba(143,176,156,.12)); border-radius:12px; border:1px solid var(--border); font-size:13px; color:var(--text-mid); line-height:1.7; text-align:center; }
+  .summary-note strong { color:var(--rose-deep); }
+  .disclaimer { text-align:center; font-size:11.5px; color:var(--text-soft); margin-top:14px; line-height:1.7; padding:0 8px; }
+
+  /* Storage note */
+  .storage-note { font-size:12px; color:var(--text-soft); background:var(--cream); border-radius:10px; padding:10px 14px; margin-bottom:18px; border:1px solid var(--border); line-height:1.6; }
+
+  /* Records */
+  .record-card { display:flex; align-items:flex-start; justify-content:space-between; padding:14px 16px; background:var(--cream); border-radius:12px; border:1px solid var(--border); margin-bottom:10px; gap:12px; flex-wrap:wrap; transition:box-shadow .2s; }
+  .record-card:hover { box-shadow:0 4px 16px var(--shadow); }
+  .record-info { flex:1; min-width:200px; }
+  .record-date { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:600; color:var(--text); }
+  .record-meta { font-size:12px; color:var(--text-soft); margin-top:3px; }
+  .record-badges { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
+  .badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:700; }
+  .badge-rose { background:var(--rose-light);  color:#8A4040; }
+  .badge-sage { background:var(--sage-light);  color:#3D6A50; }
+  .badge-gold { background:var(--gold-light);  color:#8A6600; }
+  .record-del { padding:7px 13px; background:#FFF0F0; border:1px solid #F0C0C0; border-radius:8px; font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; color:#C06060; cursor:pointer; transition:all .2s; flex-shrink:0; }
+  .record-del:hover { background:#F0A0A0; color:#fff; }
+  .empty-state { text-align:center; padding:40px 20px; color:var(--text-soft); }
+  .empty-state .empty-icon { font-size:40px; margin-bottom:10px; }
+  .empty-state p { font-size:14px; line-height:1.7; }
+
+  /* History */
+  .history-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .history-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .history-table th { text-align:left; padding:10px 12px; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-soft); border-bottom:2px solid var(--border); white-space:nowrap; }
+  .history-table td { padding:11px 12px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .history-table tr:last-child td { border-bottom:none; }
+  .history-table tr:hover td { background:var(--cream); }
+  .ht-start { font-weight:700; color:var(--text); }
+  .ht-ov    { color:#7A5A00; font-weight:600; }
+  .ht-fert  { color:#2D5A40; }
+  .ht-next  { color:#8A4040; }
+
+  /* Notification settings */
+  .notif-info { font-size:13px; color:var(--text-soft); background:var(--cream); border-radius:10px; padding:12px 14px; margin-bottom:20px; border:1px solid var(--border); line-height:1.6; }
+  .notif-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border); gap:12px; }
+  .notif-row:last-of-type { border-bottom:none; }
+  .notif-row-label { font-size:14px; font-weight:600; color:var(--text); }
+  .notif-row-sub { font-size:12px; color:var(--text-soft); margin-top:2px; }
+  .toggle-switch { position:relative; display:inline-block; width:46px; height:25px; flex-shrink:0; }
+  .toggle-switch input { display:none; }
+  .slider-track { position:absolute; cursor:pointer; inset:0; background:#DDD; border-radius:25px; transition:.3s; }
+  .slider-track:before { content:''; position:absolute; height:19px; width:19px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.3s; box-shadow:0 1px 4px rgba(0,0,0,.2); }
+  .toggle-switch input:checked + .slider-track { background:var(--sage); }
+  .toggle-switch input:checked + .slider-track:before { transform:translateX(21px); }
+  .notif-days-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:10px; font-family:'Nunito',sans-serif; font-size:14px; color:var(--text); background:var(--cream); outline:none; cursor:pointer; }
+  .perm-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+  .perm-granted { background:var(--sage-light); color:#3D6A50; }
+  .perm-denied  { background:var(--rose-light); color:#8A4040; }
+  .perm-default { background:var(--gold-light); color:#8A6600; }
+
+  /* ICS */
+  .ics-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:10px; margin-bottom:18px; }
+  .ics-check { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--cream); border:1.5px solid var(--border); border-radius:10px; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-mid); transition:all .2s; -webkit-user-select:none; user-select:none; }
+  .ics-check input { accent-color:var(--rose-deep); width:14px; height:14px; cursor:pointer; flex-shrink:0; }
+  .ics-check.checked { background:var(--rose-light); border-color:var(--rose); color:var(--rose-deep); }
+
+  /* Toast */
+  .toast { position:fixed; bottom:70px; left:50%; transform:translateX(-50%) translateY(14px); padding:11px 22px; border-radius:100px; font-size:14px; font-weight:600; opacity:0; transition:all .3s; z-index:9999; pointer-events:none; white-space:nowrap; box-shadow:0 4px 20px rgba(0,0,0,.15); }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast-success { background:var(--sage); color:#fff; }
+  .toast-error   { background:var(--rose-deep); color:#fff; }
+  .toast-info    { background:var(--gold); color:#fff; }
+
+  /* Tab content */
+  .tab-content { display:none; animation:fadeUp .4s ease both; }
+  .tab-content.active { display:block; }
+
+  /* Animations */
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo-moon">🌙</span>
+  <h1>Luna <span>Cycle</span></h1>
+  <p>배란일 · 가임기 · 생리주기 계산기</p>
+</header>
+
+<div class="container">
+
+  <!-- Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="calc">
+      <span class="tab-icon">🔮</span><span class="tab-label">계산기</span>
+    </button>
+    <button class="tab-btn" data-tab="records">
+      <span class="tab-icon">📋</span><span class="tab-label">기록</span>
+    </button>
+    <button class="tab-btn" data-tab="history">
+      <span class="tab-icon">🌙</span><span class="tab-label">히스토리</span>
+    </button>
+    <button class="tab-btn" data-tab="notif">
+      <span class="tab-icon">🔔</span><span class="tab-label">알림</span>
+    </button>
+  </nav>
+
+  <!-- ══ TAB: 계산기 ══ -->
+  <div class="tab-content active" id="tab-calc">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>주기 정보 입력</div>
+      <div class="input-grid">
+        <div class="field">
+          <label>마지막 생리 시작일</label>
+          <input type="date" id="lastPeriod" />
+          <span class="hint">가장 최근 생리가 시작된 날짜</span>
+        </div>
+        <div class="field">
+          <label>평균 생리 주기</label>
+          <div class="range-row">
+            <input type="range" id="cycleRange" min="15" max="45" value="28">
+            <span class="range-val" id="cycleVal">28일</span>
+          </div>
+          <span class="hint">보통 21 ~ 35일 사이입니다</span>
+        </div>
+        <div class="field">
+          <label>생리 기간</label>
+          <div class="range-row">
+            <input type="range" id="durationRange" min="2" max="10" value="5">
+            <span class="range-val" id="durationVal">5일</span>
+          </div>
+          <span class="hint">보통 3 ~ 7일 사이입니다</span>
+        </div>
+      </div>
+      <div class="warning" id="warningBox"><span>⚠️</span><span id="warningText"></span></div>
+      <button class="btn-save" id="saveRecordBtn">💾 이 주기 기록 저장</button>
+    </div>
+
+    <div class="results-grid" id="resultChips">
+      <div class="result-chip chip-ovulation">
+        <div class="chip-icon">🌕</div>
+        <div class="chip-label">예상 배란일</div>
+        <div class="chip-date" id="resOvulation">—</div>
+        <div class="chip-day"  id="resOvulationDay"></div>
+      </div>
+      <div class="result-chip chip-fertile">
+        <div class="chip-icon">🌿</div>
+        <div class="chip-label">가임기 시작</div>
+        <div class="chip-date" id="resFertileStart">—</div>
+        <div class="chip-day"  id="resFertileStartDay"></div>
+      </div>
+      <div class="result-chip chip-fertile">
+        <div class="chip-icon">🌿</div>
+        <div class="chip-label">가임기 종료</div>
+        <div class="chip-date" id="resFertileEnd">—</div>
+        <div class="chip-day"  id="resFertileEndDay"></div>
+      </div>
+      <div class="result-chip chip-next">
+        <div class="chip-icon">🌸</div>
+        <div class="chip-label">다음 생리 예정일</div>
+        <div class="chip-date" id="resNextPeriod">—</div>
+        <div class="chip-day"  id="resNextPeriodDay"></div>
+      </div>
+    </div>
+
+    <div class="card cal-wrap" id="calCard">
+      <div class="card-title"><span class="dot"></span>캘린더 보기</div>
+
+      <div class="cal-header-row">
+        <div class="cal-nav">
+          <button id="prevMonth">&#8249;</button>
+          <div class="cal-nav-title" id="calTitle"></div>
+          <button id="nextMonth">&#8250;</button>
+        </div>
+        <button class="multi-toggle" id="multiToggle">3개월 보기</button>
+      </div>
+
+      <div id="singleCalWrap">
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div id="multiCalWrap" style="display:none">
+        <div class="multi-cal-grid" id="multiGrid"></div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--rose-light);border:1px solid var(--rose)"></div>생리 기간</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--sage-light);border:1px solid var(--sage)"></div>가임기</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold-light);border:2px solid var(--gold)"></div>배란일</div>
+      </div>
+
+      <div class="summary-note" id="summaryNote" style="display:none"></div>
+      <div class="disclaimer">
+        ※ 이 계산은 평균 주기를 기반으로 한 <strong>예측값</strong>입니다.
+        실제 배란일은 개인차 및 건강 상태에 따라 달라질 수 있으며,<br>
+        의학적 판단을 대체하지 않습니다. 정확한 확인은 전문의와 상담하세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: 기록 ══ -->
+  <div class="tab-content" id="tab-records">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>생리 기록 관리</div>
+      <div class="storage-note">
+        💾 기록은 <strong>이 기기의 브라우저</strong>에만 저장됩니다.
+        브라우저 캐시 삭제, 시크릿 모드, 다른 기기에서는 기록이 없을 수 있습니다.
+      </div>
+      <div id="recordsList"></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: 히스토리 ══ -->
+  <div class="tab-content" id="tab-history">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>배란일 히스토리</div>
+      <div class="storage-note">저장된 기록 기반으로 예측된 배란일 목록입니다.</div>
+      <div class="history-table-wrap" id="historyWrap"></div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: 알림 ══ -->
+  <div class="tab-content" id="tab-notif">
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>브라우저 알림</div>
+      <div class="notif-info">
+        🔔 앱을 방문할 때 배란일·생리 예정일이 가까워졌으면 알림을 표시합니다.<br>
+        서버 없는 구조이므로 <strong>앱을 직접 열었을 때</strong>만 동작합니다.
+      </div>
+
+      <div class="notif-row">
+        <div>
+          <div class="notif-row-label">알림 활성화</div>
+          <div class="notif-row-sub">브라우저 알림 권한이 필요합니다</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notifToggle">
+          <span class="slider-track"></span>
+        </label>
+      </div>
+
+      <div class="notif-row">
+        <div>
+          <div class="notif-row-label">며칠 전 알림</div>
+          <div class="notif-row-sub">이벤트 전 알림 타이밍</div>
+        </div>
+        <select class="notif-days-select" id="notifDays">
+          <option value="1">1일 전</option>
+          <option value="2" selected>2일 전</option>
+          <option value="3">3일 전</option>
+        </select>
+      </div>
+
+      <div class="notif-row">
+        <div><div class="notif-row-label">권한 상태</div></div>
+        <div id="permBadge"></div>
+      </div>
+
+      <div style="margin-top:16px">
+        <button class="btn-primary" id="testNotifBtn">🔔 테스트 알림 보내기</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>캘린더 내보내기 (.ics)</div>
+      <div class="notif-info">
+        📅 항목을 선택해 .ics 파일로 내보낸 후 Google 캘린더·애플 캘린더에 가져올 수 있습니다.
+        현재 계산된 주기 또는 가장 최근 저장 기록을 기반으로 생성됩니다.
+      </div>
+      <div class="ics-options" id="icsOptions">
+        <label class="ics-check checked"><input type="checkbox" id="icsPeriod" checked> 🔴 생리 기간</label>
+        <label class="ics-check checked"><input type="checkbox" id="icsFertile" checked> 🌿 가임기</label>
+        <label class="ics-check checked"><input type="checkbox" id="icsOvulation" checked> 🌕 배란일</label>
+        <label class="ics-check checked"><input type="checkbox" id="icsNextPeriod" checked> 🌸 다음 생리 예정일</label>
+      </div>
+      <button class="btn-primary" id="downloadICSBtn">📅 .ics 파일 다운로드</button>
+    </div>
+
+  </div>
+
+</div><!-- /container -->
+
+<script>
+/* ═══════════════════════════════
+   1. STORAGE  (prefix: luna_cycle:)
+═══════════════════════════════ */
+const STORE = {
+  P: 'luna_cycle:',
+  get(k)    { try { const v = localStorage.getItem(this.P+k); return v!==null ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(this.P+k, JSON.stringify(v)); return true; } catch(e) { console.error(e); return false; } },
+  del(k)    { localStorage.removeItem(this.P+k); }
+};
+
+/* ═══════════════════════════════
+   2. RECORDS
+═══════════════════════════════ */
+const Records = {
+  getAll()  { return STORE.get('records') || []; },
+  getLatest() { const a = this.getAll(); return a.length ? a[0] : null; },
+
+  save(startDate, cycle, duration) {
+    const all = this.getAll();
+    if (all.find(r => r.startDate === startDate))
+      return { ok: false, msg: '이미 저장된 시작일입니다.' };
+    all.unshift({ id: Date.now(), startDate, cycle, duration, savedAt: new Date().toISOString() });
+    STORE.set('records', all);
+    return { ok: true };
+  },
+
+  delete(id) { STORE.set('records', this.getAll().filter(r => r.id !== id)); }
+};
+
+/* ═══════════════════════════════
+   3. SETTINGS
+═══════════════════════════════ */
+const Settings = {
+  defaults: { notifEnabled: false, notifDaysBefore: 2, lastNotifCheck: null },
+  get()       { return { ...this.defaults, ...(STORE.get('settings') || {}) }; },
+  set(patch)  { STORE.set('settings', { ...this.get(), ...patch }); }
+};
+
+/* ═══════════════════════════════
+   4. DATE UTILS
+═══════════════════════════════ */
+const addDays  = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const toISO    = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const MONTHS   = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const DOWS     = ['일','월','화','수','목','금','토'];
+const fmt      = d => `${MONTHS[d.getMonth()]} ${d.getDate()}일`;
+const dayLabel = d => {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff  = Math.round((d - today) / 86400000);
+  return diff === 0 ? '오늘' : diff > 0 ? `${diff}일 후` : `${-diff}일 전`;
+};
+
+/* ═══════════════════════════════
+   5. CALCULATION
+═══════════════════════════════ */
+function calculate(lastStr, cycle, duration) {
+  const last = new Date(lastStr); last.setHours(0,0,0,0);
+  const nextPeriod   = addDays(last, cycle);
+  const ovulation    = addDays(nextPeriod, -14);
+  const fertileStart = addDays(ovulation, -5);
+  const fertileEnd   = addDays(ovulation, 1);
+  const periodEnd    = addDays(last, duration - 1);
+  return { last, periodEnd, ovulation, fertileStart, fertileEnd, nextPeriod };
+}
+
+/* ═══════════════════════════════
+   6. STATE
+═══════════════════════════════ */
+const state = {
+  cycle: 28, duration: 5, result: null,
+  calYear: new Date().getFullYear(),
+  calMonth: new Date().getMonth(),
+  multiMonth: false
+};
+
+/* ═══════════════════════════════
+   7. WARNINGS
+═══════════════════════════════ */
+function checkWarnings(lastStr, cycle) {
+  const box = document.getElementById('warningBox');
+  const txt = document.getElementById('warningText');
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  if (lastStr) {
+    const d = new Date(lastStr); d.setHours(0,0,0,0);
+    if (d > today) { txt.textContent = '마지막 생리 시작일이 오늘보다 미래입니다.'; box.classList.add('show'); return false; }
+  }
+  if (cycle < 21) { txt.textContent = `주기(${cycle}일)가 너무 짧습니다. 21일 이상을 입력해 주세요.`; box.classList.add('show'); return false; }
+  if (cycle > 35) { txt.textContent = `주기(${cycle}일)가 정상 범위(35일)를 초과합니다. 전문의 상담을 권장드립니다.`; box.classList.add('show'); }
+  else            { box.classList.remove('show'); }
+  return true;
+}
+
+/* ═══════════════════════════════
+   8. RENDER RESULTS
+═══════════════════════════════ */
+function renderResults(r) {
+  document.getElementById('resultChips').classList.add('visible');
+  document.getElementById('calCard').classList.add('visible');
+  const set = (id, v) => { document.getElementById(id).textContent = v; };
+  set('resOvulation',       fmt(r.ovulation));
+  set('resOvulationDay',    dayLabel(r.ovulation));
+  set('resFertileStart',    fmt(r.fertileStart));
+  set('resFertileStartDay', dayLabel(r.fertileStart));
+  set('resFertileEnd',      fmt(r.fertileEnd));
+  set('resFertileEndDay',   dayLabel(r.fertileEnd));
+  set('resNextPeriod',      fmt(r.nextPeriod));
+  set('resNextPeriodDay',   dayLabel(r.nextPeriod));
+  const note = document.getElementById('summaryNote');
+  note.style.display = 'block';
+  note.innerHTML = `<strong>🌿 가임기 (${fmt(r.fertileStart)} ~ ${fmt(r.fertileEnd)})</strong> 기간 동안 임신 가능성이 높습니다.<br>
+배란일은 <strong>${fmt(r.ovulation)} (${DOWS[r.ovulation.getDay()]}요일)</strong>로 예상되며, 다음 생리 예정일은 <strong>${fmt(r.nextPeriod)}</strong>입니다.`;
+}
+
+/* ═══════════════════════════════
+   9. BUILD MONTH GRID
+═══════════════════════════════ */
+function buildMonthGrid(Y, M, r) {
+  const frag    = document.createDocumentFragment();
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const first   = new Date(Y, M, 1);
+  const last    = new Date(Y, M+1, 0);
+  const startDow = first.getDay();
+
+  DOWS.forEach(d => { const el = document.createElement('div'); el.className='cal-dow'; el.textContent=d; frag.appendChild(el); });
+
+  for (let i=0; i<startDow; i++) {
+    const el = document.createElement('div'); el.className='cal-day other-month';
+    el.textContent = new Date(Y, M, -startDow+i+1).getDate(); frag.appendChild(el);
+  }
+
+  const isoLast = r ? toISO(r.last)        : null;
+  const isoPEnd = r ? toISO(r.periodEnd)   : null;
+  const isoFS   = r ? toISO(r.fertileStart): null;
+  const isoFE   = r ? toISO(r.fertileEnd)  : null;
+  const isoOv   = r ? toISO(r.ovulation)   : null;
+
+  for (let d=1; d<=last.getDate(); d++) {
+    const date = new Date(Y, M, d); date.setHours(0,0,0,0);
+    const iso  = toISO(date);
+    const el   = document.createElement('div');
+    el.className = 'cal-day';
+    if (date.getTime()===today.getTime()) el.classList.add('today');
+
+    let special = false;
+    if (r) {
+      const inP = iso >= isoLast && iso <= isoPEnd;
+      const inF = iso >= isoFS   && iso <= isoFE && iso !== isoOv;
+      const isO = iso === isoOv;
+      if (isO) {
+        el.classList.add('ovulation');
+        const ic = document.createElement('div'); ic.className='ov-icon'; ic.textContent='🌕'; el.appendChild(ic);
+        special = true;
+      } else if (inP) { el.classList.add('period');  special = true; }
+        else if (inF) { el.classList.add('fertile'); special = true; }
+    }
+
+    if (!special) {
+      if (date.getDay()===0) el.style.color='var(--rose-deep)';
+      if (date.getDay()===6) el.style.color='#6B8EB0';
+    }
+
+    const num = document.createElement('span'); num.textContent = d; el.appendChild(num);
+    frag.appendChild(el);
+  }
+
+  const endDow = last.getDay();
+  for (let i=endDow+1; i<=6; i++) {
+    const el = document.createElement('div'); el.className='cal-day other-month';
+    el.textContent = new Date(Y, M+1, i-endDow).getDate(); frag.appendChild(el);
+  }
+  return frag;
+}
+
+/* ═══════════════════════════════
+   10. RENDER CALENDAR
+═══════════════════════════════ */
+function renderCalendar() {
+  const {calYear:Y, calMonth:M, result:r} = state;
+  document.getElementById('calTitle').textContent = `${Y}년 ${MONTHS[M]}`;
+  const g = document.getElementById('calGrid'); g.innerHTML = ''; g.appendChild(buildMonthGrid(Y, M, r));
+}
+
+function renderMultiMonth() {
+  const {calYear:Y, calMonth:M, result:r} = state;
+  const container = document.getElementById('multiGrid'); container.innerHTML = '';
+  for (let off=-1; off<=1; off++) {
+    let mm=M+off, yy=Y;
+    if (mm<0)  { mm=11; yy--; } if (mm>11) { mm=0; yy++; }
+    const wrap  = document.createElement('div'); wrap.className='mini-cal';
+    const title = document.createElement('div'); title.className='mini-cal-title'; title.textContent=`${yy}년 ${MONTHS[mm]}`; wrap.appendChild(title);
+    const grid  = document.createElement('div'); grid.className='cal-grid'; grid.appendChild(buildMonthGrid(yy, mm, r)); wrap.appendChild(grid);
+    container.appendChild(wrap);
+  }
+}
+
+/* ═══════════════════════════════
+   11. MAIN UPDATE
+═══════════════════════════════ */
+function update() {
+  const lastPeriod = document.getElementById('lastPeriod').value;
+  const cycle      = parseInt(document.getElementById('cycleRange').value);
+  const duration   = parseInt(document.getElementById('durationRange').value);
+  const valid      = checkWarnings(lastPeriod, cycle);
+  if (!lastPeriod || !valid) return;
+
+  const r = calculate(lastPeriod, cycle, duration);
+  state.result   = r; state.cycle = cycle; state.duration = duration;
+  state.calYear  = r.ovulation.getFullYear();
+  state.calMonth = r.ovulation.getMonth();
+
+  renderResults(r);
+  if (state.multiMonth) renderMultiMonth(); else renderCalendar();
+}
+
+/* ═══════════════════════════════
+   12. RENDER RECORDS TAB
+═══════════════════════════════ */
+function renderRecords() {
+  const records = Records.getAll();
+  const el = document.getElementById('recordsList');
+  el.innerHTML = '';
+  if (!records.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>저장된 기록이 없습니다.<br>계산기 탭에서 저장 버튼을 눌러주세요.</p></div>`;
+    return;
+  }
+  records.forEach(rec => {
+    const r   = calculate(rec.startDate, rec.cycle, rec.duration);
+    const div = document.createElement('div'); div.className='record-card';
+    div.innerHTML = `
+      <div class="record-info">
+        <div class="record-date">${fmt(new Date(rec.startDate))} 시작</div>
+        <div class="record-meta">주기 ${rec.cycle}일 · 기간 ${rec.duration}일 · 저장: ${new Date(rec.savedAt).toLocaleDateString('ko-KR')}</div>
+        <div class="record-badges">
+          <span class="badge badge-gold">🌕 배란 ${fmt(r.ovulation)}</span>
+          <span class="badge badge-sage">🌿 ${fmt(r.fertileStart)}~${fmt(r.fertileEnd)}</span>
+          <span class="badge badge-rose">🌸 다음 ${fmt(r.nextPeriod)}</span>
+        </div>
+      </div>
+      <button class="record-del" data-id="${rec.id}">삭제</button>`;
+    el.appendChild(div);
+  });
+  el.querySelectorAll('.record-del').forEach(btn => btn.addEventListener('click', () => {
+    if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+    Records.delete(Number(btn.dataset.id));
+    renderRecords(); renderHistory();
+    showToast('기록이 삭제되었습니다.', 'info');
+  }));
+}
+
+/* ═══════════════════════════════
+   13. RENDER HISTORY TAB
+═══════════════════════════════ */
+function renderHistory() {
+  const records = Records.getAll();
+  const wrap = document.getElementById('historyWrap');
+  if (!records.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="empty-icon">🌙</div><p>히스토리가 없습니다.<br>기록을 저장하면 여기에 표시됩니다.</p></div>`;
+    return;
+  }
+  let rows = '';
+  records.forEach(rec => {
+    const r = calculate(rec.startDate, rec.cycle, rec.duration);
+    rows += `<tr>
+      <td class="ht-start">${fmt(new Date(rec.startDate))}</td>
+      <td>${rec.cycle}일</td>
+      <td class="ht-ov">🌕 ${fmt(r.ovulation)}</td>
+      <td class="ht-fert">${fmt(r.fertileStart)}</td>
+      <td class="ht-fert">${fmt(r.fertileEnd)}</td>
+      <td class="ht-next">🌸 ${fmt(r.nextPeriod)}</td>
+    </tr>`;
+  });
+  wrap.innerHTML = `<table class="history-table">
+    <thead><tr>
+      <th>생리 시작일</th><th>주기</th><th>예상 배란일</th>
+      <th>가임기 시작</th><th>가임기 종료</th><th>다음 생리 예정일</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+/* ═══════════════════════════════
+   14. NOTIFICATIONS
+═══════════════════════════════ */
+const Notif = {
+  supported() { return 'Notification' in window; },
+  async requestPerm() {
+    if (!this.supported()) return 'unsupported';
+    if (Notification.permission !== 'default') return Notification.permission;
+    return await Notification.requestPermission();
+  },
+  show(title, body) {
+    if (!this.supported() || Notification.permission !== 'granted') return;
+    try { new Notification(title, { body }); } catch(e) {}
+  },
+  checkUpcoming() {
+    const s = Settings.get();
+    if (!s.notifEnabled || !this.supported() || Notification.permission !== 'granted') return;
+    const today = toISO(new Date());
+    if (s.lastNotifCheck === today) return;
+    const lat  = Records.getLatest();
+    const src  = lat ? lat : { startDate: document.getElementById('lastPeriod').value, cycle: state.cycle, duration: state.duration };
+    if (!src.startDate) return;
+    const r    = calculate(src.startDate, src.cycle, src.duration);
+    const now  = new Date(); now.setHours(0,0,0,0);
+    const days = s.notifDaysBefore;
+    [{ date: r.fertileStart, label:'가임기 시작' }, { date: r.ovulation, label:'배란일' }, { date: r.nextPeriod, label:'다음 생리 예정일' }]
+      .forEach(ev => {
+        const diff = Math.round((ev.date - now) / 86400000);
+        if (diff === days) this.show('🌙 Luna Cycle', `${ev.label}이 ${days}일 후입니다 (${fmt(ev.date)})`);
+        else if (diff === 0) this.show('🌙 Luna Cycle', `오늘은 ${ev.label}입니다! (${fmt(ev.date)})`);
+      });
+    Settings.set({ lastNotifCheck: today });
+  }
+};
+
+function renderPermBadge() {
+  const el = document.getElementById('permBadge');
+  if (!Notif.supported()) { el.innerHTML = '<span class="perm-badge perm-denied">미지원</span>'; return; }
+  const p = Notification.permission;
+  if (p==='granted') el.innerHTML = '<span class="perm-badge perm-granted">✅ 허용됨</span>';
+  else if (p==='denied') el.innerHTML = '<span class="perm-badge perm-denied">❌ 차단됨</span>';
+  else el.innerHTML = '<span class="perm-badge perm-default">⏳ 요청 필요</span>';
+}
+
+/* ═══════════════════════════════
+   15. ICS EXPORT
+═══════════════════════════════ */
+function icsDate(d) { return toISO(d).replace(/-/g,''); }
+
+function generateICS(r) {
+  const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Luna Cycle//KO','CALSCALE:GREGORIAN'];
+  const addEv = (s, eD, sum, desc) => lines.push(
+    'BEGIN:VEVENT',
+    `UID:${icsDate(s)}-${Math.random().toString(36).slice(2)}@lunacycle`,
+    `DTSTART;VALUE=DATE:${icsDate(s)}`,
+    `DTEND;VALUE=DATE:${icsDate(eD)}`,
+    `SUMMARY:${sum}`,
+    `DESCRIPTION:${desc}`,
+    'END:VEVENT'
+  );
+  if (document.getElementById('icsPeriod').checked)
+    addEv(r.last, addDays(r.periodEnd,1), '🔴 생리 기간', 'Luna Cycle');
+  if (document.getElementById('icsFertile').checked)
+    addEv(r.fertileStart, addDays(r.fertileEnd,1), '🌿 가임기', 'Luna Cycle');
+  if (document.getElementById('icsOvulation').checked)
+    addEv(r.ovulation, addDays(r.ovulation,1), '🌕 배란일 예상', 'Luna Cycle');
+  if (document.getElementById('icsNextPeriod').checked)
+    addEv(r.nextPeriod, addDays(r.nextPeriod,1), '🌸 다음 생리 예정일', 'Luna Cycle');
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
+function downloadICS(content) {
+  const blob = new Blob([content], { type:'text/calendar;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'luna_cycle.ics'; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* ═══════════════════════════════
+   16. TOAST
+═══════════════════════════════ */
+function showToast(msg, type='success') {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`; t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('show')));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3000);
+}
+
+/* ═══════════════════════════════
+   17. TABS
+═══════════════════════════════ */
+function showTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id===`tab-${name}`));
+  if (name==='records') renderRecords();
+  if (name==='history') renderHistory();
+  if (name==='notif')   renderPermBadge();
+}
+
+/* ═══════════════════════════════
+   18. INIT
+═══════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+
+  // Load latest record or default date
+  const latest = Records.getLatest();
+  if (latest) {
+    document.getElementById('lastPeriod').value    = latest.startDate;
+    document.getElementById('cycleRange').value    = latest.cycle;
+    document.getElementById('cycleVal').textContent = latest.cycle + '일';
+    document.getElementById('durationRange').value    = latest.duration;
+    document.getElementById('durationVal').textContent = latest.duration + '일';
+    state.cycle = latest.cycle; state.duration = latest.duration;
+  } else {
+    const def = new Date(); def.setDate(def.getDate()-10);
+    document.getElementById('lastPeriod').value = toISO(def);
+  }
+
+  renderCalendar();
+  update();
+
+  // Input events
+  document.getElementById('lastPeriod').addEventListener('input', update);
+  document.getElementById('cycleRange').addEventListener('input', function() {
+    document.getElementById('cycleVal').textContent = this.value+'일'; update();
+  });
+  document.getElementById('durationRange').addEventListener('input', function() {
+    document.getElementById('durationVal').textContent = this.value+'일'; update();
+  });
+
+  // Calendar navigation
+  const nav = delta => {
+    state.calMonth += delta;
+    if (state.calMonth < 0)  { state.calMonth=11; state.calYear--; }
+    if (state.calMonth > 11) { state.calMonth=0;  state.calYear++; }
+    document.getElementById('calTitle').textContent = `${state.calYear}년 ${MONTHS[state.calMonth]}`;
+    if (state.multiMonth) renderMultiMonth(); else renderCalendar();
+  };
+  document.getElementById('prevMonth').addEventListener('click', () => nav(-1));
+  document.getElementById('nextMonth').addEventListener('click', () => nav(1));
+
+  // Multi-month toggle
+  document.getElementById('multiToggle').addEventListener('click', function() {
+    state.multiMonth = !state.multiMonth;
+    this.classList.toggle('active', state.multiMonth);
+    this.textContent = state.multiMonth ? '1개월 보기' : '3개월 보기';
+    document.getElementById('singleCalWrap').style.display = state.multiMonth ? 'none' : '';
+    document.getElementById('multiCalWrap').style.display  = state.multiMonth ? '' : 'none';
+    document.getElementById('calTitle').style.display      = state.multiMonth ? 'none' : '';
+    if (state.multiMonth) renderMultiMonth(); else renderCalendar();
+  });
+
+  // Save record
+  document.getElementById('saveRecordBtn').addEventListener('click', () => {
+    const lp  = document.getElementById('lastPeriod').value;
+    const cy  = parseInt(document.getElementById('cycleRange').value);
+    const dur = parseInt(document.getElementById('durationRange').value);
+    if (!lp) { showToast('날짜를 먼저 입력해 주세요.', 'error'); return; }
+    const res = Records.save(lp, cy, dur);
+    showToast(res.ok ? '기록이 저장되었습니다! 💾' : res.msg, res.ok ? 'success' : 'error');
+  });
+
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+
+  // Notification tab
+  const s = Settings.get();
+  document.getElementById('notifToggle').checked = s.notifEnabled;
+  document.getElementById('notifDays').value     = String(s.notifDaysBefore);
+  renderPermBadge();
+
+  document.getElementById('notifToggle').addEventListener('change', async function() {
+    if (this.checked) {
+      const perm = await Notif.requestPerm();
+      if (perm !== 'granted') {
+        this.checked = false;
+        showToast('알림 권한이 필요합니다. 브라우저 설정에서 허용해 주세요.', 'error');
+        renderPermBadge(); return;
+      }
+    }
+    Settings.set({ notifEnabled: this.checked });
+    renderPermBadge();
+    showToast(this.checked ? '알림이 활성화되었습니다.' : '알림이 비활성화되었습니다.', 'info');
+  });
+
+  document.getElementById('notifDays').addEventListener('change', function() {
+    Settings.set({ notifDaysBefore: parseInt(this.value) });
+  });
+
+  document.getElementById('testNotifBtn').addEventListener('click', async () => {
+    const perm = await Notif.requestPerm();
+    renderPermBadge();
+    if (perm !== 'granted') { showToast('알림 권한이 없습니다.', 'error'); return; }
+    Notif.show('🌙 Luna Cycle', '테스트 알림입니다. 알림이 정상 동작 중입니다!');
+    showToast('테스트 알림을 보냈습니다.', 'success');
+  });
+
+  // ICS checkboxes — update .checked class
+  document.querySelectorAll('.ics-check input').forEach(cb => cb.addEventListener('change', function() {
+    this.closest('.ics-check').classList.toggle('checked', this.checked);
+  }));
+
+  // ICS download
+  document.getElementById('downloadICSBtn').addEventListener('click', () => {
+    const r = state.result || (() => { const l=Records.getLatest(); return l ? calculate(l.startDate,l.cycle,l.duration) : null; })();
+    if (!r) { showToast('먼저 계산을 실행하거나 기록을 저장해 주세요.', 'error'); return; }
+    downloadICS(generateICS(r));
+    showToast('.ics 파일을 다운로드합니다.', 'success');
+  });
+
+  // Check push on load
+  Notif.checkUpcoming();
+});
+</script>
+</body>
+</html>
