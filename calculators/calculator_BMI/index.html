@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMI 비만도 계산기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="wrapper">
+
+    <!-- 헤더 -->
+    <header>
+      <div class="logo-label">Health Tracker</div>
+      <h1>비만도 <span>BMI</span> 계산기</h1>
+      <p>키와 몸무게를 입력하면 자동으로 계산됩니다</p>
+    </header>
+
+    <!-- 입력 카드 -->
+    <div class="card">
+      <div class="input-grid">
+        <div class="input-group">
+          <label for="height">키</label>
+          <div class="input-wrap">
+            <input type="number" id="height" placeholder="170" min="1" max="300" step="0.1">
+            <span class="unit">cm</span>
+          </div>
+          <div class="error-msg" id="height-err"></div>
+        </div>
+        <div class="input-group">
+          <label for="weight">몸무게</label>
+          <div class="input-wrap">
+            <input type="number" id="weight" placeholder="65" min="1" max="500" step="0.1">
+            <span class="unit">kg</span>
+          </div>
+          <div class="error-msg" id="weight-err"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 결과 카드 -->
+    <div class="card result-card hidden" id="result-card">
+      <div class="gauge-container">
+        <div class="gauge-wrap">
+          <canvas id="gauge" width="260" height="134"></canvas>
+          <div class="gauge-bmi">
+            <div class="bmi-val" id="bmi-val">--</div>
+            <div class="bmi-label">BMI Index</div>
+          </div>
+        </div>
+        <div class="status-badge" id="status-badge">
+          <span class="dot" id="badge-dot"></span>
+          <span id="badge-text">--</span>
+        </div>
+        <div class="desc-text" id="desc-text"></div>
+      </div>
+
+      <div class="legend" id="legend">
+        <div class="legend-item" data-state="underweight">
+          <div class="legend-dot" style="background:var(--blue)"></div>
+          <div class="legend-range">~ 18.4</div>
+          <div class="legend-name">저체중</div>
+        </div>
+        <div class="legend-item" data-state="normal">
+          <div class="legend-dot" style="background:var(--green)"></div>
+          <div class="legend-range">18.5 ~ 22.9</div>
+          <div class="legend-name">정상</div>
+        </div>
+        <div class="legend-item" data-state="overweight">
+          <div class="legend-dot" style="background:var(--orange)"></div>
+          <div class="legend-range">23 ~ 24.9</div>
+          <div class="legend-name">과체중</div>
+        </div>
+        <div class="legend-item" data-state="obese">
+          <div class="legend-dot" style="background:var(--red)"></div>
+          <div class="legend-range">25 ~</div>
+          <div class="legend-name">비만</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 입력 전 안내 -->
+    <div class="card" id="idle-card">
+      <div class="idle-hint">
+        <div class="icon">⚖️</div>
+        키와 몸무게를 입력하면<br>비만도 결과가 바로 표시됩니다
+      </div>
+    </div>
+
+    <footer>
+      본 계산기는 한국 비만학회 기준을 적용합니다.<br>
+      의학적 진단을 대체하지 않습니다.
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
