@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>퇴직금 계산기</title>
+
+  <!-- 구글 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- 스타일 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── 헤더 ── -->
+<header>
+  <div class="header-badge">📋 2023년 개정세법 기준</div>
+  <h1>퇴직금 계산기</h1>
+  <p>퇴직급여 · 퇴직소득세 · 실수령액을 정확히 계산합니다</p>
+</header>
+
+<main>
+
+  <!-- ── 입력: 재직 정보 ── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">📅</div>
+      <div class="card-title">재직 정보</div>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>입사일</label>
+          <input type="date" id="startDate">
+          <span class="error-msg" id="startDateErr"></span>
+        </div>
+
+        <div class="form-group">
+          <label>퇴사일</label>
+          <input type="date" id="endDate">
+          <span class="error-msg" id="endDateErr"></span>
+        </div>
+
+        <!-- 재직기간 실시간 표시 -->
+        <div class="form-group full">
+          <div class="tenure-box" id="tenureBox">
+            <span class="tenure-label">📌 재직기간</span>
+            <span class="tenure-value" id="tenureText">—</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 입력: 급여 정보 ── -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">💰</div>
+      <div class="card-title">급여 정보 (퇴직 전 3개월)</div>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>3개월 급여 총액 (원)</label>
+          <input type="text" id="totalSalary" placeholder="예: 15,000,000" inputmode="numeric" autocomplete="off">
+          <span class="input-hint">세전 · 기본급 + 수당 포함</span>
+          <span class="error-msg" id="salaryErr"></span>
+        </div>
+
+        <div class="form-group">
+          <label>해당 기간 총 일수</label>
+          <input type="number" id="totalDays" placeholder="예: 92" min="1" max="95">
+          <span class="input-hint">3개월의 실제 역일 수 (보통 89~92)</span>
+          <span class="error-msg" id="daysErr"></span>
+        </div>
+
+      </div>
+
+      <button class="btn-calc" onclick="calculate()">
+        ⚡ 퇴직금 계산하기
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 결과 영역 ── -->
+  <div id="results">
+
+    <!-- 핵심 결과 -->
+    <div class="card fade-up">
+      <div class="card-header">
+        <div class="card-icon">📊</div>
+        <div class="card-title">계산 결과</div>
+      </div>
+      <div class="card-body">
+        <div class="result-grid">
+
+          <div class="result-item">
+            <div class="r-label">평균임금 (1일)</div>
+            <div class="r-value" id="r-avgWage">—</div>
+          </div>
+
+          <div class="result-item">
+            <div class="r-label">근속연수</div>
+            <div class="r-value" id="r-serviceYears">—</div>
+            <div class="r-sub" id="r-serviceYearsSub"></div>
+          </div>
+
+          <div class="result-item is-primary span-full">
+            <div class="r-label">퇴직급여</div>
+            <div class="r-value" id="r-severancePay">—</div>
+            <div class="r-sub">평균임금 × 30일 × 근속연수</div>
+          </div>
+
+          <div class="result-item is-tax">
+            <div class="r-label">퇴직소득세 (지방세 포함)</div>
+            <div class="r-value" id="r-totalTax">—</div>
+            <div class="r-sub" id="r-taxRate">실효세율 —%</div>
+          </div>
+
+          <div class="result-item is-net">
+            <div class="r-label">실수령액</div>
+            <div class="r-value" id="r-netAmount">—</div>
+            <div class="r-sub">퇴직급여 − 퇴직소득세</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- 세금 계산 과정 -->
+    <div class="card fade-up d1">
+      <div class="card-header">
+        <div class="card-icon">🧾</div>
+        <div class="card-title">퇴직소득세 계산 단계</div>
+      </div>
+      <div class="card-body">
+        <div class="breakdown-table">
+
+          <div class="bd-row">
+            <span class="bd-label">① 퇴직소득금액</span>
+            <span class="bd-value" id="bd-income">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ② 근속연수 공제
+              <span id="bd-tenureYearsLabel" style="font-size:11px;color:#aaa"></span>
+            </span>
+            <span class="bd-value is-minus" id="bd-tenureDeduction">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ③ 환산급여
+              <span style="font-size:11px;color:#aaa">(② 잔액 × 12 ÷ 근속연수)</span>
+            </span>
+            <span class="bd-value" id="bd-converted">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">④ 환산급여 공제</span>
+            <span class="bd-value is-minus" id="bd-convertedDeduction">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ⑤ 과세표준
+              <span style="font-size:11px;color:#aaa">(③ − ④)</span>
+            </span>
+            <span class="bd-value" id="bd-taxBase">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ⑥ 환산세액
+              <span style="font-size:11px;color:#aaa">(누진세율)</span>
+            </span>
+            <span class="bd-value" id="bd-convertedTax">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ⑦ 산출세액
+              <span style="font-size:11px;color:#aaa">(⑥ × 근속연수 ÷ 12)</span>
+            </span>
+            <span class="bd-value" id="bd-incomeTax">—</span>
+          </div>
+          <div class="bd-row">
+            <span class="bd-label">
+              ⑧ 지방소득세
+              <span style="font-size:11px;color:#aaa">(⑦ × 10%)</span>
+            </span>
+            <span class="bd-value" id="bd-localTax">—</span>
+          </div>
+          <div class="bd-row section-sep">
+            <span class="bd-label"><strong>퇴직소득세 합계 (⑦ + ⑧)</strong></span>
+            <span class="bd-value is-total" id="bd-totalTax">—</span>
+          </div>
+
+        </div>
+
+        <div class="notice">
+          <span class="notice-icon">⚠️</span>
+          <span>
+            이 계산기는 <strong>2023년 이후 개정세법</strong>을 적용합니다.
+            세율·공제금액은 연도마다 변경될 수 있으며, 계산 결과는 <strong>참고용</strong>입니다.
+            정확한 세액은 세무사나 국세청(126)에 확인하세요.
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 도넛 차트 -->
+    <div class="card fade-up d2">
+      <div class="card-header">
+        <div class="card-icon">🥧</div>
+        <div class="card-title">구성 비율</div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="donutChart"></canvas>
+          <div class="chart-center">
+            <div class="chart-center-top">퇴직급여</div>
+            <div class="chart-center-val" id="chartCenterVal">—</div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#1B2B5B"></div>
+            실수령액 <span class="legend-pct" id="leg-net">—%</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#B8922A"></div>
+            세금 <span class="legend-pct" id="leg-tax">—%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#results -->
+
+</main>
+
+<footer>
+  본 계산기는 참고용이며 실제 세액과 차이가 있을 수 있습니다 &nbsp;·&nbsp; 2023년 이후 개정세법 기준
+</footer>
+
+<!-- 스크립트 (body 최하단 — DOM 준비 후 실행) -->
+<script src="script.js"></script>
+
+</body>
+</html>

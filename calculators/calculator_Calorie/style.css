@@ -1,0 +1,616 @@
+/* ============================================================
+   style.css
+   칼로리 & 다이어트 계산기 – 파스텔 스카이 테마
+============================================================ */
+
+/* ── CSS 변수 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #dceefb;   /* 페이지 배경: 연한 하늘 */
+  --card:      #ffffff;   /* 카드 배경 */
+  --input-bg:  #eef6fd;   /* 입력 필드 배경 */
+  --border:    #bdd8f2;   /* 테두리 */
+  --accent:    #3a9fd6;   /* 스카이 블루 (주 강조색) */
+  --accent2:   #6bbfdf;   /* 베이비 블루 (보조 강조색) */
+  --danger:    #e05c72;   /* 에러 / 초과 */
+  --warn:      #e89c38;   /* 경고 / 부족 */
+  --t1:        #1a3a58;   /* 주 텍스트: 딥 네이비 */
+  --t2:        #4e7898;   /* 보조 텍스트 */
+  --t3:        #8fb4cc;   /* 힌트 텍스트 */
+  --radius:    14px;
+  --shadow:    0 6px 30px rgba(58, 159, 214, .13);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  padding: 32px 16px 100px;
+  background-image:
+    radial-gradient(ellipse 65% 45% at 85%  -5%, rgba(107, 191, 223, .30) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 35% at -5%  90%, rgba(58,  159, 214, .18) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 30% at 50%  50%, rgba(255, 255, 255, .55) 0%, transparent 70%);
+}
+
+/* ============================================================
+   레이아웃
+============================================================ */
+.app-wrap { max-width: 900px; margin: 0 auto; }
+
+/* ── 헤더 ── */
+header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeDown .6s ease both;
+}
+header .eyebrow {
+  font-size: 11px;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  letter-spacing: .04em;
+  line-height: 1;
+  background: linear-gradient(135deg, #1a3a58 20%, #3a9fd6 70%, #6bbfdf 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+header p { margin-top: 10px; color: var(--t2); font-size: 14px; }
+
+/* ── 2열 그리드 ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ── 카드 ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  animation: fadeUp .55s ease both;
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+/* ============================================================
+   입력 컴포넌트
+============================================================ */
+.form-group { margin-bottom: 18px; }
+.form-group:last-child { margin-bottom: 0; }
+
+label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--t2);
+  margin-bottom: 7px;
+  letter-spacing: .04em;
+}
+
+input[type="number"],
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--t1);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  padding: 11px 14px;
+  transition: border-color .2s, box-shadow .2s;
+  outline: none;
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+input:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(58, 159, 214, .15);
+}
+input.error { border-color: var(--danger); box-shadow: 0 0 0 3px rgba(224, 92, 114, .12); }
+.error-msg  { font-size: 11px; color: var(--danger); margin-top: 5px; display: none; }
+.error-msg.show { display: block; }
+
+/* ── 라디오 토글 그룹 ── */
+.toggle-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.toggle-group input { display: none; }
+.toggle-group label {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 11px 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t2);
+  transition: all .2s;
+  margin: 0;
+}
+.toggle-group input:checked + label {
+  background: rgba(58, 159, 214, .12);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.toggle-group label:hover { border-color: var(--t3); color: var(--t1); }
+
+/* ============================================================
+   결과 카드
+============================================================ */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+@media (max-width: 480px) { .result-grid { grid-template-columns: 1fr 1fr; } }
+
+.result-item {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 14px;
+  text-align: center;
+  transition: transform .2s;
+}
+.result-item:hover { transform: translateY(-2px); }
+.result-item .ri-label { font-size: 11px; color: var(--t2); letter-spacing: .08em; margin-bottom: 8px; }
+.result-item .ri-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .03em;
+  color: var(--t1);
+  line-height: 1;
+}
+.result-item .ri-unit  { font-size: 12px; color: var(--t2); margin-top: 4px; }
+.result-item.highlight .ri-value { color: var(--accent); }
+
+/* ── 목표 배지 ── */
+.goal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  margin-bottom: 24px;
+}
+.goal-badge.loss     { background: rgba(58,  159, 214, .12); color: #2a7db5; border: 1px solid rgba(58,  159, 214, .35); }
+.goal-badge.maintain { background: rgba(107, 191, 223, .15); color: #2a7db5; border: 1px solid rgba(107, 191, 223, .40); }
+.goal-badge.gain     { background: rgba(232, 156,  56, .12); color: #b87110; border: 1px solid rgba(232, 156,  56, .35); }
+
+/* ── 진행 바 ── */
+.intake-section { margin-top: 24px; }
+.intake-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+.intake-label-row span   { font-size: 12px; color: var(--t2); }
+.intake-label-row strong { font-size: 13px; color: var(--t1); }
+
+.progress-wrap {
+  width: 100%;
+  height: 16px;
+  background: var(--input-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 4px;
+  position: relative;
+  transition: width .8s cubic-bezier(.22, 1, .36, 1), background .4s;
+}
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: rgba(255, 255, 255, .45);
+  border-radius: 999px;
+}
+.progress-bar.ok   { background: linear-gradient(90deg, #2da8d8, #6bcde8); }
+.progress-bar.over { background: linear-gradient(90deg, #c0405a, #e05c72); }
+.progress-bar.warn { background: linear-gradient(90deg, #c87a10, #e89c38); }
+
+.progress-pct { text-align: center; margin-top: 10px; font-size: 13px; color: var(--t2); }
+.progress-pct span { font-weight: 700; font-size: 15px; }
+
+/* ── 매크로 ── */
+.macro-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+.macro-item {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.macro-item .m-name { font-size: 11px; color: var(--t2); margin-bottom: 6px; }
+.macro-item .m-val  { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; }
+.macro-item .m-unit { font-size: 11px; color: var(--t3); }
+.macro-item.protein .m-val { color: #2a7db5; }
+.macro-item.carb    .m-val { color: #b87110; }
+.macro-item.fat     .m-val { color: #c05a3a; }
+
+/* ── 차트 ── */
+.chart-wrap { position: relative; height: 220px; margin-top: 8px; }
+
+/* ── 플레이스홀더 ── */
+.placeholder-msg { text-align: center; padding: 40px 20px; color: var(--t3); font-size: 14px; }
+.placeholder-msg .icon { font-size: 36px; display: block; margin-bottom: 12px; }
+
+/* ============================================================
+   식단 기록 섹션
+============================================================ */
+
+/* ── 오늘 합계 배너 ── */
+.daily-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(58, 159, 214, .10), rgba(107, 191, 223, .12));
+  border: 1px solid rgba(58, 159, 214, .25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.daily-summary .ds-left  { font-size: 12px; color: var(--t2); }
+.daily-summary .ds-total { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--accent); line-height: 1; }
+.daily-summary .ds-meals { display: flex; gap: 16px; }
+.daily-summary .ds-meal  { text-align: center; }
+.daily-summary .ds-meal .dm-label { font-size: 10px; color: var(--t3); }
+.daily-summary .ds-meal .dm-val   { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--t2); }
+
+/* ── 식사 탭 ── */
+.meal-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.meal-tab {
+  flex: 1;
+  min-width: 70px;
+  padding: 9px 6px;
+  text-align: center;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--t2);
+  font-weight: 500;
+  transition: all .2s;
+  position: relative;
+}
+.meal-tab.active {
+  background: rgba(58, 159, 214, .12);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.tab-badge {
+  position: absolute;
+  top: -6px; right: -6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  min-width: 18px; height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+.tab-badge.show { display: flex; }
+
+/* ── 음식 검색 ── */
+.food-search-wrap { position: relative; margin-bottom: 14px; }
+.food-search-wrap input { padding-right: 40px; }
+.food-search-icon {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--t3);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+/* ── 자동완성 드롭다운 ── */
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px); left: 0; right: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(58, 159, 214, .15);
+  z-index: 100;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;
+}
+.autocomplete-list.show { display: block; }
+.autocomplete-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 14px;
+  cursor: pointer;
+  transition: background .15s;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.autocomplete-item:last-child { border-bottom: none; }
+.autocomplete-item:hover { background: var(--input-bg); }
+.autocomplete-item .ai-name { color: var(--t1); }
+.autocomplete-item .ai-meta { font-size: 12px; color: var(--t3); }
+.autocomplete-item .ai-kcal { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--accent); }
+
+/* ── 카테고리 버튼 스크롤 ── */
+.cat-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  scrollbar-width: none;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+.cat-btn {
+  white-space: nowrap;
+  padding: 6px 13px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--t2);
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.cat-btn:hover,
+.cat-btn.active { background: rgba(58, 159, 214, .12); border-color: var(--accent); color: var(--accent); }
+
+/* ── 추가된 음식 목록 ── */
+.food-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.food-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  animation: fadeUp .3s ease both;
+}
+.food-item .fi-left  { display: flex; align-items: center; gap: 10px; }
+.food-item .fi-emoji { font-size: 18px; }
+.food-item .fi-name  { font-size: 13px; color: var(--t1); font-weight: 500; }
+.food-item .fi-src   { font-size: 11px; color: var(--t3); margin-top: 2px; }
+.food-item .fi-kcal  { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--accent); margin-right: 10px; }
+.food-item .fi-del {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--t3);
+  font-size: 16px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all .2s;
+}
+.food-item .fi-del:hover { background: rgba(224, 92, 114, .12); color: var(--danger); }
+
+/* ── 식사 소계 ── */
+.meal-subtotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 14px;
+}
+.meal-subtotal .ms-label { font-size: 12px; color: var(--t2); letter-spacing: .06em; text-transform: uppercase; }
+.meal-subtotal .ms-val   { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--accent); }
+
+/* ============================================================
+   AI 사진 분석 패널
+============================================================ */
+.ai-panel {
+  background: linear-gradient(135deg, rgba(58, 159, 214, .06) 0%, rgba(107, 191, 223, .08) 100%);
+  border: 1px solid rgba(58, 159, 214, .25);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 18px;
+}
+.ai-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.beta-badge {
+  background: rgba(58, 159, 214, .15);
+  color: var(--accent);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: .08em;
+}
+
+/* ── API 키 입력 ── */
+.apikey-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.apikey-row input { flex: 1; font-size: 13px; padding: 9px 12px; }
+.apikey-toggle {
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  color: var(--t2);
+  font-size: 14px;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.apikey-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.apikey-hint { font-size: 11px; color: var(--t3); margin-bottom: 12px; line-height: 1.6; }
+
+/* ── 사진 업로드 영역 ── */
+.photo-drop {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+}
+.photo-drop:hover,
+.photo-drop.dragover { border-color: var(--accent); background: rgba(58, 159, 214, .05); }
+.photo-drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.photo-drop .pd-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.photo-drop .pd-text { font-size: 13px; color: var(--t2); }
+.photo-drop .pd-sub  { font-size: 11px; color: var(--t3); margin-top: 4px; }
+
+/* ── 이미지 미리보기 ── */
+.photo-preview {
+  display: none;
+  margin-top: 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.photo-preview.show { display: block; }
+.photo-preview img  { width: 100%; max-height: 200px; object-fit: cover; display: block; }
+.pp-overlay {
+  position: absolute; inset: 0;
+  background: rgba(26, 58, 88, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.photo-preview:hover .pp-overlay { opacity: 1; }
+.pp-overlay span { color: #fff; font-size: 13px; }
+
+/* ── AI 분석 결과 ── */
+.ai-result {
+  margin-top: 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  display: none;
+}
+.ai-result.show { display: block; animation: fadeUp .4s ease both; }
+.ar-title { font-size: 11px; color: var(--t2); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+.ar-foods { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.ar-food {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.ar-food .af-kcal { font-family: 'Bebas Neue', sans-serif; color: var(--accent); font-size: 1rem; }
+.ar-disclaimer { font-size: 11px; color: var(--warn); margin-bottom: 12px; line-height: 1.5; }
+.ar-add-btn {
+  width: 100%;
+  padding: 10px;
+  background: rgba(58, 159, 214, .12);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all .2s;
+}
+.ar-add-btn:hover { background: rgba(58, 159, 214, .22); }
+
+/* ── AI 로딩 스피너 ── */
+.ai-loading { display: none; text-align: center; padding: 24px; }
+.ai-loading.show { display: block; }
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  margin: 0 auto 12px;
+}
+.ai-loading p { font-size: 13px; color: var(--t2); }
+
+/* ── 기본 버튼 ── */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #3a9fd6, #6bbfdf);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: opacity .2s;
+  margin-top: 12px;
+}
+.btn-primary:hover    { opacity: .85; }
+.btn-primary:disabled { opacity: .45; cursor: default; }
+
+/* ============================================================
+   애니메이션
+============================================================ */
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(18px);  } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pop      { 0% { transform: scale(.85); opacity: 0; } 80% { transform: scale(1.03); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes spin     { to { transform: rotate(360deg); } }
+
+.anim-pop    { animation: pop .45s ease both; }
+.left-col    { animation-delay: .05s; }
+.right-col   { animation-delay: .15s; }
+.meal-card   { animation-delay: .25s; }
+.result-card { animation-delay: .35s; }
+.chart-card  { animation-delay: .45s; }
+
+/* ── 스크롤바 ── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #dceefb; }
+::-webkit-scrollbar-thumb { background: #bdd8f2; border-radius: 999px; }
