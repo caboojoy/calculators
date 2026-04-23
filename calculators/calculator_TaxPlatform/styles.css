@@ -1,0 +1,555 @@
+/* ═══════════════════════════════════════════════
+   style.css — 세무 계산 플랫폼 공통 스타일
+   caboojoy-calculators / calculator_TaxPlatform
+   ═══════════════════════════════════════════════ */
+
+   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+   /* ── 공통 변수 ── */
+   :root {
+     --bg:        #0A0E1A;
+     --surface:   #111827;
+     --card:      #1a2234;
+     --border:    rgba(255,255,255,0.07);
+     --border-hi: rgba(255,255,255,0.14);
+     --text:      #F0F4FF;
+     --text-2:    #8899BB;
+     --text-3:    #556080;
+     --accent:    #3B82F6;   /* 각 페이지에서 덮어씀 */
+     --danger:    #EF4444;
+     --success:   #10B981;
+     --radius:    12px;
+     --radius-sm: 8px;
+     --shadow:    0 4px 24px rgba(0,0,0,0.4);
+     --font:      'Noto Sans KR', sans-serif;
+     --mono:      'JetBrains Mono', monospace;
+   }
+   
+   /* ── Reset & Base ── */
+   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+   
+   html { font-size: 15px; scroll-behavior: smooth; }
+   
+   body {
+     font-family: var(--font);
+     background: var(--bg);
+     color: var(--text);
+     min-height: 100vh;
+     line-height: 1.6;
+     -webkit-font-smoothing: antialiased;
+   }
+   
+   /* ── Layout ── */
+   .page-wrap {
+     max-width: 680px;
+     margin: 0 auto;
+     padding: 0 16px 60px;
+   }
+   
+   .page-wrap.wide { max-width: 900px; }
+   
+   /* ── Header ── */
+   .page-header {
+     padding: 20px 0 28px;
+     border-bottom: 1px solid var(--border);
+     margin-bottom: 28px;
+   }
+   
+   .breadcrumb {
+     display: flex;
+     align-items: center;
+     gap: 8px;
+     font-size: 0.8rem;
+     color: var(--text-3);
+     margin-bottom: 14px;
+   }
+   
+   .breadcrumb a {
+     color: var(--text-3);
+     text-decoration: none;
+     transition: color 0.15s;
+   }
+   
+   .breadcrumb a:hover { color: var(--accent); }
+   
+   .breadcrumb .sep { opacity: 0.5; }
+   
+   .page-title {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+   }
+   
+   .page-title .icon {
+     width: 44px; height: 44px;
+     border-radius: var(--radius-sm);
+     background: color-mix(in srgb, var(--accent) 15%, transparent);
+     display: flex; align-items: center; justify-content: center;
+     font-size: 1.3rem;
+     flex-shrink: 0;
+   }
+   
+   .page-title h1 {
+     font-size: 1.5rem;
+     font-weight: 700;
+     letter-spacing: -0.03em;
+   }
+   
+   .page-title .subtitle {
+     font-size: 0.8rem;
+     color: var(--text-2);
+     margin-top: 1px;
+   }
+   
+   /* ── Hub Grid ── */
+   .hub-hero {
+     text-align: center;
+     padding: 48px 0 40px;
+   }
+   
+   .hub-hero h1 {
+     font-size: 2rem;
+     font-weight: 700;
+     letter-spacing: -0.04em;
+     margin-bottom: 8px;
+   }
+   
+   .hub-hero p {
+     color: var(--text-2);
+     font-size: 0.9rem;
+   }
+   
+   .hub-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+     gap: 12px;
+     margin-bottom: 20px;
+   }
+   
+   .hub-card {
+     display: block;
+     padding: 20px 16px;
+     background: var(--card);
+     border: 1px solid var(--border);
+     border-radius: var(--radius);
+     text-decoration: none;
+     color: var(--text);
+     transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+     position: relative;
+     overflow: hidden;
+   }
+   
+   .hub-card::before {
+     content: '';
+     position: absolute;
+     top: 0; left: 0; right: 0;
+     height: 3px;
+     background: var(--card-accent);
+     opacity: 0;
+     transition: opacity 0.2s;
+   }
+   
+   .hub-card:hover {
+     border-color: var(--card-accent);
+     transform: translateY(-2px);
+     box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 0 1px var(--card-accent);
+   }
+   
+   .hub-card:hover::before { opacity: 1; }
+   
+   .hub-card .emoji { font-size: 1.6rem; margin-bottom: 10px; display: block; }
+   
+   .hub-card .name {
+     font-size: 0.95rem;
+     font-weight: 600;
+     display: block;
+     margin-bottom: 4px;
+   }
+   
+   .hub-card .desc {
+     font-size: 0.75rem;
+     color: var(--text-3);
+     display: block;
+   }
+   
+   .saved-badge {
+     display: inline-block;
+     margin-top: 8px;
+     padding: 2px 8px;
+     border-radius: 20px;
+     font-size: 0.68rem;
+     background: color-mix(in srgb, var(--success) 15%, transparent);
+     color: var(--success);
+     font-weight: 500;
+   }
+   
+   .comprehensive-link {
+     display: flex;
+     align-items: center;
+     justify-content: space-between;
+     padding: 20px 24px;
+     background: linear-gradient(135deg, #1a2234 0%, #0f1929 100%);
+     border: 1px solid var(--border-hi);
+     border-radius: var(--radius);
+     text-decoration: none;
+     color: var(--text);
+     transition: all 0.2s;
+     margin-top: 20px;
+   }
+   
+   .comprehensive-link:hover {
+     border-color: rgba(255,255,255,0.25);
+     transform: translateY(-1px);
+   }
+   
+   .comprehensive-link .left .title { font-size: 1.1rem; font-weight: 700; }
+   .comprehensive-link .left .sub   { font-size: 0.8rem; color: var(--text-2); margin-top: 2px; }
+   .comprehensive-link .arrow       { font-size: 1.3rem; opacity: 0.5; }
+   
+   /* ── Card (공통 입력/결과 컨테이너) ── */
+   .card {
+     background: var(--card);
+     border: 1px solid var(--border);
+     border-radius: var(--radius);
+     padding: 24px;
+     margin-bottom: 16px;
+   }
+   
+   .card-title {
+     font-size: 0.85rem;
+     font-weight: 600;
+     color: var(--accent);
+     text-transform: uppercase;
+     letter-spacing: 0.06em;
+     margin-bottom: 20px;
+     display: flex;
+     align-items: center;
+     gap: 8px;
+   }
+   
+   .card-title::before {
+     content: '';
+     display: block;
+     width: 3px; height: 14px;
+     background: var(--accent);
+     border-radius: 2px;
+   }
+   
+   /* ── Form Fields ── */
+   .field {
+     margin-bottom: 16px;
+   }
+   
+   .field:last-child { margin-bottom: 0; }
+   
+   .field label {
+     display: block;
+     font-size: 0.82rem;
+     font-weight: 500;
+     color: var(--text-2);
+     margin-bottom: 6px;
+   }
+   
+   .field label .req { color: var(--accent); margin-left: 2px; }
+   
+   .field input[type="text"],
+   .field input[type="number"],
+   .field select {
+     width: 100%;
+     padding: 10px 14px;
+     background: var(--surface);
+     border: 1px solid var(--border-hi);
+     border-radius: var(--radius-sm);
+     color: var(--text);
+     font-size: 0.95rem;
+     font-family: var(--font);
+     transition: border-color 0.15s, box-shadow 0.15s;
+     outline: none;
+     -moz-appearance: textfield;
+   }
+   
+   .field input::-webkit-outer-spin-button,
+   .field input::-webkit-inner-spin-button { -webkit-appearance: none; }
+   
+   .field input:focus,
+   .field select:focus {
+     border-color: var(--accent);
+     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+   }
+   
+   .field select option { background: var(--surface); }
+   
+   .field-row {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 12px;
+   }
+   
+   .field-hint {
+     font-size: 0.75rem;
+     color: var(--text-3);
+     margin-top: 5px;
+   }
+   
+   /* ── Toggle (Y/N) ── */
+   .toggle-group {
+     display: flex;
+     gap: 8px;
+   }
+   
+   .toggle-btn {
+     flex: 1;
+     padding: 9px;
+     border-radius: var(--radius-sm);
+     border: 1px solid var(--border-hi);
+     background: var(--surface);
+     color: var(--text-2);
+     font-family: var(--font);
+     font-size: 0.88rem;
+     cursor: pointer;
+     transition: all 0.15s;
+     text-align: center;
+   }
+   
+   .toggle-btn.active {
+     background: color-mix(in srgb, var(--accent) 18%, transparent);
+     border-color: var(--accent);
+     color: var(--accent);
+     font-weight: 600;
+   }
+   
+   /* ── Buttons ── */
+   .btn {
+     display: inline-flex;
+     align-items: center;
+     justify-content: center;
+     gap: 8px;
+     padding: 12px 24px;
+     border-radius: var(--radius-sm);
+     border: none;
+     font-family: var(--font);
+     font-size: 0.95rem;
+     font-weight: 600;
+     cursor: pointer;
+     transition: all 0.15s;
+     text-decoration: none;
+   }
+   
+   .btn-primary {
+     background: var(--accent);
+     color: #fff;
+     width: 100%;
+   }
+   
+   .btn-primary:hover { filter: brightness(1.1); }
+   .btn-primary:active { transform: scale(0.98); }
+   
+   .btn-ghost {
+     background: transparent;
+     border: 1px solid var(--border-hi);
+     color: var(--text-2);
+   }
+   
+   .btn-ghost:hover {
+     border-color: var(--accent);
+     color: var(--accent);
+   }
+   
+   .btn-sm { padding: 8px 14px; font-size: 0.83rem; }
+   
+   /* ── 결과 카드 ── */
+   .result-card {
+     background: var(--card);
+     border: 1px solid var(--border-hi);
+     border-radius: var(--radius);
+     padding: 24px;
+     margin-bottom: 16px;
+     display: none;
+     animation: slideIn 0.25s ease-out;
+   }
+   
+   .result-card.visible { display: block; }
+   
+   @keyframes slideIn {
+     from { opacity: 0; transform: translateY(8px); }
+     to   { opacity: 1; transform: translateY(0); }
+   }
+   
+   .result-row {
+     display: flex;
+     justify-content: space-between;
+     align-items: baseline;
+     padding: 9px 0;
+     border-bottom: 1px solid var(--border);
+     font-size: 0.9rem;
+   }
+   
+   .result-row:last-child { border-bottom: none; }
+   
+   .result-row .lbl { color: var(--text-2); }
+   
+   .result-row .val {
+     font-weight: 500;
+     font-variant-numeric: tabular-nums;
+   }
+   
+   .result-row.total {
+     padding: 14px 0 4px;
+     border-top: 1px solid var(--border-hi);
+     border-bottom: none;
+     margin-top: 6px;
+   }
+   
+   .result-row.total .lbl { font-weight: 600; color: var(--text); font-size: 0.95rem; }
+   
+   .result-row.total .val {
+     font-size: 1.25rem;
+     font-weight: 700;
+     color: var(--accent);
+   }
+   
+   /* 지방소득세 포함 총세액 */
+   .result-row.grand-total .val {
+     font-size: 1.4rem;
+     color: var(--text);
+   }
+   
+   .result-note {
+     font-size: 0.78rem;
+     color: var(--text-3);
+     padding: 10px 0 0;
+     line-height: 1.5;
+   }
+   
+   /* ── Tax Badge (세율 표시) ── */
+   .tax-badge {
+     display: inline-block;
+     padding: 3px 10px;
+     border-radius: 20px;
+     font-size: 0.75rem;
+     font-weight: 700;
+     background: color-mix(in srgb, var(--accent) 18%, transparent);
+     color: var(--accent);
+   }
+   
+   /* ── JSON 블록 ── */
+   .json-block {
+     background: #0d1117;
+     border: 1px solid var(--border);
+     border-radius: var(--radius-sm);
+     padding: 16px;
+     font-family: var(--mono);
+     font-size: 0.78rem;
+     color: #7dd3fc;
+     white-space: pre;
+     overflow-x: auto;
+     line-height: 1.7;
+     max-height: 260px;
+     overflow-y: auto;
+     display: none;
+   }
+   
+   .json-block.visible { display: block; }
+   
+   .json-key   { color: #93c5fd; }
+   .json-str   { color: #86efac; }
+   .json-num   { color: #fde68a; }
+   .json-bool  { color: #f9a8d4; }
+   
+   /* ── 종합소득세 페이지 전용 ── */
+   .income-item {
+     display: flex;
+     align-items: center;
+     gap: 14px;
+     padding: 14px 0;
+     border-bottom: 1px solid var(--border);
+   }
+   
+   .income-item:last-child { border-bottom: none; }
+   
+   .income-dot {
+     width: 10px; height: 10px;
+     border-radius: 50%;
+     flex-shrink: 0;
+   }
+   
+   .income-item .info { flex: 1; }
+   .income-item .info .name { font-size: 0.9rem; font-weight: 500; }
+   .income-item .info .sub  { font-size: 0.77rem; color: var(--text-3); margin-top: 1px; }
+   
+   .income-item .amount {
+     text-align: right;
+     font-variant-numeric: tabular-nums;
+   }
+   
+   .income-item .amount .taxable { font-size: 0.9rem; font-weight: 600; }
+   .income-item .amount .income  { font-size: 0.77rem; color: var(--text-3); }
+   
+   .tag-sep   { background: color-mix(in srgb, #3B82F6 15%, transparent); color: #3B82F6; }
+   .tag-comp  { background: color-mix(in srgb, #10B981 15%, transparent); color: #10B981; }
+   
+   .tag {
+     display: inline-block;
+     padding: 2px 8px;
+     border-radius: 4px;
+     font-size: 0.7rem;
+     font-weight: 600;
+   }
+   
+   .empty-msg {
+     text-align: center;
+     padding: 32px;
+     color: var(--text-3);
+     font-size: 0.88rem;
+   }
+   
+   .empty-msg a { color: var(--accent); text-decoration: none; }
+   
+   /* ── Action Row ── */
+   .action-row {
+     display: flex;
+     gap: 10px;
+     margin-top: 16px;
+   }
+   
+   .action-row .btn { flex: 1; }
+   
+   /* ── Divider ── */
+   .divider {
+     border: none;
+     border-top: 1px solid var(--border);
+     margin: 20px 0;
+   }
+   
+   /* ── Toast ── */
+   .toast {
+     position: fixed;
+     bottom: 24px;
+     left: 50%;
+     transform: translateX(-50%) translateY(20px);
+     background: #22c55e;
+     color: #fff;
+     padding: 10px 22px;
+     border-radius: 100px;
+     font-size: 0.88rem;
+     font-weight: 600;
+     opacity: 0;
+     transition: all 0.3s ease;
+     pointer-events: none;
+     z-index: 1000;
+     white-space: nowrap;
+   }
+   
+   .toast.show {
+     opacity: 1;
+     transform: translateX(-50%) translateY(0);
+   }
+   
+   /* ── Responsive ── */
+   @media (max-width: 480px) {
+     .field-row { grid-template-columns: 1fr; }
+     .hub-grid  { grid-template-columns: 1fr 1fr; }
+     .page-title h1 { font-size: 1.2rem; }
+   }
+
+   

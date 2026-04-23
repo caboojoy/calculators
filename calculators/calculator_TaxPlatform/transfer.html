@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>양도소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #EF4444; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(239,68,68,0.07) 0%, var(--bg) 60%); }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>양도소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">🏠</div>
+      <div>
+        <h1>양도소득 계산기</h1>
+        <div class="subtitle">양도차익 - 장기보유특별공제 · 분리과세</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">자산 정보</div>
+
+    <div class="field">
+      <label>자산 유형</label>
+      <select id="assetType" onchange="updateRate()">
+        <option value="house1">주택 (1세대 1주택, 장기보유)</option>
+        <option value="house2">주택 (1세대 2주택)</option>
+        <option value="house3">주택 (1세대 3주택 이상 또는 다주택)</option>
+        <option value="land">토지/건물 (기본세율)</option>
+        <option value="stock_listed">상장주식</option>
+        <option value="stock_unlisted">비상장주식</option>
+        <option value="shortterm">단기양도 (1년 미만)</option>
+      </select>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>양도가액 <span class="req">*</span></label>
+        <input type="text" id="salePrice" placeholder="예) 800,000,000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>취득가액 <span class="req">*</span></label>
+        <input type="text" id="buyPrice" placeholder="예) 400,000,000" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>필요경비</label>
+        <input type="text" id="expenses" placeholder="예) 5,000,000" inputmode="numeric">
+        <div class="field-hint">취득·양도 관련 비용, 자본적 지출</div>
+      </div>
+      <div class="field">
+        <label>보유기간 (년)</label>
+        <input type="number" id="holdYears" placeholder="예) 5" min="0" max="30" step="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">공제 정보</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>적용 세율 (%)</label>
+        <input type="number" id="taxRate" value="6" step="1" min="6" max="70">
+        <div class="field-hint" id="rateHint">자산 유형에 따라 자동 설정</div>
+      </div>
+      <div class="field">
+        <label>장기보유특별공제율 (%)</label>
+        <input type="number" id="longDeductRate" value="0" step="1" min="0" max="80">
+        <div class="field-hint" id="ltcHint">보유기간에 따라 자동 계산</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>양도소득기본공제</label>
+      <input type="text" value="2,500,000" disabled style="opacity:0.5">
+      <div class="field-hint">연 250만원 고정 적용</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">🏠 양도소득세 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note">※ 양도소득세는 분리과세입니다. 1세대1주택 비과세 여부, 조정대상지역 여부에 따라 달라질 수 있습니다.</div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 참고용으로 저장</button>
+  </div>
+  <pre class="json-block" id="jsonBlock"></pre>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  const ASSET_RATES = {
+    house1: { rate: null, note: '기본세율 (장기보유특별공제 최대 80%)' },
+    house2: { rate: null, note: '기본세율 + 10%p 중과' },
+    house3: { rate: null, note: '기본세율 + 20%p 중과' },
+    land:   { rate: null, note: '기본세율' },
+    stock_listed:   { rate: 0.20, note: '20% (대주주) / 소액주주 비과세' },
+    stock_unlisted: { rate: 0.20, note: '20%' },
+    shortterm: { rate: 0.50, note: '50% (보유 1년 미만 주택)' },
+  };
+
+  ['salePrice','buyPrice','expenses'].forEach(id => addCommaInput(document.getElementById(id)));
+
+  let lastResult = null;
+
+  function updateRate() {
+    const type = document.getElementById('assetType').value;
+    const info = ASSET_RATES[type];
+    const rateEl = document.getElementById('taxRate');
+    const hintEl = document.getElementById('rateHint');
+
+    if (info.rate !== null) {
+      rateEl.value = info.rate * 100;
+      rateEl.disabled = true;
+    } else {
+      rateEl.disabled = false;
+    }
+    hintEl.textContent = info.note;
+
+    // 보유기간 기반 장기보유특별공제 갱신
+    updateLTC();
+  }
+
+  function updateLTC() {
+    const years = parseInt(document.getElementById('holdYears').value) || 0;
+    const type  = document.getElementById('assetType').value;
+    const ltcEl = document.getElementById('longDeductRate');
+    const ltcHint = document.getElementById('ltcHint');
+
+    let rate = 0;
+    if (['house1','land'].includes(type)) {
+      rate = TaxEngine.longTermDeductionRate(years);
+      if (type === 'house1' && years >= 10) rate = Math.min(0.80, rate * 2); // 1주택 최대 80%
+    }
+
+    ltcEl.value = (rate * 100).toFixed(0);
+    ltcHint.textContent = years < 3
+      ? '보유 3년 미만: 장기보유특별공제 없음'
+      : `보유 ${years}년 → ${(rate*100).toFixed(0)}% 공제`;
+  }
+
+  document.getElementById('holdYears').addEventListener('input', updateLTC);
+  document.getElementById('assetType').addEventListener('change', updateRate);
+
+  function calculate() {
+    const salePrice = Fmt.parse(document.getElementById('salePrice').value);
+    const buyPrice  = Fmt.parse(document.getElementById('buyPrice').value);
+    const expenses  = Fmt.parse(document.getElementById('expenses').value);
+    const holdYears = parseInt(document.getElementById('holdYears').value) || 0;
+    const taxRate   = (parseFloat(document.getElementById('taxRate').value) || 6) / 100;
+    const ltcRate   = (parseFloat(document.getElementById('longDeductRate').value) || 0) / 100;
+    const type      = document.getElementById('assetType').value;
+
+    if (!salePrice || !buyPrice) { alert('양도가액과 취득가액을 입력해주세요.'); return; }
+
+    // 양도차익
+    const gain = Math.max(0, salePrice - buyPrice - expenses);
+
+    // 장기보유특별공제
+    const ltcDeduction = Math.floor(gain * ltcRate);
+
+    // 양도소득금액
+    const transferIncome = gain - ltcDeduction;
+
+    // 양도소득기본공제
+    const basicDeduction = 2_500_000;
+
+    // 과세표준
+    const taxBase = Math.max(0, transferIncome - basicDeduction);
+
+    // 세액 계산
+    // ASSET_RATES[type].rate 가 null 이면 누진세율, 아니면 단일세율
+    const isFixedRate = ASSET_RATES[type].rate !== null;
+    let calculatedTax;
+    let taxRateLabel;
+    if (isFixedRate) {
+      // 단일세율 (주식, 단기양도)
+      calculatedTax = Math.floor(taxBase * taxRate);
+      taxRateLabel  = `${(taxRate * 100).toFixed(0)}%`;
+    } else {
+      // 누진세율 (주택, 토지)
+      calculatedTax = TaxEngine.progressiveTax(taxBase);
+      taxRateLabel  = TaxEngine.bracketLabel(taxBase);
+      // 다주택 중과
+      const surcharge = type === 'house2' ? 0.10 : type === 'house3' ? 0.20 : 0;
+      if (surcharge > 0) {
+        calculatedTax += Math.floor(taxBase * surcharge);
+        taxRateLabel  += `+${(surcharge*100).toFixed(0)}%p 중과`;
+      }
+    }
+
+    const localTax = Math.floor(calculatedTax * 0.1);
+    const total    = calculatedTax + localTax;
+
+    const rows = [
+      ['양도가액',              Fmt.won(salePrice)],
+      ['취득가액',              `-${Fmt.won(buyPrice)}`],
+      ['필요경비',              `-${Fmt.won(expenses)}`],
+      ['양도차익',              Fmt.won(gain), true],
+      [`장기보유특별공제 (${(ltcRate*100).toFixed(0)}%)`, `-${Fmt.won(ltcDeduction)}`],
+      ['양도소득금액',          Fmt.won(transferIncome), true],
+      ['양도소득기본공제',      `-${Fmt.won(basicDeduction)}`],
+      ['과세표준',              Fmt.won(taxBase), true],
+      [`양도소득세 (${taxRateLabel})`, Fmt.won(calculatedTax)],
+      ['지방소득세 (10%)',      Fmt.won(localTax)],
+    ];
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, b]) =>
+        `<div class="result-row${b?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">총 납부세액</span>
+        <span class="val">${Fmt.won(total)}</span>
+      </div>`;
+
+    lastResult = createTaxResult(
+      'transfer', salePrice - buyPrice, transferIncome, calculatedTax, false,
+      { salePrice, buyPrice, expenses, gain, ltcRate, ltcDeduction,
+        transferIncome, basicDeduction, taxBase, taxRate, calculatedTax, localTax }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('transfer', lastResult);
+    showToast('✓ 양도소득 저장 완료! (참고용, 분리과세)');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+
+  // 초기화
+  updateRate();
+</script>
+</body>
+</html>
+

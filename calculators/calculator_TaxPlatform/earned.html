@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>근로소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #3B82F6; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(59,130,246,0.07) 0%, var(--bg) 60%); }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- 헤더 -->
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a>
+      <span class="sep">›</span>
+      <span>근로소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">💼</div>
+      <div>
+        <h1>근로소득 계산기</h1>
+        <div class="subtitle">연간 총급여 기준 · 2024년 소득세법</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 입력 -->
+  <div class="card">
+    <div class="card-title">소득 정보</div>
+
+    <div class="field">
+      <label>연간 총급여액 <span class="req">*</span></label>
+      <input type="text" id="wage" placeholder="예) 50,000,000" inputmode="numeric">
+      <div class="field-hint">세전 연봉 + 상여금 합계 (식대·차량유지비 등 비과세 제외 전)</div>
+    </div>
+
+    <div class="field">
+      <label>비과세소득 합계</label>
+      <input type="text" id="nontax" placeholder="예) 2,400,000" inputmode="numeric">
+      <div class="field-hint">식대(월 20만원), 차량유지비(월 20만원), 출산보육수당 등</div>
+    </div>
+
+    <div class="field">
+      <label>4대보험 본인부담금 (연간)</label>
+      <input type="text" id="insurance" placeholder="자동계산 또는 직접입력" inputmode="numeric">
+      <div class="field-hint">건강보험료 + 고용보험료 (소득공제 항목)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">인적공제</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>배우자 공제</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-group="spouse" data-val="0">없음</button>
+          <button class="toggle-btn"        data-group="spouse" data-val="1">있음 (+150만)</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>부양가족 수 (본인 제외)</label>
+        <input type="text" id="dependents" value="0" inputmode="numeric" style="text-align:center;">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>추가공제</label>
+      <div class="toggle-group" style="flex-wrap:wrap;gap:6px;">
+        <button class="toggle-btn" data-group="extra" data-val="경로우대">경로우대 (+100만)</button>
+        <button class="toggle-btn" data-group="extra" data-val="장애인">장애인 (+200만)</button>
+        <button class="toggle-btn" data-group="extra" data-val="한부모">한부모 (+100만)</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">💼 근로소득세 계산하기</button>
+
+  <!-- 결과 -->
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note" id="resultNote"></div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  </div>
+
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="shared.js"></script>
+<script>
+  // ── 상태 ──
+  const state = { spouseVal: 0, extras: new Set() };
+  let lastResult = null;
+
+  // ── 입력 자동 콤마 ──
+  ['wage','nontax','insurance'].forEach(id => addCommaInput(document.getElementById(id)));
+
+  // ── 토글 버튼 ──
+  document.querySelectorAll('[data-group]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const g = btn.dataset.group;
+      if (g === 'spouse') {
+        document.querySelectorAll('[data-group="spouse"]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.spouseVal = +btn.dataset.val;
+      } else if (g === 'extra') {
+        btn.classList.toggle('active');
+        const v = btn.dataset.val;
+        state.extras.has(v) ? state.extras.delete(v) : state.extras.add(v);
+      }
+    });
+  });
+
+  // ── 저장된 값 불러오기 ──
+  (function loadSaved() {
+    const saved = TaxStorage.get('earned');
+    if (!saved) return;
+    if (saved.details.wage)      document.getElementById('wage').value      = Number(saved.details.wage).toLocaleString('ko-KR');
+    if (saved.details.nontax)    document.getElementById('nontax').value    = Number(saved.details.nontax).toLocaleString('ko-KR');
+    if (saved.details.insurance) document.getElementById('insurance').value = Number(saved.details.insurance).toLocaleString('ko-KR');
+  })();
+
+  // ── 계산 ──
+  function calculate() {
+    const wage      = Fmt.parse(document.getElementById('wage').value);
+    const nontax    = Fmt.parse(document.getElementById('nontax').value);
+    const insurance = Fmt.parse(document.getElementById('insurance').value);
+    const deps      = Math.max(0, parseInt(document.getElementById('dependents').value) || 0);
+
+    if (!wage) { alert('연간 총급여액을 입력해주세요.'); return; }
+
+    // 1. 과세급여 = 총급여 - 비과세
+    const taxableWage = Math.max(0, wage - nontax);
+
+    // 2. 근로소득공제
+    const earnedDed = TaxEngine.earnedIncomeDeduction(taxableWage);
+
+    // 3. 근로소득금액
+    const earnedIncome = taxableWage - earnedDed;
+
+    // 4. 인적공제
+    const spouseAmt = state.spouseVal * 1_500_000;
+    let extraAmt = 0;
+    if (state.extras.has('경로우대')) extraAmt += 1_000_000;
+    if (state.extras.has('장애인'))   extraAmt += 2_000_000;
+    if (state.extras.has('한부모'))   extraAmt += 1_000_000;
+
+    const personalDed = 1_500_000 + spouseAmt + deps * 1_500_000 + extraAmt;
+
+    // 5. 근로소득 특별소득공제 (4대보험)
+    const specialDed = insurance;
+
+    // 6. 과세표준
+    const taxBase = Math.max(0, earnedIncome - personalDed - specialDed);
+
+    // 7. 산출세액
+    const calculatedTax = TaxEngine.progressiveTax(taxBase);
+
+    // 8. 근로소득세액공제
+    const taxCredit = TaxEngine.earnedTaxCredit(calculatedTax, taxableWage);
+
+    // 9. 결정세액
+    const finalTax = Math.max(0, calculatedTax - taxCredit);
+
+    // 10. 지방소득세 (10%)
+    const localTax = Math.floor(finalTax * 0.1);
+    const totalTax = finalTax + localTax;
+
+    // 결과 렌더
+    const rows = [
+      ['연간 총급여액',     Fmt.won(wage)],
+      ['비과세소득',        `-${Fmt.won(nontax)}`],
+      ['과세급여',          Fmt.won(taxableWage)],
+      ['근로소득공제',      `-${Fmt.won(earnedDed)}`],
+      ['근로소득금액',      Fmt.won(earnedIncome), true],
+      ['인적공제',          `-${Fmt.won(personalDed)}`],
+      ['4대보험 특별공제',  `-${Fmt.won(specialDed)}`],
+      ['과세표준',          Fmt.won(taxBase), true],
+      [`산출세액 (${TaxEngine.bracketLabel(taxBase)})`, Fmt.won(calculatedTax)],
+      ['근로소득세액공제',  `-${Fmt.won(taxCredit)}`],
+      ['결정세액 (소득세)', Fmt.won(finalTax)],
+      ['지방소득세 (10%)',  Fmt.won(localTax)],
+    ];
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, bold]) =>
+        `<div class="result-row${bold?' total':''}">
+          <span class="lbl">${l}</span>
+          <span class="val">${v}</span>
+        </div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">총 납부세액 (소득세+지방세)</span>
+        <span class="val">${Fmt.won(totalTax)}</span>
+      </div>`;
+
+    document.getElementById('resultNote').textContent =
+      '※ 표준세액공제, 특별세액공제(교육비·의료비·보험료 등)는 포함되지 않아 실제 결정세액과 차이가 있을 수 있습니다.';
+
+    lastResult = createTaxResult(
+      'earned',
+      wage,
+      earnedIncome,   // 종합소득에 합산될 근로소득금액
+      finalTax,
+      true,           // 종합과세 대상
+      { wage, nontax, taxableWage, earnedDed, earnedIncome, personalDed,
+        specialDed, taxBase, calculatedTax, taxCredit, finalTax, localTax }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('earned', lastResult);
+    showToast('✓ 근로소득 저장 완료!');
+  }
+
+  function toggleJson() {
+    const el = document.getElementById('jsonBlock');
+    el.classList.toggle('visible');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>
+

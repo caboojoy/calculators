@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>금융소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #F59E0B; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(245,158,11,0.07) 0%, var(--bg) 60%); }
+
+    .threshold-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      border: 1px solid;
+      margin-bottom: 16px;
+    }
+    .threshold-card.sep  { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.3); }
+    .threshold-card.comp { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.3);  }
+
+    .threshold-card .status { font-size: 1.5rem; }
+    .threshold-card .info   { flex: 1; }
+    .threshold-card .title  { font-weight: 600; font-size: 0.95rem; }
+    .threshold-card .desc   { font-size: 0.8rem; color: var(--text-2); margin-top: 2px; }
+
+    #thresholdNotice { display: none; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>금융소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">💰</div>
+      <div>
+        <h1>금융소득 계산기</h1>
+        <div class="subtitle">이자·배당 · 2천만원 기준 종합과세 판단</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">소득 정보</div>
+    <div class="field-row">
+      <div class="field">
+        <label>이자소득 (연간)</label>
+        <input type="text" id="interest" placeholder="예) 5,000,000" inputmode="numeric">
+        <div class="field-hint">예·적금 이자, 채권이자 등</div>
+      </div>
+      <div class="field">
+        <label>배당소득 (연간)</label>
+        <input type="text" id="dividend" placeholder="예) 8,000,000" inputmode="numeric">
+        <div class="field-hint">주식배당금, 펀드분배금 등</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>이미 원천징수된 금액 (합계)</label>
+      <input type="text" id="withheld" placeholder="예) 1,540,000" inputmode="numeric">
+      <div class="field-hint">금융기관에서 원천징수한 세액 (세율 15.4% 기 적용분)</div>
+    </div>
+  </div>
+
+  <div id="thresholdNotice"></div>
+
+  <button class="btn btn-primary" onclick="calculate()">💰 금융소득세 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note" id="resultNote"></div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  </div>
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  const THRESHOLD = 20_000_000;
+  ['interest','dividend','withheld'].forEach(id => addCommaInput(document.getElementById(id)));
+
+  let lastResult = null;
+
+  function calculate() {
+    const interest = Fmt.parse(document.getElementById('interest').value);
+    const dividend = Fmt.parse(document.getElementById('dividend').value);
+    const withheld = Fmt.parse(document.getElementById('withheld').value);
+
+    const total = interest + dividend;
+    if (!total) { alert('이자소득 또는 배당소득을 입력해주세요.'); return; }
+
+    const isComprehensive = total > THRESHOLD;
+    const excess = isComprehensive ? total - THRESHOLD : 0;
+
+    // 분리과세분 (2천만원 이하 or 전부)
+    const separatePart = isComprehensive ? THRESHOLD : total;
+    // 분리과세 세율: 원천징수세율 14% + 지방소득세 1.4% = 15.4%
+    const separateTax  = Math.floor(separatePart * 0.154);
+
+    // 종합과세분 (2천만원 초과분)
+    // ※ 실제로는 다른 소득과 합산해야 하므로, 여기서는 단독 계산
+    const comprehensiveTax = isComprehensive
+      ? TaxEngine.progressiveTax(excess)
+      : 0;
+
+    const totalTax = isComprehensive
+      ? separateTax + comprehensiveTax
+      : separateTax;
+
+    const additionalTax = Math.max(0, totalTax - withheld);
+
+    // 임계값 안내 업데이트
+    const notice = document.getElementById('thresholdNotice');
+    if (isComprehensive) {
+      notice.innerHTML = `
+        <div class="threshold-card comp">
+          <div class="status">⚠️</div>
+          <div class="info">
+            <div class="title">종합과세 대상</div>
+            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 2천만원을 초과합니다.<br>
+            초과분 ${Fmt.won(excess)}은 종합소득세에 합산됩니다.</div>
+          </div>
+        </div>`;
+    } else {
+      notice.innerHTML = `
+        <div class="threshold-card sep">
+          <div class="status">✅</div>
+          <div class="info">
+            <div class="title">분리과세 (원천징수 완료)</div>
+            <div class="desc">금융소득 합계 ${Fmt.won(total)}가 2천만원 이하입니다.<br>
+            원천징수(15.4%)로 납세가 완료되어 종합소득세 합산 불필요.</div>
+          </div>
+        </div>`;
+    }
+    notice.style.display = 'block';
+
+    const rows = [
+      ['이자소득',               Fmt.won(interest)],
+      ['배당소득',               Fmt.won(dividend)],
+      ['금융소득 합계',           Fmt.won(total), true],
+      ['2천만원 이하 (분리과세분)', Fmt.won(separatePart)],
+      ['분리과세 세액 (15.4%)',   Fmt.won(separateTax)],
+    ];
+
+    if (isComprehensive) {
+      rows.push(['2천만원 초과 (종합과세분)', Fmt.won(excess)]);
+      rows.push([`종합과세 세액 (${TaxEngine.bracketLabel(excess)})`, Fmt.won(comprehensiveTax)]);
+    }
+
+    rows.push(['이미 원천징수된 세액',  `-${Fmt.won(withheld)}`]);
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, b]) =>
+        `<div class="result-row${b?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">추가 납부세액 (추정)</span>
+        <span class="val" style="color:${additionalTax>0?'var(--danger)':'var(--success)'}">${additionalTax > 0 ? Fmt.won(additionalTax) : '환급 또는 없음'}</span>
+      </div>`;
+
+    document.getElementById('resultNote').textContent = isComprehensive
+      ? '※ 종합과세분은 다른 소득과 합산 시 세율이 달라집니다. 종합소득세 계산기를 이용하세요.'
+      : '※ 분리과세는 원천징수로 납세 완료이나, Gross-up 배당세액공제는 반영되지 않습니다.';
+
+    lastResult = createTaxResult(
+      'financial', total,
+      isComprehensive ? excess : 0,   // 종합과세에 합산될 금액만
+      isComprehensive ? comprehensiveTax : 0,
+      isComprehensive,
+      { interest, dividend, total, isComprehensive, separatePart, separateTax,
+        excess, comprehensiveTax, totalTax, withheld, additionalTax }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('financial', lastResult);
+    showToast('✓ 금융소득 저장 완료!');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>
+

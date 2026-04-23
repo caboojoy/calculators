@@ -1,0 +1,205 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4대보험 계산기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+    <div class="container">
+
+    <!-- 헤더 -->
+    <header>
+        <div class="header-badge">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+        2025년 기준
+        </div>
+        <h1>4대보험 계산기</h1>
+        <p class="header-sub">국민연금 · 건강보험 · 고용보험 · 산재보험 — 근로자/사업주 부담 자동 계산</p>
+    </header>
+
+    <div class="layout">
+
+        <!-- ───────── 좌측: 입력 패널 ───────── -->
+        <div class="left-col">
+
+        <!-- 급여 입력 -->
+        <div class="card">
+            <div class="card-title">급여 입력</div>
+
+            <!-- 연봉 / 월급 탭 -->
+            <div class="tab-group">
+            <button class="tab-btn active" id="tab-annual"  onclick="switchTab('annual')">연봉</button>
+            <button class="tab-btn"        id="tab-monthly" onclick="switchTab('monthly')">월급</button>
+            </div>
+
+            <!-- 급여 입력 -->
+            <div class="input-group" style="margin-top:14px">
+            <label id="salary-label">연봉 입력</label>
+            <div class="input-wrap">
+                <span class="input-prefix">₩</span>
+                <input type="text" id="salary-input" placeholder="0" inputmode="numeric"
+                oninput="onSalaryInput(this)">
+                <span class="input-suffix">원</span>
+            </div>
+            <div class="input-hint" id="salary-hint">월 환산액이 자동으로 계산됩니다</div>
+            <div class="input-error" id="salary-error">올바른 금액을 입력해주세요</div>
+            </div>
+
+            <!-- 연봉 슬라이더 -->
+            <div class="slider-wrap">
+            <div class="slider-header">
+                <span class="slider-label">연봉 슬라이더</span>
+                <span class="slider-value" id="slider-display">0원</span>
+            </div>
+            <input type="range" id="salary-slider"
+                min="10000000" max="200000000" step="1000000" value="40000000"
+                oninput="onSliderInput(this.value)">
+            <div style="display:flex;justify-content:space-between;margin-top:4px">
+                <span style="font-size:10px;color:var(--text3)">1,000만</span>
+                <span style="font-size:10px;color:var(--text3)">2억</span>
+            </div>
+            </div>
+
+            <!-- 비과세 금액 -->
+            <div class="input-group">
+            <label>비과세 금액 (월)</label>
+            <div class="input-wrap">
+                <span class="input-prefix">₩</span>
+                <input type="text" id="nontax-input" placeholder="0" inputmode="numeric"
+                oninput="onFormattedInput(this, calculate)">
+                <span class="input-suffix">원</span>
+            </div>
+            <div class="input-hint">식대(월 20만원), 차량유지비 등</div>
+            <div class="input-error" id="nontax-error">비과세가 총급여를 초과합니다</div>
+            </div>
+
+            <!-- 상여금 -->
+            <label class="checkbox-group">
+            <input type="checkbox" id="bonus-check" onchange="calculate()">
+            <span class="checkbox-label">상여금 포함 (연봉의 1개월분)</span>
+            </label>
+
+            <!-- 업종 선택 (산재보험 요율) -->
+            <div class="input-group">
+            <label>업종 (산재보험 요율)</label>
+            <select id="industry-select" onchange="calculate()">
+                <option value="0.7">금융·보험·서비스 (0.7%)</option>
+                <option value="0.9" selected>일반 사무직·IT (0.9%)</option>
+                <option value="1.0">도소매·운수·부동산 (1.0%)</option>
+                <option value="1.4">제조업 일반 (1.4%)</option>
+                <option value="2.0">농림·어업 (2.0%)</option>
+                <option value="2.3">식료품 제조 (2.3%)</option>
+                <option value="3.7">건설업 (3.7%)</option>
+                <option value="5.0">광업 (5.0%)</option>
+            </select>
+            </div>
+
+            <!-- 적용 연도 -->
+            <div class="year-select-wrap">
+            <label style="margin:0;font-size:12px">적용 연도</label>
+            <span class="year-badge" id="year-badge">2025년</span>
+            <select id="year-select"
+                style="width:auto;padding:4px 28px 4px 8px;font-size:12px;"
+                onchange="onYearChange(this.value)">
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+            </select>
+            </div>
+        </div><!-- /급여 입력 카드 -->
+
+        <!-- 공제 비율 바 -->
+        <div class="card" id="ratio-card" style="display:none">
+            <div class="card-title">공제 비율</div>
+            <div class="ratio-bar-section" id="ratio-bars"></div>
+        </div>
+
+        </div><!-- /left-col -->
+
+        <!-- ───────── 우측: 결과 패널 ───────── -->
+        <div class="right-col">
+
+        <!-- 급여 요약 -->
+        <div class="card" id="summary-card">
+            <div class="card-title">급여 요약</div>
+            <div id="summary-content">
+            <div class="empty-state">
+                <div class="empty-icon">💼</div>
+                <div>급여를 입력하면 결과가 표시됩니다</div>
+            </div>
+            </div>
+        </div>
+
+        <!-- 시각화 차트 -->
+        <div class="card" id="chart-card" style="display:none">
+            <div class="card-title">시각화</div>
+            <div class="charts-grid">
+            <!-- 도넛 차트 -->
+            <div class="chart-container">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-align:center">
+                보험별 비중 (근로자)
+                </div>
+                <div class="chart-wrap">
+                <canvas id="donutChart"></canvas>
+                <div class="donut-center">
+                    <div class="donut-pct" id="donut-pct">0%</div>
+                    <div class="donut-label">공제율</div>
+                </div>
+                </div>
+                <div class="chart-legend" id="donut-legend"></div>
+            </div>
+            <!-- 바 차트 -->
+            <div class="chart-container">
+                <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-align:center">
+                급여 구조
+                </div>
+                <div class="chart-wrap">
+                <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            </div>
+        </div><!-- /chart-card -->
+
+        <!-- 보험료 상세 테이블 -->
+        <div class="card" id="table-card" style="display:none">
+            <div class="card-title">보험료 상세</div>
+            <div id="table-content"></div>
+            <button class="detail-toggle" id="detail-btn" onclick="toggleDetail()">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            계산 과정 보기
+            </button>
+            <div class="detail-content" id="detail-content"></div>
+        </div>
+
+        <!-- 연봉 변화 비교 -->
+        <div class="card" id="compare-card" style="display:none">
+            <div class="card-title">연봉 변화 비교</div>
+            <div style="margin-bottom:12px">
+            <label>비교 연봉 입력</label>
+            <div class="input-wrap">
+                <span class="input-prefix">₩</span>
+                <input type="text" id="compare-input" placeholder="0" inputmode="numeric"
+                oninput="onFormattedInput(this, updateCompare)">
+                <span class="input-suffix">원</span>
+            </div>
+            </div>
+            <div class="compare-wrap" id="compare-content">
+            <div style="text-align:center;color:var(--text3);font-size:12px;padding:16px 0">
+                비교할 연봉을 입력하세요
+            </div>
+            </div>
+        </div>
+
+        </div><!-- /right-col -->
+    </div><!-- /layout -->
+    </div><!-- /container -->
+
+    <script src="script.js"></script>
+    </body>
+    </html>

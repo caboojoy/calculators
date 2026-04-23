@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>일용직소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #8B5CF6; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(139,92,246,0.07) 0%, var(--bg) 60%); }
+
+    .sep-notice {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      background: color-mix(in srgb, #8B5CF6 10%, transparent);
+      border: 1px solid color-mix(in srgb, #8B5CF6 30%, transparent);
+      border-radius: var(--radius-sm);
+      font-size: 0.83rem;
+      color: #c4b5fd;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a>
+      <span class="sep">›</span>
+      <span>일용직소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">🔨</div>
+      <div>
+        <h1>일용직소득 계산기</h1>
+        <div class="subtitle">일당 기준 원천징수세액 · 분리과세</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sep-notice">
+    ℹ️ 일용직 근로소득은 <strong>분리과세</strong>로 종합소득세에 합산되지 않습니다. (원천징수로 납세 완료)
+  </div>
+
+  <div class="card">
+    <div class="card-title">소득 정보</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>1일 급여 (일당) <span class="req">*</span></label>
+        <input type="text" id="daily" placeholder="예) 150,000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>근무일수 <span class="req">*</span></label>
+        <input type="text" id="days" placeholder="예) 20" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>일용직 근로소득공제 (일 15만원)</label>
+      <input type="text" id="dedPerDay" value="150,000" inputmode="numeric">
+      <div class="field-hint">기본값 150,000원. 변경 시 직접 입력</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">🔨 일용직 세액 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note">※ 일용직 근로소득세율 6% 적용. 분리과세이므로 종합소득세 합산 없음.</div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 참고용으로 저장</button>
+  </div>
+
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  ['daily','days','dedPerDay'].forEach(id => addCommaInput(document.getElementById(id)));
+
+  let lastResult = null;
+
+  function calculate() {
+    const dailyWage = Fmt.parse(document.getElementById('daily').value);
+    const days      = Fmt.parse(document.getElementById('days').value);
+    const dedPerDay = Fmt.parse(document.getElementById('dedPerDay').value) || 150_000;
+
+    if (!dailyWage || !days) { alert('일당과 근무일수를 입력해주세요.'); return; }
+
+    const totalIncome = dailyWage * days;
+
+    // 1일 단위로 계산 (일용직 세법 구조)
+    const taxablePerDay  = Math.max(0, dailyWage - dedPerDay);
+    const taxPerDay      = Math.floor(taxablePerDay * 0.06);          // 세율 6%
+    const creditPerDay   = Math.floor(taxPerDay * 0.55);              // 근로소득세액공제 55%
+    const finalTaxPerDay = Math.max(0, taxPerDay - creditPerDay);
+    const totalTax       = finalTaxPerDay * days;
+    const localTax       = Math.floor(totalTax * 0.1);
+    const totalWithLocal = totalTax + localTax;
+
+    const taxableTotal = taxablePerDay * days;
+
+    const rows = [
+      ['일당',             Fmt.won(dailyWage)],
+      ['근무일수',         `${days}일`],
+      ['총 수입금액',       Fmt.won(totalIncome), true],
+      ['일용직 근로소득공제 (일 × 일수)', `-${Fmt.won(dedPerDay * days)}`],
+      ['과세대상 급여',     Fmt.won(taxableTotal), true],
+      ['산출세액 (6%)',     Fmt.won(taxPerDay * days)],
+      ['근로소득세액공제 (55%)', `-${Fmt.won(creditPerDay * days)}`],
+      ['원천징수세액 (소득세)', Fmt.won(totalTax)],
+      ['지방소득세 (10%)', Fmt.won(localTax)],
+    ];
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, bold]) =>
+        `<div class="result-row${bold?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">총 원천징수 세액</span>
+        <span class="val">${Fmt.won(totalWithLocal)}</span>
+      </div>
+      <div class="result-row">
+        <span class="lbl">실수령액</span>
+        <span class="val" style="color:var(--success)">${Fmt.won(totalIncome - totalWithLocal)}</span>
+      </div>`;
+
+    lastResult = createTaxResult(
+      'daily',
+      totalIncome,
+      taxableTotal,
+      totalTax,
+      false,  // 분리과세 → 종합소득세 합산 안 됨
+      { dailyWage, days, dedPerDay, totalIncome, taxableTotal,
+        taxPerDay, creditPerDay, finalTaxPerDay, totalTax, localTax }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('daily', lastResult);
+    showToast('✓ 일용직소득 저장 완료! (참고용)');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>
+

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>소득세 계산 플랫폼</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(59,130,246,0.08) 0%, var(--bg) 65%); }
+
+    .hub-hero h1 span { color: #3B82F6; }
+
+    .stat-row {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .stat-item { text-align: center; }
+    .stat-item .num { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+    .stat-item .lbl { font-size: 0.75rem; color: var(--text-3); margin-top: 2px; }
+    .stat-item .num.green { color: #10B981; }
+
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      margin-top: 28px;
+    }
+
+    .year-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      background: rgba(59,130,246,0.12);
+      color: #60a5fa;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-3);
+      font-size: 0.75rem;
+      padding: 32px 0 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap wide">
+
+  <div class="hub-hero">
+    <h1>세무 계산 <span>플랫폼</span></h1>
+    <p>2024년 세법 기준 · 소득별 계산 후 종합소득세 자동 합산</p>
+    <span class="year-badge">2024년 소득세법</span>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat-item">
+        <div class="num" id="savedCount">0</div>
+        <div class="lbl">저장된 소득</div>
+      </div>
+      <div class="stat-item">
+        <div class="num green" id="totalIncome">—</div>
+        <div class="lbl">총 수입금액</div>
+      </div>
+      <div class="stat-item">
+        <div class="num" id="totalTax">—</div>
+        <div class="lbl">추정 세액 합계</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">개별 소득 계산기</div>
+
+  <div class="hub-grid" id="hubGrid">
+    <!-- JS로 렌더 -->
+  </div>
+
+  <a href="comprehensive.html" class="comprehensive-link">
+    <div class="left">
+      <div class="title">📊 종합소득세 계산기</div>
+      <div class="sub">모든 소득을 불러와 누진세율로 최종 세액 산출</div>
+    </div>
+    <div class="arrow">→</div>
+  </a>
+
+  <footer>
+    ※ 본 계산기는 참고용이며, 실제 세액은 전문가에게 상담을 권장합니다.
+  </footer>
+</div>
+
+<script src="shared.js"></script>
+<script>
+  const CARDS = [
+    { type: 'earned',    desc: '급여·상여·연간 총급여' },
+    { type: 'daily',     desc: '일당 × 근무일수 (분리과세)' },
+    { type: 'business',  desc: '수입금액 - 필요경비' },
+    { type: 'financial', desc: '이자·배당 (2천만원 기준)' },
+    { type: 'transfer',  desc: '양도차익 - 장기공제 (분리과세)' },
+    { type: 'pension',   desc: '공적·사적 연금소득' },
+    { type: 'other',     desc: '강연료·원고료·상금 등' },
+  ];
+
+  function render() {
+    const all = TaxStorage.getAll();
+    const grid = document.getElementById('hubGrid');
+    grid.innerHTML = CARDS.map(({ type, desc }) => {
+      const meta = INCOME_TYPES[type];
+      const saved = all[type];
+      const savedHtml = saved
+        ? `<span class="saved-badge">✓ 저장됨</span>`
+        : '';
+      return `
+        <a href="${meta.file}" class="hub-card" style="--card-accent:${meta.color}">
+          <span class="emoji">${meta.emoji}</span>
+          <span class="name">${meta.label}</span>
+          <span class="desc">${desc}</span>
+          ${savedHtml}
+        </a>`;
+    }).join('');
+
+    // 통계 업데이트
+    const types = Object.keys(all);
+    document.getElementById('savedCount').textContent = types.length;
+
+    let totalIncome = 0, totalTax = 0;
+    types.forEach(t => {
+      totalIncome += (all[t].income || 0);
+      totalTax    += (all[t].tax || 0);
+    });
+
+    document.getElementById('totalIncome').textContent =
+      types.length ? Fmt.eok(totalIncome) : '—';
+    document.getElementById('totalTax').textContent =
+      types.length ? Fmt.eok(totalTax) : '—';
+  }
+
+  render();
+  window.addEventListener('taxDataUpdated', render);
+  window.addEventListener('storage', render);
+</script>
+</body>
+</html>
+

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>기타소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #EC4899; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(236,72,153,0.07) 0%, var(--bg) 60%); }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>기타소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">📋</div>
+      <div>
+        <h1>기타소득 계산기</h1>
+        <div class="subtitle">강연료·원고료·상금 등 · 300만원 기준</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">소득 정보</div>
+
+    <div class="field">
+      <label>기타소득 종류</label>
+      <select id="otherType" onchange="updateExpenseRate()">
+        <option value="lecture">강연료 · 강사료 (필요경비 60%)</option>
+        <option value="manuscript">원고료 · 인세 (필요경비 60%)</option>
+        <option value="prize">상금 · 시상금 (필요경비 80%, 복권 제외)</option>
+        <option value="lottery">복권 당첨금 (필요경비 0%, 고율과세)</option>
+        <option value="royalty">특허·지식재산권 사용료 (필요경비 60%)</option>
+        <option value="misc">기타 (필요경비 60%)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>총 수입금액 <span class="req">*</span></label>
+      <input type="text" id="income" placeholder="예) 5,000,000" inputmode="numeric">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>필요경비율 (%)</label>
+        <input type="number" id="expenseRate" value="60" min="0" max="100" step="1">
+      </div>
+      <div class="field">
+        <label>이미 원천징수된 세액</label>
+        <input type="text" id="withheld" placeholder="자동 계산 or 직접 입력" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">과세 방식 선택</div>
+    <div class="field">
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-tax="auto">자동 판단 (300만원 기준)</button>
+        <button class="toggle-btn"        data-tax="sep">분리과세 선택</button>
+        <button class="toggle-btn"        data-tax="comp">종합과세 선택</button>
+      </div>
+      <div class="field-hint">기타소득금액 300만원 이하: 분리과세(22%) 또는 종합과세 중 선택 가능</div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">📋 기타소득세 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note" id="resultNote"></div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  </div>
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  const THRESHOLD       = 3_000_000;
+  const OTHER_EXPENSE   = { lecture:60, manuscript:60, prize:80, lottery:0, royalty:60, misc:60 };
+  const SEPARATE_RATE   = 0.22;   // 분리과세 원천징수율 (소득세 20% + 지방 2%)
+  const LOTTERY_RATE_LO = 0.22;   // 복권 3억 이하
+  const LOTTERY_RATE_HI = 0.33;   // 복권 3억 초과분
+
+  let taxMode = 'auto';
+  let lastResult = null;
+
+  ['income','withheld'].forEach(id => addCommaInput(document.getElementById(id)));
+
+  document.querySelectorAll('[data-tax]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-tax]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      taxMode = btn.dataset.tax;
+    });
+  });
+
+  function updateExpenseRate() {
+    const type = document.getElementById('otherType').value;
+    document.getElementById('expenseRate').value = OTHER_EXPENSE[type];
+  }
+
+  function calculate() {
+    const income      = Fmt.parse(document.getElementById('income').value);
+    const expenseRate = (parseFloat(document.getElementById('expenseRate').value) || 60) / 100;
+    const withheld    = Fmt.parse(document.getElementById('withheld').value);
+    const type        = document.getElementById('otherType').value;
+
+    if (!income) { alert('총 수입금액을 입력해주세요.'); return; }
+
+    // 필요경비
+    const expense      = Math.floor(income * expenseRate);
+    // 기타소득금액
+    const otherIncome  = income - expense;
+
+    // 과세 방식 결정
+    let isSeparate;
+    if (taxMode === 'auto') {
+      isSeparate = otherIncome <= THRESHOLD;
+    } else {
+      isSeparate = taxMode === 'sep';
+    }
+
+    let tax, note;
+
+    if (type === 'lottery') {
+      // 복권 당첨: 3억 이하 22%, 초과분 33%
+      const lowPart  = Math.min(income, 300_000_000);
+      const highPart = Math.max(0, income - 300_000_000);
+      tax  = Math.floor(lowPart * LOTTERY_RATE_LO) + Math.floor(highPart * LOTTERY_RATE_HI);
+      note = '복권 당첨금: 3억원 이하 22%, 초과분 33% 원천징수 (분리과세 완료)';
+      isSeparate = true;
+    } else if (isSeparate) {
+      // 분리과세: 22% 원천징수
+      tax  = Math.floor(otherIncome * SEPARATE_RATE);
+      note = '분리과세(22%) 원천징수로 납세 완료. 종합소득세 합산 불필요.';
+    } else {
+      // 종합과세 (단독 계산 — 실제는 다른 소득과 합산 필요)
+      const taxBase = Math.max(0, otherIncome - 1_500_000); // 기본공제 150만원 (단순)
+      tax  = TaxEngine.progressiveTax(taxBase);
+      note = '종합과세 선택 시 다른 소득과 합산 과세됩니다. 종합소득세 계산기를 이용하세요.';
+    }
+
+    const localTax = Math.floor(tax * 0.1);
+    const total    = tax + localTax;
+    const addTax   = Math.max(0, total - withheld);
+
+    const rows = [
+      ['총 수입금액',        Fmt.won(income)],
+      [`필요경비 (${(expenseRate*100).toFixed(0)}%)`, `-${Fmt.won(expense)}`],
+      ['기타소득금액',       Fmt.won(otherIncome), true],
+      [`과세 방식`,          isSeparate ? '분리과세' : '종합과세'],
+      [isSeparate ? `원천징수세액 (${type==='lottery'?'22/33':'22'}%)` : '산출세액', Fmt.won(tax)],
+      ['지방소득세',         Fmt.won(localTax)],
+      ['이미 납부한 세액',   `-${Fmt.won(withheld)}`],
+    ];
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, b]) =>
+        `<div class="result-row${b?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">추가 납부세액</span>
+        <span class="val" style="color:${addTax>0?'var(--danger)':'var(--success)'}">${addTax > 0 ? Fmt.won(addTax) : '없음 (기납부 충족)'}</span>
+      </div>`;
+
+    document.getElementById('resultNote').textContent = note;
+
+    lastResult = createTaxResult(
+      'other', income, otherIncome, tax, !isSeparate,
+      { income, expense, expenseRate, otherIncome, isSeparate, taxMode, type, tax, localTax, withheld }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('other', lastResult);
+    showToast('✓ 기타소득 저장 완료!');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>

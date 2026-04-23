@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>종합소득세 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #60A5FA; }
+    body  {
+      background:
+        radial-gradient(ellipse 60% 40% at 30% 0%, rgba(99,102,241,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 70% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .comp-hero {
+      text-align: center;
+      padding: 32px 0 24px;
+    }
+
+    .comp-hero h1 { font-size: 1.7rem; font-weight: 700; letter-spacing:-0.04em; margin-bottom: 6px; }
+    .comp-hero p  { color: var(--text-2); font-size: 0.85rem; }
+
+    .load-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: rgba(96,165,250,0.08);
+      border: 1px dashed rgba(96,165,250,0.4);
+      border-radius: var(--radius);
+      color: #60a5fa;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .load-btn:hover {
+      background: rgba(96,165,250,0.13);
+      border-color: rgba(96,165,250,0.7);
+    }
+
+    .income-section { margin-bottom: 16px; }
+
+    .income-item { position: relative; }
+
+    .remove-btn {
+      position: absolute;
+      right: 0; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px;
+      transition: color 0.15s;
+    }
+
+    .remove-btn:hover { color: var(--danger); }
+
+    .sum-row {
+      background: rgba(96,165,250,0.06);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .deduction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .bracket-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: rgba(96,165,250,0.12);
+      color: #60a5fa;
+      margin-left: 8px;
+    }
+
+    .final-box {
+      background: linear-gradient(135deg, rgba(96,165,250,0.08) 0%, rgba(99,102,241,0.08) 100%);
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .final-box .label { font-size: 0.85rem; color: var(--text-2); margin-bottom: 8px; }
+    .final-box .amount { font-size: 2.2rem; font-weight: 700; color: #60a5fa; letter-spacing: -0.04em; }
+    .final-box .sub    { font-size: 0.8rem; color: var(--text-3); margin-top: 6px; }
+
+    .step-number {
+      width: 22px; height: 22px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>종합소득세</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">📊</div>
+      <div>
+        <h1>종합소득세 계산기</h1>
+        <div class="subtitle">모든 소득 합산 · 누진세율 최종 계산</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 1: 소득 불러오기 -->
+  <div class="card">
+    <div class="card-title">
+      <span class="step-number">1</span> 소득 불러오기
+    </div>
+
+    <button class="load-btn" onclick="loadAll()">
+      ↺ 저장된 소득 데이터 모두 불러오기
+    </button>
+
+    <div id="incomeList">
+      <div class="empty-msg">
+        저장된 소득이 없습니다.<br>
+        <a href="index.html">각 소득 계산기</a>에서 계산 후 저장해주세요.
+      </div>
+    </div>
+  </div>
+
+  <!-- 합산 요약 -->
+  <div class="card" id="sumCard" style="display:none">
+    <div class="card-title">
+      <span class="step-number">2</span> 종합소득금액 합산
+    </div>
+    <div id="sumDetail"></div>
+    <div class="sum-row">
+      <div class="result-row total" style="padding: 0; border: none;">
+        <span class="lbl">종합소득금액 합계</span>
+        <span class="val" id="totalComprehensiveIncome">—</span>
+      </div>
+    </div>
+    <div style="font-size:0.75rem;color:var(--text-3)">
+      ※ 분리과세 소득(일용직, 양도소득 등)은 제외됩니다.
+    </div>
+  </div>
+
+  <!-- STEP 3: 소득공제 -->
+  <div class="card" id="deductCard" style="display:none">
+    <div class="card-title">
+      <span class="step-number">3</span> 소득공제
+    </div>
+
+    <div class="deduction-grid">
+      <div class="field">
+        <label>기본공제 (본인)</label>
+        <input type="text" value="1,500,000" disabled style="opacity:0.5">
+      </div>
+      <div class="field">
+        <label>배우자 공제</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" data-ded="spouse" data-val="0">없음</button>
+          <button class="toggle-btn"        data-ded="spouse" data-val="1500000">+150만</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>부양가족 수</label>
+        <input type="number" id="deps" value="0" min="0" max="10" style="text-align:center;">
+      </div>
+      <div class="field">
+        <label>연금보험료 공제</label>
+        <input type="text" id="pensionPremium" placeholder="국민연금 납부액" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>특별소득공제 (건강보험 등)</label>
+        <input type="text" id="specialDed" placeholder="예) 2,400,000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>기타 소득공제</label>
+        <input type="text" id="otherDed" placeholder="예) 0" inputmode="numeric">
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" onclick="calculateFinal()">📊 종합소득세 최종 계산</button>
+    </div>
+  </div>
+
+  <!-- STEP 4: 결과 -->
+  <div id="finalSection" style="display:none">
+    <div class="card">
+      <div class="card-title">
+        <span class="step-number">4</span> 과세표준 및 세액 계산
+      </div>
+      <div id="calcRows"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span class="step-number">5</span> 세액공제
+      </div>
+      <div id="creditRows"></div>
+    </div>
+
+    <div class="final-box" id="finalBox"></div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">JSON 출력 (전체 결과)</div>
+      <pre class="json-block visible" id="finalJson" style="max-height:400px"></pre>
+    </div>
+
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-ghost" onclick="window.print()">🖨 출력</button>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;text-align:center">
+    <a href="index.html" class="btn btn-ghost btn-sm">← 메인으로</a>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  let loadedIncomes = {};
+  let deductions = { spouse: 0 };
+
+  // ── 소득 불러오기 ──
+  function loadAll() {
+    loadedIncomes = TaxStorage.getAll();
+
+    const list = document.getElementById('incomeList');
+    const keys = Object.keys(loadedIncomes).filter(k => k !== 'comprehensive');
+
+    if (!keys.length) {
+      list.innerHTML = `<div class="empty-msg">저장된 소득이 없습니다.<br><a href="index.html">각 소득 계산기</a>에서 저장해주세요.</div>`;
+      document.getElementById('sumCard').style.display   = 'none';
+      document.getElementById('deductCard').style.display = 'none';
+      return;
+    }
+
+    list.innerHTML = keys.map(k => {
+      const d = loadedIncomes[k];
+      const m = INCOME_TYPES[k];
+      const tag = d.comprehensive
+        ? `<span class="tag tag-comp">종합과세</span>`
+        : `<span class="tag tag-sep">분리과세</span>`;
+      const savedTime = d.savedAt ? new Date(d.savedAt).toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+      return `
+        <div class="income-item" id="item-${k}">
+          <div style="width:10px;height:10px;border-radius:50%;background:${m.color};flex-shrink:0;margin-right:14px;display:inline-block;vertical-align:middle;"></div>
+          <div style="display:inline-flex;align-items:center;gap:10px;width:calc(100% - 40px);flex-wrap:wrap;">
+            <span style="font-weight:600;font-size:0.9rem;">${m.emoji} ${m.label}</span>
+            ${tag}
+            <span style="color:var(--text-3);font-size:0.75rem;">${savedTime}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding-left:24px;">
+            <span style="font-size:0.8rem;color:var(--text-2);">수입금액 ${Fmt.won(d.income)}</span>
+            <span style="font-weight:600;font-size:0.88rem;">종합과세분 ${Fmt.won(d.taxable_income)}</span>
+          </div>
+          <button class="remove-btn" onclick="removeIncome('${k}')" title="제거">✕</button>
+          <div style="border-bottom:1px solid var(--border);margin-top:10px;"></div>
+        </div>`;
+    }).join('');
+
+    updateSum();
+    document.getElementById('sumCard').style.display   = 'block';
+    document.getElementById('deductCard').style.display = 'block';
+    document.getElementById('finalSection').style.display = 'none';
+  }
+
+  function removeIncome(key) {
+    delete loadedIncomes[key];
+    document.getElementById(`item-${key}`)?.remove();
+    updateSum();
+  }
+
+  function updateSum() {
+    const compIncomes = Object.entries(loadedIncomes)
+      .filter(([k, v]) => v.comprehensive === true);
+
+    const sumDetail = document.getElementById('sumDetail');
+    const totalEl   = document.getElementById('totalComprehensiveIncome');
+
+    if (!compIncomes.length) {
+      sumDetail.innerHTML = '<div style="color:var(--text-3);font-size:0.85rem;text-align:center;padding:12px">종합과세 대상 소득이 없습니다.</div>';
+      totalEl.textContent = '0원';
+      return;
+    }
+
+    let total = 0;
+    sumDetail.innerHTML = compIncomes.map(([k, v]) => {
+      total += v.taxable_income;
+      const m = INCOME_TYPES[k];
+      return `<div class="result-row">
+        <span class="lbl">${m.emoji} ${m.label}</span>
+        <span class="val">${Fmt.won(v.taxable_income)}</span>
+      </div>`;
+    }).join('');
+
+    totalEl.textContent = Fmt.won(total);
+  }
+
+  // ── 소득공제 토글 ──
+  document.querySelectorAll('[data-ded="spouse"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-ded="spouse"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      deductions.spouse = +btn.dataset.val;
+    });
+  });
+
+  ['pensionPremium','specialDed','otherDed'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) addCommaInput(el);
+  });
+
+  // ── 최종 계산 ──
+  function calculateFinal() {
+    const compEntries = Object.entries(loadedIncomes).filter(([, v]) => v.comprehensive === true);
+    if (!compEntries.length) {
+      alert('종합과세 대상 소득이 없습니다. 먼저 소득을 불러오세요.');
+      return;
+    }
+
+    // 1. 종합소득금액 합산
+    let totalIncome = 0;
+    compEntries.forEach(([, v]) => { totalIncome += v.taxable_income; });
+
+    // 2. 소득공제 합산
+    const deps           = Math.max(0, parseInt(document.getElementById('deps').value) || 0);
+    const selfDed        = 1_500_000;
+    const spouseDed      = deductions.spouse;
+    const depsDed        = deps * 1_500_000;
+    const pensionPremium = Fmt.parse(document.getElementById('pensionPremium').value);
+    const specialDed     = Fmt.parse(document.getElementById('specialDed').value);
+    const otherDed       = Fmt.parse(document.getElementById('otherDed').value);
+
+    const totalDed = selfDed + spouseDed + depsDed + pensionPremium + specialDed + otherDed;
+
+    // 3. 과세표준
+    const taxBase = Math.max(0, totalIncome - totalDed);
+
+    // 4. 산출세액 (누진세율)
+    const calculatedTax = TaxEngine.progressiveTax(taxBase);
+    const bracket       = TaxEngine.bracketLabel(taxBase);
+
+    // 5. 세액공제
+    // 근로소득세액공제 (근로소득이 있을 때)
+    const earnedData    = loadedIncomes['earned'];
+    const earnedWage    = earnedData?.details?.taxableWage || 0;
+    const earnedCredit  = earnedData ? TaxEngine.earnedTaxCredit(calculatedTax, earnedWage) : 0;
+
+    // 자녀세액공제 (2024 세법: 1명 15만, 2명 35만, 3명~ +30만)
+    const childCredit = deps === 0 ? 0
+      : deps === 1 ? 150_000
+      : deps === 2 ? 350_000
+      : 350_000 + (deps - 2) * 300_000;
+
+    const totalCredit   = earnedCredit + childCredit;
+    const finalTax      = Math.max(0, calculatedTax - totalCredit);
+    const localTax      = Math.floor(finalTax * 0.1);
+    const grandTotal    = finalTax + localTax;
+
+    // 기납부세액 (각 계산기에서 이미 원천징수된 금액)
+    let prepaid = 0;
+    compEntries.forEach(([, v]) => { prepaid += (v.tax || 0); });
+
+    const additionalTax = Math.max(0, grandTotal - prepaid);
+    const refund        = Math.max(0, prepaid - grandTotal);
+
+    // 렌더 - 과세표준 계산
+    document.getElementById('calcRows').innerHTML = `
+      <div class="result-row"><span class="lbl">종합소득금액</span><span class="val">${Fmt.won(totalIncome)}</span></div>
+      <div class="result-row"><span class="lbl">소득공제 합계</span><span class="val">-${Fmt.won(totalDed)}</span></div>
+      <div class="result-row total"><span class="lbl">과세표준</span><span class="val">${Fmt.won(taxBase)}</span></div>
+      <div class="result-row"><span class="lbl">적용 세율</span><span class="val"><span class="bracket-pill">${bracket}</span></span></div>
+      <div class="result-row total"><span class="lbl">산출세액</span><span class="val">${Fmt.won(calculatedTax)}</span></div>`;
+
+    // 세액공제 내역
+    document.getElementById('creditRows').innerHTML = `
+      <div class="result-row"><span class="lbl">근로소득세액공제</span><span class="val">-${Fmt.won(earnedCredit)}</span></div>
+      <div class="result-row"><span class="lbl">자녀세액공제</span><span class="val">-${Fmt.won(childCredit)}</span></div>
+      <div class="result-row total"><span class="lbl">세액공제 합계</span><span class="val">-${Fmt.won(totalCredit)}</span></div>
+      <div class="result-row total"><span class="lbl">결정세액 (소득세)</span><span class="val">${Fmt.won(finalTax)}</span></div>
+      <div class="result-row"><span class="lbl">지방소득세 (10%)</span><span class="val">${Fmt.won(localTax)}</span></div>
+      <div class="result-row"><span class="lbl">기납부세액 (원천징수 합계)</span><span class="val">-${Fmt.won(prepaid)}</span></div>`;
+
+    // 최종 박스
+    document.getElementById('finalBox').innerHTML = `
+      <div class="label">최종 납부(환급) 세액</div>
+      <div class="amount" style="color:${additionalTax>0?'#f87171':refund>0?'#34d399':'#60a5fa'}">
+        ${additionalTax > 0 ? `+${Fmt.won(additionalTax)} 납부` : refund > 0 ? `-${Fmt.won(refund)} 환급` : '0원 (납부/환급 없음)'}
+      </div>
+      <div class="sub">총 세부담액 ${Fmt.won(grandTotal)} · 실효세율 ${totalIncome > 0 ? (grandTotal/totalIncome*100).toFixed(2) : '0.00'}%</div>`;
+
+    // JSON 최종 출력
+    const finalResult = {
+      summary: {
+        total_income: totalIncome,
+        total_deduction: totalDed,
+        tax_base: taxBase,
+        tax_bracket: bracket,
+        calculated_tax: calculatedTax,
+        tax_credit: totalCredit,
+        final_tax: finalTax,
+        local_tax: localTax,
+        grand_total: grandTotal,
+        prepaid_tax: prepaid,
+        additional_tax: additionalTax,
+        refund: refund,
+        effective_rate: totalIncome > 0 ? +(grandTotal/totalIncome*100).toFixed(2) : 0,
+      },
+      income_breakdown: Object.fromEntries(
+        compEntries.map(([k, v]) => [k, { income: v.income, taxable_income: v.taxable_income }])
+      ),
+      deductions: { self: selfDed, spouse: spouseDed, dependents: depsDed,
+                    pension_premium: pensionPremium, special: specialDed, other: otherDed },
+      tax_credits: { earned: earnedCredit, child: childCredit },
+      calculated_at: new Date().toISOString(),
+    };
+
+    document.getElementById('finalJson').innerHTML = syntaxHighlight(finalResult);
+
+    TaxStorage.save('comprehensive', finalResult);
+    document.getElementById('finalSection').style.display = 'block';
+    document.getElementById('finalSection').scrollIntoView({ behavior:'smooth', block:'start' });
+    showToast('✓ 종합소득세 계산 완료!');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+
+  // 페이지 로드 시 자동 불러오기 시도
+  if (Object.keys(TaxStorage.getAll()).length > 0) loadAll();
+</script>
+</body>
+</html>
+

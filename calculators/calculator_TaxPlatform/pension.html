@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>연금소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #6366F1; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(99,102,241,0.07) 0%, var(--bg) 60%); }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>연금소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">🎯</div>
+      <div>
+        <h1>연금소득 계산기</h1>
+        <div class="subtitle">공적·사적연금 · 연금소득공제 적용</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">공적연금 (종합과세 의무)</div>
+
+    <div class="field">
+      <label>국민연금 수령액 (연간)</label>
+      <input type="text" id="nationalPension" placeholder="예) 12,000,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>공무원·교원·군인연금 (연간)</label>
+      <input type="text" id="publicPension" placeholder="예) 0" inputmode="numeric">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">사적연금 (1,500만원 기준)</div>
+
+    <div class="field">
+      <label>연금저축 수령액 (연간)</label>
+      <input type="text" id="annuitySavings" placeholder="예) 8,000,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>IRP(개인형퇴직연금) 수령액 (연간)</label>
+      <input type="text" id="irp" placeholder="예) 5,000,000" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>사적연금 과세 방식</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-tax="sep">분리과세 (3~5%, 단순)</button>
+        <button class="toggle-btn"        data-tax="comp">종합과세 (1,500만원 초과 시)</button>
+      </div>
+      <div class="field-hint">1,500만원 이하이면 분리과세 선택 가능 (3~5% 저율 과세)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">소득공제</div>
+    <div class="field-row">
+      <div class="field">
+        <label>인적공제 합계</label>
+        <input type="text" id="personalDed" placeholder="예) 1,500,000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>기타 소득공제</label>
+        <input type="text" id="otherDed" placeholder="예) 0" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">🎯 연금소득세 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note" id="resultNote"></div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  </div>
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  const PRIVATE_THRESHOLD = 15_000_000;
+  let privateTaxMode = 'sep';
+  let lastResult = null;
+
+  ['nationalPension','publicPension','annuitySavings','irp','personalDed','otherDed']
+    .forEach(id => addCommaInput(document.getElementById(id)));
+
+  document.querySelectorAll('[data-tax]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-tax]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      privateTaxMode = btn.dataset.tax;
+    });
+  });
+
+  function calculate() {
+    const national = Fmt.parse(document.getElementById('nationalPension').value);
+    const pub      = Fmt.parse(document.getElementById('publicPension').value);
+    const annuity  = Fmt.parse(document.getElementById('annuitySavings').value);
+    const irp      = Fmt.parse(document.getElementById('irp').value);
+    const personalDed = Fmt.parse(document.getElementById('personalDed').value) || 1_500_000;
+    const otherDed    = Fmt.parse(document.getElementById('otherDed').value);
+
+    const publicTotal  = national + pub;
+    const privateTotal = annuity + irp;
+    const totalPension = publicTotal + privateTotal;
+
+    if (!totalPension) { alert('연금 수령액을 입력해주세요.'); return; }
+
+    // 공적연금: 연금소득공제 적용 → 종합과세 합산
+    const pubDeduction = TaxEngine.pensionIncomeDeduction(publicTotal);
+    const pubIncome    = Math.max(0, publicTotal - pubDeduction);
+
+    // 사적연금: 분리과세 or 종합과세
+    let privateTax = 0;
+    let privateForComp = 0;
+
+    if (privateTaxMode === 'sep' && privateTotal <= PRIVATE_THRESHOLD) {
+      // 분리과세: 나이에 따라 3~5% (여기서는 4%로 단순화)
+      privateTax   = Math.floor(privateTotal * 0.04);
+      privateForComp = 0;
+    } else {
+      // 종합과세 합산
+      privateForComp = privateTotal;
+    }
+
+    // 종합과세 합산 소득금액
+    const comprehensiveIncome = pubIncome + privateForComp;
+
+    // 소득공제
+    const totalDed = personalDed + otherDed;
+    const taxBase  = Math.max(0, comprehensiveIncome - totalDed);
+
+    // 산출세액 (공적연금 + 종합과세 사적연금)
+    const comprehensiveTax = TaxEngine.progressiveTax(taxBase);
+    const localTaxComp     = Math.floor(comprehensiveTax * 0.1);
+
+    const totalTax = comprehensiveTax + localTaxComp + privateTax;
+
+    const rows = [
+      ['공적연금 총액',           Fmt.won(publicTotal)],
+      ['연금소득공제',            `-${Fmt.won(pubDeduction)}`],
+      ['공적연금 소득금액',        Fmt.won(pubIncome), true],
+      ['사적연금 총액',           Fmt.won(privateTotal)],
+      privateTaxMode === 'sep' && privateTotal <= PRIVATE_THRESHOLD
+        ? ['사적연금 분리과세 (4%)', Fmt.won(privateTax)]
+        : ['사적연금 종합과세 합산', Fmt.won(privateForComp)],
+      ['종합과세 합산 소득금액',   Fmt.won(comprehensiveIncome), true],
+      ['소득공제 합계',           `-${Fmt.won(totalDed)}`],
+      ['과세표준',                Fmt.won(taxBase), true],
+      [`산출세액 (${TaxEngine.bracketLabel(taxBase)})`, Fmt.won(comprehensiveTax)],
+      ['지방소득세',              Fmt.won(localTaxComp)],
+    ];
+
+    if (privateTax > 0) {
+      rows.push(['사적연금 분리과세 세액', Fmt.won(privateTax)]);
+    }
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, b]) =>
+        `<div class="result-row${b?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">총 납부세액</span>
+        <span class="val">${Fmt.won(totalTax)}</span>
+      </div>`;
+
+    document.getElementById('resultNote').textContent =
+      '※ 사적연금 분리과세율은 수령 나이에 따라 3%(70세 이상)~5%(55세 이상 70세 미만)로 달라집니다.';
+
+    const isComp = publicTotal > 0 || (privateTaxMode === 'comp' || privateTotal > PRIVATE_THRESHOLD);
+
+    lastResult = createTaxResult(
+      'pension', totalPension, comprehensiveIncome, comprehensiveTax, isComp,
+      { publicTotal, pubDeduction, pubIncome, privateTotal, privateTaxMode,
+        privateTax, comprehensiveIncome, totalDed, taxBase, comprehensiveTax, localTaxComp }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('pension', lastResult);
+    showToast('✓ 연금소득 저장 완료!');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>
+

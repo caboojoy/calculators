@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사업소득 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root { --accent: #10B981; }
+    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(16,185,129,0.07) 0%, var(--bg) 60%); }
+    .method-info {
+      background: color-mix(in srgb, #10B981 8%, transparent);
+      border: 1px solid color-mix(in srgb, #10B981 25%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      color: #6ee7b7;
+      margin-top: 12px;
+      display: none;
+    }
+    .method-info.visible { display: block; }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a href="index.html">🏠 메인</a><span class="sep">›</span><span>사업소득</span>
+    </div>
+    <div class="page-title">
+      <div class="icon">🏢</div>
+      <div>
+        <h1>사업소득 계산기</h1>
+        <div class="subtitle">수입금액 - 필요경비 · 종합과세 합산</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">사업 정보</div>
+
+    <div class="field">
+      <label>업종 구분</label>
+      <select id="bizType">
+        <option value="service">서비스업 (단순경비율 ~64%)</option>
+        <option value="retail">도소매업 (단순경비율 ~90%)</option>
+        <option value="food">음식업 (단순경비율 ~75%)</option>
+        <option value="manufacture">제조업 (단순경비율 ~85%)</option>
+        <option value="freelance">프리랜서/인적용역 (단순경비율 ~64.1%)</option>
+        <option value="direct">직접 입력</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>연간 수입금액 <span class="req">*</span></label>
+      <input type="text" id="revenue" placeholder="예) 80,000,000" inputmode="numeric">
+    </div>
+
+    <div class="field">
+      <label>필요경비 계산 방식</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-method="simple">단순경비율</button>
+        <button class="toggle-btn"        data-method="standard">기준경비율</button>
+        <button class="toggle-btn"        data-method="actual">실제경비</button>
+      </div>
+      <div class="method-info" id="methodInfo"></div>
+    </div>
+
+    <div class="field" id="rateField">
+      <label>경비율 (%)</label>
+      <input type="number" id="expenseRate" placeholder="예) 64.1" step="0.1" min="0" max="100">
+    </div>
+
+    <div class="field" id="actualField" style="display:none">
+      <label>실제 필요경비</label>
+      <input type="text" id="actualExpense" placeholder="예) 30,000,000" inputmode="numeric">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">소득공제 (선택)</div>
+    <div class="field">
+      <label>노란우산공제 불입액</label>
+      <input type="text" id="yellowUmbrella" placeholder="최대 500만원 (사업규모별)" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label>인적공제 (연간, 본인+부양가족)</label>
+      <input type="text" id="personalDed" placeholder="예) 1,500,000" inputmode="numeric">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="calculate()">🏢 사업소득세 계산하기</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="card-title">계산 결과</div>
+    <div id="resultRows"></div>
+    <div class="result-note">※ 종합소득세 합산 시 타 소득과 합산 과세됩니다. 복식부기 의무자는 세무사 상담 권장.</div>
+  </div>
+
+  <div class="action-row" id="actionRow" style="display:none">
+    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
+    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  </div>
+  <pre class="json-block" id="jsonBlock"></pre>
+
+  <div style="margin-top:12px;text-align:center">
+    <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="shared.js"></script>
+<script>
+  const BIZ_RATES = {
+    service: 64.1, retail: 90.3, food: 75.2,
+    manufacture: 85.0, freelance: 64.1, direct: null
+  };
+
+  const METHOD_INFO = {
+    simple:   '수입금액 × 단순경비율 = 필요경비. 소규모 사업자에게 유리.',
+    standard: '주요 경비(인건비, 임차료, 매입액)만 증빙, 나머지는 기준경비율 적용.',
+    actual:   '실제 지출한 경비를 전액 인정. 복식부기 작성 필요.',
+  };
+
+  let currentMethod = 'simple';
+  let lastResult = null;
+
+  ['revenue','actualExpense','yellowUmbrella','personalDed'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) addCommaInput(el);
+  });
+
+  document.getElementById('bizType').addEventListener('change', function() {
+    const rate = BIZ_RATES[this.value];
+    if (rate !== null) document.getElementById('expenseRate').value = rate;
+  });
+
+  document.querySelectorAll('[data-method]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-method]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMethod = btn.dataset.method;
+      document.getElementById('rateField').style.display   = currentMethod !== 'actual' ? '' : 'none';
+      document.getElementById('actualField').style.display = currentMethod === 'actual'  ? '' : 'none';
+      const info = document.getElementById('methodInfo');
+      info.textContent = METHOD_INFO[currentMethod];
+      info.classList.add('visible');
+    });
+  });
+
+  // 초기 경비율 설정
+  document.getElementById('expenseRate').value = 64.1;
+
+  function calculate() {
+    const revenue    = Fmt.parse(document.getElementById('revenue').value);
+    const rate       = parseFloat(document.getElementById('expenseRate').value) / 100;
+    const actualExp  = Fmt.parse(document.getElementById('actualExpense').value);
+    const yellowDed  = Fmt.parse(document.getElementById('yellowUmbrella').value);
+    const personalDed= Fmt.parse(document.getElementById('personalDed').value) || 1_500_000;
+
+    if (!revenue) { alert('연간 수입금액을 입력해주세요.'); return; }
+
+    let expense;
+    if (currentMethod === 'actual') {
+      expense = actualExp;
+    } else {
+      const r = currentMethod === 'simple' ? rate :
+        parseFloat(document.getElementById('expenseRate').value) / 100;
+      expense = Math.floor(revenue * r);
+    }
+
+    // 사업소득금액
+    const businessIncome = Math.max(0, revenue - expense);
+    const expenseRate    = revenue > 0 ? expense / revenue : 0;
+
+    // 소득공제
+    const totalDed = Math.min(yellowDed, 5_000_000) + personalDed;
+
+    // 과세표준
+    const taxBase = Math.max(0, businessIncome - totalDed);
+
+    // 세율 및 세액
+    const calculatedTax = TaxEngine.progressiveTax(taxBase);
+    const localTax      = Math.floor(calculatedTax * 0.1);
+
+    const rows = [
+      ['연간 수입금액',        Fmt.won(revenue)],
+      [`필요경비 (${(expenseRate*100).toFixed(1)}%)`, `-${Fmt.won(expense)}`],
+      ['사업소득금액',         Fmt.won(businessIncome), true],
+      ['노란우산공제',         `-${Fmt.won(Math.min(yellowDed, 5_000_000))}`],
+      ['인적공제',             `-${Fmt.won(personalDed)}`],
+      ['과세표준',             Fmt.won(taxBase), true],
+      [`산출세액 (${TaxEngine.bracketLabel(taxBase)})`, Fmt.won(calculatedTax)],
+      ['지방소득세 (10%)',     Fmt.won(localTax)],
+    ];
+
+    document.getElementById('resultRows').innerHTML =
+      rows.map(([l, v, b]) =>
+        `<div class="result-row${b?' total':''}"><span class="lbl">${l}</span><span class="val">${v}</span></div>`
+      ).join('') +
+      `<div class="result-row grand-total total">
+        <span class="lbl">총 납부세액</span>
+        <span class="val">${Fmt.won(calculatedTax + localTax)}</span>
+      </div>`;
+
+    lastResult = createTaxResult(
+      'business', revenue, businessIncome, calculatedTax, true,
+      { revenue, expense, expenseRate, businessIncome, totalDed,
+        taxBase, calculatedTax, localTax, method: currentMethod }
+    );
+
+    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
+    document.getElementById('resultCard').classList.add('visible');
+    document.getElementById('actionRow').style.display = 'flex';
+    document.getElementById('resultCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function saveResult() {
+    if (!lastResult) return;
+    TaxStorage.save('business', lastResult);
+    showToast('✓ 사업소득 저장 완료!');
+  }
+
+  function toggleJson() { document.getElementById('jsonBlock').classList.toggle('visible'); }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function syntaxHighlight(obj) {
+    return JSON.stringify(obj, null, 2)
+      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
+      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+      .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
+  }
+</script>
+</body>
+</html>
+
