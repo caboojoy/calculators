@@ -1,0 +1,712 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PayLab · 근로/급여 통합 계산기</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+    /* ── 리셋 & 기본 ────────────────────────────────── */
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+    --bg:#f0f7ff;
+    --surface:#ffffff;
+    --surface2:#f5f9ff;
+    --border:#dce8f5;
+    --border2:#c5d9ee;
+    --text:#1a2d42;
+    --text2:#4a6580;
+    --text3:#7a9ab5;
+    --blue:#2563eb;
+    --blue-bg:#eff6ff;
+    --blue-light:#dbeafe;
+    --green:#16a34a;
+    --green-bg:#f0fdf4;
+    --red:#dc2626;
+    --red-bg:#fef2f2;
+    --amber:#d97706;
+    --amber-bg:#fffbeb;
+    --shadow:0 1px 3px rgba(0,40,80,.06),0 1px 2px rgba(0,40,80,.04);
+    --shadow-md:0 4px 12px rgba(0,40,80,.08);
+    --radius:10px;
+    --radius-lg:14px;
+    }
+    body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+    /* ── 헤더 ──────────────────────────────────────── */
+    .header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+    .header-brand{display:flex;align-items:center;gap:10px}
+    .header-logo{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700}
+    .header-title{font-size:16px;font-weight:700;color:var(--text)}
+    .header-sub{font-size:11px;color:var(--text3);margin-top:1px}
+    .header-badge{font-size:11px;padding:4px 12px;border-radius:20px;background:var(--blue-bg);color:var(--blue);font-weight:500;border:1px solid var(--blue-light)}
+
+    /* ── 레이아웃 ──────────────────────────────────── */
+    .layout{display:grid;grid-template-columns:300px 1fr;gap:20px;max-width:1200px;margin:0 auto;padding:20px}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+    /* ── 입력 패널 ─────────────────────────────────── */
+    .input-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;height:fit-content;box-shadow:var(--shadow)}
+    .section-head{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:12px;margin-top:18px}
+    .section-head:first-child{margin-top:0}
+    .field{margin-bottom:10px}
+    .field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+    .field input,.field select{width:100%;height:34px;font-size:13px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface);color:var(--text);font-family:inherit;transition:border-color .15s,box-shadow .15s}
+    .field input:focus,.field select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+    .field input[type="number"],.field input.money{text-align:right}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+
+    /* ── 수당 행 ───────────────────────────────────── */
+    .allowance-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .allowance-row input[type="text"]{flex:1.4;height:32px;font-size:12px;padding:0 8px;border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit}
+    .allowance-row input[type="text"]:last-of-type{flex:1;text-align:right}
+    .btn-del{width:26px;height:26px;border:1px solid #fee2e2;border-radius:6px;background:transparent;color:var(--red);cursor:pointer;font-size:16px;line-height:1;flex-shrink:0;transition:background .12s}
+    .btn-del:hover{background:#fee2e2}
+    .btn-add{width:100%;font-size:12px;color:var(--blue);border:1px dashed var(--blue-light);background:transparent;padding:6px;border-radius:8px;cursor:pointer;margin-top:2px;font-family:inherit;transition:background .12s}
+    .btn-add:hover{background:var(--blue-bg)}
+
+    /* ── 체크박스 ──────────────────────────────────── */
+    .chk-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
+    .chk-row input[type="checkbox"]{width:14px;height:14px;cursor:pointer;accent-color:var(--blue)}
+    .chk-row span{font-size:12px;color:var(--text2)}
+
+    /* ── 계산 버튼 ─────────────────────────────────── */
+    .btn-calc{width:100%;height:40px;background:var(--text);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;margin-top:16px;font-family:inherit;letter-spacing:-.01em;transition:background .15s,transform .1s}
+    .btn-calc:hover{background:#2d4a63}
+    .btn-calc:active{transform:scale(.99)}
+
+    /* ── 결과 패널 ─────────────────────────────────── */
+    .results-panel{min-height:400px}
+    .results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .results-grid.no-results{display:flex;align-items:center;justify-content:center;min-height:400px}
+
+    /* ── 결과 카드 ─────────────────────────────────── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);transition:box-shadow .15s}
+    .card:hover{box-shadow:var(--shadow-md)}
+    .card.full{grid-column:1/-1}
+    .card.pass{border-left:4px solid var(--green)}
+    .card.fail{border-left:4px solid var(--red)}
+    .card-title{font-size:11px;font-weight:600;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+    .card-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+    .badge-pass{background:var(--green-bg);color:var(--green)}
+    .badge-fail{background:var(--red-bg);color:var(--red)}
+    .badge-info{background:var(--blue-bg);color:var(--blue)}
+    .card-value{font-size:20px;font-weight:700;color:var(--text);line-height:1.2}
+    .card-sub{font-size:11px;color:var(--text3);margin-top:4px}
+    .card-rows{margin-top:12px;border-top:1px solid var(--border);padding-top:10px}
+    .card-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px}
+    .card-row-label{color:var(--text2)}
+    .card-row-val{font-weight:500;color:var(--text)}
+    .card-row-val.accent{color:var(--blue)}
+    .log-toggle{display:inline-flex;align-items:center;gap:4px;margin-top:10px;font-size:11px;color:var(--text3);border:none;background:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color .12s}
+    .log-toggle:hover{color:var(--text2)}
+    .log-box{margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:11px;color:var(--text2);line-height:1.9;white-space:pre-wrap;display:none}
+    .log-box.open{display:block}
+
+    /* ── 육아휴직 테이블 ───────────────────────────── */
+    .parental-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+    .parental-table th{text-align:right;font-size:11px;font-weight:600;color:var(--text3);padding:6px 10px;border-bottom:1px solid var(--border)}
+    .parental-table th:first-child{text-align:left}
+    .parental-table td{padding:6px 10px;border-bottom:1px solid #f0f5fa;text-align:right;color:var(--text)}
+    .parental-table td:first-child{text-align:left;color:var(--text2)}
+    .parental-table .total-row td{background:var(--surface2);font-weight:600;border-bottom:none}
+
+    /* ── 빈 상태 ───────────────────────────────────── */
+    .empty{text-align:center;color:var(--text3)}
+    .empty-icon{font-size:48px;margin-bottom:12px;opacity:.35}
+    .empty-title{font-size:15px;font-weight:500;margin-bottom:4px}
+    .empty-desc{font-size:13px}
+    </style>
+    </head>
+    <body>
+
+    <header class="header">
+    <div class="header-brand">
+        <div class="header-logo">₩</div>
+        <div>
+        <div class="header-title">PayLab</div>
+        <div class="header-sub">근로/급여 통합 계산기</div>
+        </div>
+    </div>
+    <span class="header-badge" id="yearBadge">2025년 기준</span>
+    </header>
+
+    <div class="layout">
+    <!-- ── 입력 패널 ──────────────────────────────── -->
+    <aside class="input-panel">
+
+        <div class="section-head">기본 정보</div>
+        <div class="grid2">
+        <div class="field">
+            <label>기준 연도</label>
+            <select id="year" onchange="document.getElementById('yearBadge').textContent=this.value+'년 기준'">
+            <option>2025</option><option>2024</option><option>2023</option>
+            <option>2022</option><option>2021</option><option>2020</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>주 소정근로시간</label>
+            <input type="number" id="weeklyHours" value="40" min="1" max="52">
+        </div>
+        <div class="field">
+            <label>입사일</label>
+            <input type="date" id="hireDate" value="2021-03-01">
+        </div>
+        <div class="field">
+            <label>기준일</label>
+            <input type="date" id="refDate">
+        </div>
+        </div>
+
+        <div class="section-head">임금 정보</div>
+        <div class="field">
+        <label>기본급 (월, 원)</label>
+        <input type="text" id="baseSalary" value="3,000,000" inputmode="numeric" oninput="onMoneyInput(this)" class="money">
+        </div>
+        <div class="field">
+        <label>고정수당 <span style="font-size:10px;color:var(--text3)">(통상임금 포함)</span></label>
+        <div id="fixedList"></div>
+        <button class="btn-add" onclick="addAllowance('fixed')">+ 고정수당 추가</button>
+        </div>
+        <div class="field" style="margin-top:8px">
+        <label>비고정수당 <span style="font-size:10px;color:var(--text3)">(통상임금 미포함)</span></label>
+        <div id="varList"></div>
+        <button class="btn-add" onclick="addAllowance('var')">+ 비고정수당 추가</button>
+        </div>
+
+        <div class="section-head">최근 3개월 임금 <span style="font-weight:400;text-transform:none;font-size:10px">(평균임금 산정)</span></div>
+        <div class="grid3">
+        <div class="field"><label>1개월 전</label><input type="text" id="m1" value="3,200,000" inputmode="numeric" oninput="onMoneyInput(this)" class="money"></div>
+        <div class="field"><label>2개월 전</label><input type="text" id="m2" value="3,300,000" inputmode="numeric" oninput="onMoneyInput(this)" class="money"></div>
+        <div class="field"><label>3개월 전</label><input type="text" id="m3" value="3,200,000" inputmode="numeric" oninput="onMoneyInput(this)" class="money"></div>
+        </div>
+
+        <div class="section-head">연차 정보</div>
+        <div style="max-width:48%">
+        <div class="field"><label>사용 연차일수</label><input type="number" id="leaveDaysUsed" value="5" min="0"></div>
+        </div>
+
+        <div class="section-head">출산·육아 설정</div>
+        <label class="chk-row"><input type="checkbox" id="multiplePreg"><span>다태아 출산 (120일 적용)</span></label>
+        <label class="chk-row"><input type="checkbox" id="sixPlus6"><span>6+6 부모육아휴직제 (2024년 개정)</span></label>
+        <div style="max-width:48%">
+        <div class="field"><label>육아휴직 신청 개월수</label><input type="number" id="parentalMonths" value="12" min="1" max="12"></div>
+        </div>
+
+        <button class="btn-calc" onclick="calculate()">계산하기</button>
+        <p id="calcTime" style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px;display:none"></p>
+    </aside>
+
+    <!-- ── 결과 패널 ──────────────────────────────── -->
+    <main class="results-panel">
+        <div class="results-grid no-results" id="resultsGrid">
+        <div class="empty">
+            <div class="empty-icon">📊</div>
+            <div class="empty-title">계산 결과가 여기에 표시됩니다</div>
+            <div class="empty-desc">좌측에서 정보를 입력하고 「계산하기」를 눌러주세요</div>
+        </div>
+        </div>
+    </main>
+    </div>
+
+    <script>
+    /* ══════════════════════════════════════════════════════════════
+    POLICY DATA (정책 데이터)
+    ══════════════════════════════════════════════════════════════ */
+    const POLICY = {
+    minWage:   {2017:6470,2018:7530,2019:8350,2020:8590,2021:8720,2022:9160,2023:9620,2024:9860,2025:10030},
+    matUpper:  {2022:1800000,2023:2000000,2024:2100000,2025:2100000},
+    parental:  {first3:{rate:0.8,upper:1500000,lower:70000},rest:{rate:0.5,upper:1200000,lower:70000}},
+    sixPlus6:  [2000000,2500000,3000000,3500000,4000000,4500000],
+    deferredRatio: 0.25,
+    };
+
+    function getMinWage(y){
+    const ks=Object.keys(POLICY.minWage).map(Number).sort((a,b)=>b-a);
+    for(const k of ks)if(y>=k)return POLICY.minWage[k];
+    return POLICY.minWage[2017];
+    }
+    function getMatUpper(y){
+    const ks=Object.keys(POLICY.matUpper).map(Number).sort((a,b)=>b-a);
+    for(const k of ks)if(y>=k)return POLICY.matUpper[k];
+    return POLICY.matUpper[2024];
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+    CORE ENGINE (핵심 계산 엔진 - 순수 함수)
+    ══════════════════════════════════════════════════════════════ */
+
+    /** 월 소정근로시간 = (주근로시간 + 주휴시간) × (365/7) ÷ 12 */
+    function calcMonthlyHours(wh){
+    const eff = Math.min(wh, 40);
+    return Math.round((eff + eff/5) * (365/7) / 12); // 40h → 209h
+    }
+
+    /** 통상임금 계산 | 근로기준법 시행령 제6조 */
+    function calcOrdinaryWage(base, fixed, wh){
+    const totFixed = fixed.reduce((s,a)=>s+a.amount,0);
+    const monthly  = base + totFixed;
+    const mh       = calcMonthlyHours(wh);
+    const hourly   = monthly / mh;
+    const daily    = hourly * (Math.min(wh,40)/5);
+    return {
+        hourly:Math.round(hourly), daily:Math.round(daily),
+        monthly, mh, totFixed,
+        log:[
+        `▶ 통상임금 (근로기준법 시행령 제6조)`,
+        `  기본급: ${fmt(base)}원`,
+        ...fixed.map(a=>`  고정수당 [${a.name||'(미명명)'}]: ${fmt(a.amount)}원`),
+        `  고정수당 합계: ${fmt(totFixed)}원`,
+        `  월 통상임금 합계: ${fmt(monthly)}원`,
+        `  주 소정근로시간: ${wh}h → 주휴시간: ${(Math.min(wh,40)/5).toFixed(1)}h`,
+        `  월소정근로시간: (${Math.min(wh,40)}h + ${(Math.min(wh,40)/5).toFixed(1)}h) × 365/7 ÷ 12 = ${mh}h`,
+        `  시간급 통상임금: ${fmt(monthly)} ÷ ${mh}h = ${fmt(hourly)}원/h`,
+        `  일급 통상임금: ${fmt(hourly)} × ${(Math.min(wh,40)/5).toFixed(1)}h = ${fmt(daily)}원`,
+        ]
+    };
+    }
+
+    /** 평균임금 계산 | 근로기준법 제2조 제1항 제6호 */
+    function calcAverageWage(m3){
+    const total = m3.reduce((s,v)=>s+v,0);
+    const days  = 91; // 3개월 평균 일수
+    const daily = total / days;
+    return {
+        daily:Math.round(daily), total, days,
+        log:[
+        `▶ 평균임금 (근로기준법 제2조 제1항 제6호)`,
+        `  1개월 전: ${fmt(m3[0])}원`,
+        `  2개월 전: ${fmt(m3[1])}원`,
+        `  3개월 전: ${fmt(m3[2])}원`,
+        `  3개월 총임금: ${fmt(total)}원`,
+        `  기준일수: ${days}일 (3개월 평균)`,
+        `  1일 평균임금: ${fmt(total)} ÷ ${days} = ${fmt(daily)}원`,
+        `  ※ 평균임금 < 통상임금이면 통상임금이 적용됩니다 (법 제2조 제2항)`,
+        ]
+    };
+    }
+
+    /** 주휴수당 계산 | 근로기준법 제55조 */
+    function calcWeeklyAllowance(wh, hrOrd){
+    if(wh < 15){
+        return{amount:0,monthly:0,eligible:false,dailyHours:(wh/5),
+        log:[`▶ 주휴수당 (근로기준법 제55조)`,`  주 ${wh}h < 15h → 미지급`]};
+    }
+    const dh  = Math.min(wh,40)/5;
+    const amt = dh * hrOrd;
+    return{
+        amount:Math.round(amt), monthly:Math.round(amt*4.345), eligible:true, dailyHours:dh,
+        log:[
+        `▶ 주휴수당 (근로기준법 제55조)`,
+        `  주 ${wh}h ✅ (15h 이상 충족)`,
+        `  1일 소정근로시간: ${wh}h ÷ 5일 = ${dh}h`,
+        `  주휴수당: ${dh}h × ${fmt(hrOrd)}원 = ${fmt(amt)}원/주`,
+        `  월 환산 (×4.345주): ${fmt(amt*4.345)}원`,
+        ]
+    };
+    }
+
+    /** 연차휴가 계산 | 근로기준법 제60조 */
+    function calcAnnualLeave(hireDate, refDate, usedDays){
+    const hire = new Date(hireDate);
+    const ref  = refDate ? new Date(refDate) : new Date();
+    [hire,ref].forEach(d=>d.setHours(0,0,0,0));
+
+    // Bug fix: 일(day) 미달 시 1개월 차감으로 정확한 개근월수 산정
+    let totalM = (ref.getFullYear()-hire.getFullYear())*12+(ref.getMonth()-hire.getMonth());
+    if(ref.getDate() < hire.getDate()) totalM--;
+    totalM = Math.max(totalM, 0);
+
+    const years = Math.floor(totalM/12);
+    let days, desc;
+    if(years < 1){
+        days = Math.min(totalM, 11);
+        desc = `1년 미만 근속 → 개근 ${totalM}개월 = ${days}일 (최대 11일)`;
+    } else {
+        const extra = Math.floor((years-1)/2);
+        days = Math.min(15+extra, 25);
+        desc = `${years}년 근속 → 기본 15일 + 가산 ${extra}일 = ${days}일`;
+    }
+    const remaining = Math.max(days-usedDays, 0);
+    return{
+        total:days, used:usedDays, remaining, years, months:totalM, desc,
+        log:[
+        `▶ 연차휴가 (근로기준법 제60조)`,
+        `  입사일: ${hireDate}`,
+        `  기준일: ${ref.toLocaleDateString('ko-KR')}`,
+        `  근속: ${years}년 ${totalM%12}개월 (총 ${totalM}개월 완성)`,
+        `  산정: ${desc}`,
+        `  발생: ${days}일 / 사용: ${usedDays}일 / 잔여: ${remaining}일`,
+        `  ※ 실제 개근 여부와 연차사용촉진 적용에 따라 달라질 수 있습니다`,
+        ]
+    };
+    }
+
+    /** 연차수당 계산 | 근로기준법 제60조 제4항 */
+    function calcAnnualLeaveAllowance(unusedDays, dailyOrd){
+    const amt = unusedDays * dailyOrd;
+    return{
+        amount:Math.round(amt), unusedDays, dailyOrd,
+        log:[
+        `▶ 연차수당 (근로기준법 제60조 제4항)`,
+        `  미사용 연차: ${unusedDays}일`,
+        `  1일 통상임금: ${fmt(dailyOrd)}원`,
+        `  연차수당: ${unusedDays}일 × ${fmt(dailyOrd)} = ${fmt(amt)}원`,
+        `  ※ 연차사용촉진제도 적용 시 지급 의무 면제될 수 있습니다`,
+        ]
+    };
+    }
+
+    /** 출산전후휴가급여 계산 | 근로기준법 제74조 / 고용보험법 제75조 */
+    function calcMaternity(dailyOrd, year, multiple){
+    const leaveDays  = multiple ? 120 : 90;
+    const totalOrd   = dailyOrd * leaveDays;
+    const mu         = getMatUpper(year);
+    const upper      = mu * 3;
+    const actual     = Math.min(totalOrd, upper);
+    const applied    = totalOrd > upper;
+    const empDays    = multiple ? 75 : 60;
+    const empAmt     = Math.min(dailyOrd*empDays, mu*2);
+    const insAmt     = Math.max(actual-empAmt, 0);
+    return{
+        leaveDays, totalOrd:Math.round(totalOrd), upper,
+        actual:Math.round(actual), applied,
+        empAmt:Math.round(empAmt), insAmt:Math.round(insAmt),
+        log:[
+        `▶ 출산전후휴가급여 (근로기준법 제74조)`,
+        `  구분: ${multiple?'다태아 (120일)':'단태아 (90일)'}`,
+        `  1일 통상임금: ${fmt(dailyOrd)}원`,
+        `  통상임금 기준 총액: ${leaveDays}일 × ${fmt(dailyOrd)} = ${fmt(totalOrd)}원`,
+        `  ${year}년 월 상한액 (고용보험): ${fmt(mu)}원`,
+        `  3개월 상한 합계: ${fmt(upper)}원`,
+        applied?`  ⚠️ 상한 적용 → 실지급액: ${fmt(actual)}원`:`  ✅ 상한 미적용 → 전액 지급: ${fmt(actual)}원`,
+        `  ┌ 사업주 부담 (최초 ${empDays}일): ${fmt(empAmt)}원`,
+        `  └ 고용보험 부담 (나머지): ${fmt(insAmt)}원`,
+        ]
+    };
+    }
+
+    /** 육아휴직급여 계산 | 고용보험법 제70조 */
+    function calcParental(dailyAvg, months, use6p6){
+    const ma  = dailyAvg * 30;
+    const mo  = Math.min(months, 12);
+    const breakdown = [];
+    for(let i=0; i<mo; i++){
+        const m=i+1;
+        let rate, upper, label;
+        if(use6p6 && m<=6){
+        rate=1.0; upper=POLICY.sixPlus6[i];
+        label=`${m}개월차 (6+6제: 100%, 상한 ${fmt(upper)}원)`;
+        } else if(m<=3){
+        const p=POLICY.parental.first3;
+        rate=p.rate; upper=p.upper;
+        label=`${m}개월차 (80%)`;
+        } else {
+        const p=POLICY.parental.rest;
+        rate=p.rate; upper=p.upper;
+        label=`${m}개월차 (50%)`;
+        }
+        const lower = POLICY.parental.first3.lower;
+        const calc  = Math.max(Math.min(ma*rate, upper), lower);
+        const def_  = Math.round(calc*POLICY.deferredRatio);
+        breakdown.push({m, label, rate, calc:Math.round(calc), def:def_, imm:Math.round(calc-def_)});
+    }
+    const total   = breakdown.reduce((s,x)=>s+x.calc,0);
+    const totDef  = breakdown.reduce((s,x)=>s+x.def,0);
+    return{
+        ma:Math.round(ma), breakdown, total,
+        totDef, totImm:total-totDef,
+        log:[
+        `▶ 육아휴직급여 (고용보험법 제70조)`,
+        `  1일 평균임금: ${fmt(dailyAvg)}원`,
+        `  월 평균임금 (×30일): ${fmt(ma)}원`,
+        `  신청 개월: ${months}개월`,
+        use6p6?`  ✅ 6+6 부모육아휴직제 적용 (2024년 개정)`:`  일반 육아휴직급여`,
+        `  지급구조: 1~3개월 80%(상한150만), 4개월~ 50%(상한120만)`,
+        `  총 예상 지급액: ${fmt(total)}원`,
+        `  ┌ 즉시 지급 (75%): ${fmt(total-totDef)}원`,
+        `  └ 복귀후 지급 (25%): ${fmt(totDef)}원 (복직 후 6개월 뒤 일시지급)`,
+        `  ※ 실제 지급액은 고용센터 승인 후 확정됩니다`,
+        ]
+    };
+    }
+
+    /** 최저임금 검증 | 최저임금법 제6조 */
+    function calcMinWage(base, fixed, variable, wh, year){
+    const mw      = getMinWage(year);
+    const mh      = calcMonthlyHours(wh);
+    const totF    = fixed.reduce((s,a)=>s+a.amount,0);
+    const totV    = variable.reduce((s,a)=>s+a.amount,0);
+    const total   = base+totF+totV;
+    const actual  = total/mh;
+    const minMon  = mw*mh;
+    const ok      = actual >= mw;
+    const diff    = actual - mw;
+    return{
+        mw, actual:Math.round(actual), ok,
+        diff:Math.round(diff), mh, minMon:Math.round(minMon),
+        log:[
+        `▶ 최저임금 검증 (최저임금법 제6조)`,
+        `  ${year}년 최저임금: ${fmt(mw)}원/시간`,
+        `  월 소정근로시간: ${mh}시간`,
+        `  최저임금 기준 월 최소임금: ${fmt(minMon)}원`,
+        `  총 월임금: ${fmt(base)}(기본)+${fmt(totF)}(고정)+${fmt(totV)}(변동) = ${fmt(total)}원`,
+        `  실제 시간당: ${fmt(total)} ÷ ${mh}h = ${fmt(actual)}원`,
+        ok?`  ✅ 최저임금 준수 (${fmt(diff)}원/h 초과)`:`  ❌ 최저임금 위반! (${fmt(-diff)}원/h 부족)`,
+        `  ※ 상여금·복리후생비 산입범위 초과분은 별도 계산이 필요합니다`,
+        ]
+    };
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+    STATE (수당 상태 관리)
+    ══════════════════════════════════════════════════════════════ */
+    let fixedAllowances = [{id:'f1',name:'식대',amount:200000}];
+    let varAllowances   = [];
+    let fCnt=1, vCnt=0;
+
+    function fmt(n){return Math.round(n).toLocaleString('ko-KR')}
+    function v(id){return document.getElementById(id)}
+
+    /* ── 천단위 입력 포맷 헬퍼 ──────────────────────── */
+    /** 숫자 → 천단위 문자열 (예: 3000000 → "3,000,000") */
+    function fmtInput(val){
+    const num = String(val).replace(/[^0-9]/g,'');
+    return num ? parseInt(num,10).toLocaleString('ko-KR') : '';
+    }
+    /** 천단위 문자열 → 숫자 (예: "3,000,000" → 3000000) */
+    function parseInput(val){
+    return parseFloat(String(val).replace(/,/g,'')) || 0;
+    }
+    /** 입력 이벤트 핸들러: 숫자만 허용하고 즉시 천단위 포맷 + 커서 위치 보정 */
+    function onMoneyInput(el){
+    const raw         = el.value.replace(/[^0-9]/g,'');
+    const curFromEnd  = el.value.length - (el.selectionEnd || 0);
+    el.value          = raw ? parseInt(raw,10).toLocaleString('ko-KR') : '';
+    const newPos      = Math.max(0, el.value.length - curFromEnd);
+    el.setSelectionRange(newPos, newPos);
+    }
+
+    function renderAllowances(type){
+    const arr = type==='fixed' ? fixedAllowances : varAllowances;
+    const el  = v(type==='fixed'?'fixedList':'varList');
+    el.innerHTML = arr.map(a=>`
+        <div class="allowance-row">
+        <input type="text" placeholder="수당명" value="${a.name}"
+            onchange="updateAllowance('${type}','${a.id}','name',this.value)"
+            style="border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit">
+        <input type="text" inputmode="numeric" placeholder="금액" value="${a.amount ? fmtInput(a.amount) : ''}"
+            oninput="onMoneyInput(this);updateAllowance('${type}','${a.id}','amount',parseInput(this.value))"
+            style="border:1px solid var(--border2);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;text-align:right">
+        <button class="btn-del" onclick="removeAllowance('${type}','${a.id}')">×</button>
+        </div>`).join('');
+    }
+    function addAllowance(type){
+    const id = type==='fixed'?`f${++fCnt}`:`v${++vCnt}`;
+    (type==='fixed'?fixedAllowances:varAllowances).push({id,name:'',amount:0});
+    renderAllowances(type);
+    }
+    function removeAllowance(type,id){
+    if(type==='fixed') fixedAllowances = fixedAllowances.filter(a=>a.id!==id);
+    else varAllowances = varAllowances.filter(a=>a.id!==id);
+    renderAllowances(type);
+    }
+    function updateAllowance(type,id,field,val){
+    const arr = type==='fixed'?fixedAllowances:varAllowances;
+    const a   = arr.find(x=>x.id===id);
+    if(a) a[field] = val;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+    UI HELPERS
+    ══════════════════════════════════════════════════════════════ */
+    let logCounter = 0;
+    function makeCard(cls, title, badge, mainVal, sub, rows, log){
+    const lid = `log_${++logCounter}`;
+    const rowsHtml = rows.length ? `
+        <div class="card-rows">
+        ${rows.map(r=>`<div class="card-row">
+            <span class="card-row-label">${r.label}</span>
+            <span class="card-row-val${r.accent?' accent':''}">${r.value}</span>
+        </div>`).join('')}
+        </div>` : '';
+    const badgeHtml = badge ? `<span class="card-badge ${badge.cls}">${badge.text}</span>` : '';
+    return `
+        <div class="card ${cls}">
+        <div class="card-title">${title}${badgeHtml}</div>
+        <div class="card-value">${mainVal}</div>
+        ${sub?`<div class="card-sub">${sub}</div>`:''}
+        ${rowsHtml}
+        <button class="log-toggle" onclick="toggleLog('${lid}')">▸ 계산 과정 보기</button>
+        <div class="log-box" id="${lid}">${log.join('\n')}</div>
+        </div>`;
+    }
+    function toggleLog(id){
+    const el = v(id);
+    const btn = el.previousElementSibling;
+    const open = el.classList.toggle('open');
+    btn.textContent = open ? '▾ 계산 과정 닫기' : '▸ 계산 과정 보기';
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+    MAIN CALCULATE
+    ══════════════════════════════════════════════════════════════ */
+    function calculate(){
+    const base        = parseInput(v('baseSalary').value);
+    const wh          = parseFloat(v('weeklyHours').value)||40;
+    const year        = parseInt(v('year').value)||2025;
+    const hireDate    = v('hireDate').value;
+    const refDate     = v('refDate').value||'';
+    const usedDays    = parseFloat(v('leaveDaysUsed').value)||0;
+    const m3          = [parseInput(v('m1').value), parseInput(v('m2').value), parseInput(v('m3').value)];
+    const multiple    = v('multiplePreg').checked;
+    const use6p6      = v('sixPlus6').checked;
+    const pMonths     = parseInt(v('parentalMonths').value)||12;
+
+    // ── 계산 실행 ──
+    const ow  = calcOrdinaryWage(base, fixedAllowances, wh);
+    const av  = calcAverageWage(m3);
+    const wk  = calcWeeklyAllowance(wh, ow.hourly);
+    const al  = calcAnnualLeave(hireDate, refDate, usedDays);
+    const ala = calcAnnualLeaveAllowance(al.remaining, ow.daily);
+    const mat = calcMaternity(ow.daily, year, multiple);
+
+    // 평균임금 < 통상임금이면 통상임금으로 대체 (근로기준법 제2조 제2항)
+    const effDaily = Math.max(av.daily, ow.daily);
+    const par = calcParental(effDaily, pMonths, use6p6);
+    const mw  = calcMinWage(base, fixedAllowances, varAllowances, wh, year);
+
+    logCounter = 0;
+    let html = '';
+
+    // 1. 통상임금
+    html += makeCard('', '통상임금', null,
+        `${fmt(ow.hourly)}원<small style="font-size:12px;font-weight:400;color:var(--text2)">/시간</small>`,
+        `일급 ${fmt(ow.daily)}원 · 월 통상임금 ${fmt(ow.monthly)}원`,
+        [{label:'월 소정근로시간',value:`${ow.mh}시간`},{label:'시간급',value:`${fmt(ow.hourly)}원`},{label:'일급',value:`${fmt(ow.daily)}원`}],
+        ow.log);
+
+    // 2. 평균임금
+    html += makeCard('', '평균임금', null,
+        `${fmt(av.daily)}원<small style="font-size:12px;font-weight:400;color:var(--text2)">/일</small>`,
+        `3개월 합계 ${fmt(av.total)}원`,
+        [
+        {label:'기준일수',value:`${av.days}일`},
+        {label:'실사용 일급',value:`${fmt(effDaily)}원`},
+        ...(effDaily>av.daily?[{label:'통상임금 대체',value:'✅ 적용',accent:true}]:[])
+        ],
+        av.log);
+
+    // 3. 주휴수당
+    html += makeCard('', '주휴수당',
+        wk.eligible?{cls:'badge-pass',text:'지급 대상'}:{cls:'badge-fail',text:'미지급'},
+        wk.eligible?`${fmt(wk.amount)}원<small style="font-size:12px;font-weight:400;color:var(--text2)">/주</small>`:'미지급',
+        wk.eligible?`월 환산 ${fmt(wk.monthly)}원`:`주 ${wh}시간 근무 (15시간 미만)`,
+        wk.eligible?[{label:'1일 소정근로시간',value:`${wk.dailyHours}시간`},{label:'월 환산',value:`${fmt(wk.monthly)}원`}]:[],
+        wk.log);
+
+    // 4. 연차 현황
+    html += makeCard('', '연차 현황', null,
+        `${al.total}일`,
+        al.desc,
+        [
+        {label:'근속기간',value:`${al.years}년 ${al.months%12}개월`},
+        {label:'사용',value:`${al.used}일`},
+        {label:'잔여',value:`${al.remaining}일`,accent:true}
+        ],
+        al.log);
+
+    // 5. 연차수당
+    html += makeCard('', '연차수당', null,
+        `${fmt(ala.amount)}원`,
+        `미사용 ${ala.unusedDays}일 × 일 통상임금`,
+        [{label:'미사용 연차',value:`${ala.unusedDays}일`},{label:'1일 통상임금',value:`${fmt(ala.dailyOrd)}원`}],
+        ala.log);
+
+    // 6. 최저임금 검증
+    const mwPct = Math.min((mw.actual/mw.mw)*100, 100);
+    const mwExtra = `
+        <div style="height:6px;border-radius:3px;background:var(--border);margin-top:10px;overflow:hidden">
+        <div style="height:100%;width:${mwPct}%;border-radius:3px;background:${mw.ok?'var(--green)':'var(--red)'};transition:width .5s"></div>
+        </div>`;
+    html += makeCard(mw.ok?'pass':'fail', '최저임금 검증',
+        mw.ok?{cls:'badge-pass',text:`✅ 준수`}:{cls:'badge-fail',text:'❌ 위반'},
+        `${fmt(mw.actual)}원<small style="font-size:12px;font-weight:400;color:var(--text2)">/시간</small>`,
+        `${year}년 최저임금 기준 ${fmt(mw.mw)}원/시간`,
+        [
+        {label:'최저임금',value:`${fmt(mw.mw)}원/h`},
+        {label:'실지급',value:`${fmt(mw.actual)}원/h`},
+        {label:mw.ok?'초과':'부족',value:`${fmt(Math.abs(mw.diff))}원/h`,accent:mw.ok}
+        ],
+        mw.log) + mwExtra.replace('</div>', '</div>');
+
+    // 7. 출산전후휴가급여
+    html += makeCard('', '출산전후휴가급여',
+        mat.applied?{cls:'badge-info',text:'상한 적용'}:null,
+        `${fmt(mat.actual)}원`,
+        `${mat.leaveDays}일 기준`,
+        [
+        {label:'통상임금 기준 총액',value:`${fmt(mat.totalOrd)}원`},
+        {label:'사업주 부담',value:`${fmt(mat.empAmt)}원`},
+        {label:'고용보험 부담',value:`${fmt(mat.insAmt)}원`}
+        ],
+        mat.log);
+
+    // 8. 육아휴직급여 (전체 너비)
+    const parRows = par.breakdown.map(x=>`
+        <tr>
+        <td>${x.label}</td>
+        <td>${(x.rate*100).toFixed(0)}%</td>
+        <td>${fmt(x.calc)}원</td>
+        <td style="color:var(--blue)">${fmt(x.imm)}원</td>
+        <td style="color:var(--text3)">${fmt(x.def)}원</td>
+        </tr>`).join('');
+    const lid = `log_${++logCounter}`;
+    html += `
+        <div class="card full">
+        <div class="card-title">육아휴직급여 (${pMonths}개월)</div>
+        <div class="card-value">${fmt(par.total)}원</div>
+        <div class="card-sub">즉시지급 ${fmt(par.totImm)}원 · 복귀후지급 ${fmt(par.totDef)}원</div>
+        <div class="card-rows">
+            <div class="card-row">
+            <span class="card-row-label">월 평균임금</span>
+            <span class="card-row-val">${fmt(par.ma)}원</span>
+            </div>
+        </div>
+        <table class="parental-table">
+            <thead><tr>
+            <th>구분</th><th>비율</th><th>지급액</th><th>즉시(75%)</th><th>복귀후(25%)</th>
+            </tr></thead>
+            <tbody>${parRows}</tbody>
+            <tfoot><tr class="total-row">
+            <td>합계</td><td></td>
+            <td>${fmt(par.total)}원</td>
+            <td style="color:var(--blue)">${fmt(par.totImm)}원</td>
+            <td style="color:var(--text3)">${fmt(par.totDef)}원</td>
+            </tr></tfoot>
+        </table>
+        <button class="log-toggle" onclick="toggleLog('${lid}')">▸ 계산 과정 보기</button>
+        <div class="log-box" id="${lid}">${par.log.join('\n')}</div>
+        </div>`;
+
+    // ── DOM 업데이트 ──
+    const grid = v('resultsGrid');
+    grid.className = 'results-grid';
+    grid.innerHTML = html;
+
+    const ct = v('calcTime');
+    ct.style.display='block';
+    ct.textContent='마지막 계산: '+new Date().toLocaleTimeString('ko-KR');
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+    INIT
+    ══════════════════════════════════════════════════════════════ */
+    document.getElementById('refDate').value = new Date().toISOString().split('T')[0];
+    renderAllowances('fixed');
+    renderAllowances('var');
+    </script>
+    </body>
+    </html>
