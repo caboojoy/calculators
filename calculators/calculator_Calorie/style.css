@@ -88,7 +88,7 @@ header p { margin-top: 10px; color: var(--t2); font-size: 14px; }
 .form-group:last-child { margin-bottom: 0; }
 
 label {
-  display: block; font-size: 14px; font-weight: 500;
+  display: block; font-size: 14px; font-weight: 600;
   color: var(--t2); margin-bottom: 7px; letter-spacing: .04em;
 }
 
