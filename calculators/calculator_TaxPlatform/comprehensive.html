@@ -262,7 +262,7 @@
     loadedIncomes = TaxStorage.getAll();
 
     const list = document.getElementById('incomeList');
-    const keys = Object.keys(loadedIncomes).filter(k => k !== 'comprehensive');
+    const keys = Object.keys(loadedIncomes).filter(k => k !== 'comprehensive' && INCOME_TYPES[k]);
 
     if (!keys.length) {
       list.innerHTML = `<div class="empty-msg">저장된 소득이 없습니다.<br><a href="index.html">각 소득 계산기</a>에서 저장해주세요.</div>`;
@@ -386,7 +386,7 @@
     // 자녀세액공제 (규칙값 기반)
     const childCredit = deps === 0 ? 0
       : deps === 1 ? CHILD_CREDIT.first
-      : CHILD_CREDIT.first + CHILD_CREDIT.second
+      : deps === 2 ? (CHILD_CREDIT.first + CHILD_CREDIT.second)
       : CHILD_CREDIT.first + CHILD_CREDIT.second + (deps - 2) * CHILD_CREDIT.additionalAfterSecond;
 
     const totalCredit   = earnedCredit + childCredit;
