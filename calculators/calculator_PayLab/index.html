@@ -118,6 +118,17 @@
     .empty-icon{font-size:48px;margin-bottom:12px;opacity:.35}
     .empty-title{font-size:15px;font-weight:500;margin-bottom:4px}
     .empty-desc{font-size:13px}
+
+    /* ── 면책 고지 ─────────────────────────────────── */
+    .policy-notice{
+    margin-top:16px;padding:12px 16px;
+    background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+    display:flex;align-items:flex-start;gap:10px;
+    }
+    .policy-notice-icon{font-size:14px;flex-shrink:0;margin-top:1px;opacity:.55}
+    .policy-notice-body{flex:1}
+    .policy-notice-main{font-size:12px;color:var(--text2);line-height:1.7}
+    .policy-notice-sub{font-size:11px;color:var(--text3);margin-top:5px;line-height:1.7}
     </style>
     </head>
     <body>
@@ -130,7 +141,13 @@
         <div class="header-sub">근로/급여 통합 계산기</div>
         </div>
     </div>
-    <span class="header-badge" id="yearBadge">2025년 기준</span>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span class="header-badge" id="yearBadge">2025년 기준</span>
+        <span class="header-badge" id="policyBadge"
+        style="background:var(--amber-bg);color:var(--amber);border-color:#fde68a">
+        정책기준: 2025년 2월
+        </span>
+    </div>
     </header>
 
     <div class="layout">
@@ -188,11 +205,38 @@
         <div class="field"><label>사용 연차일수</label><input type="number" id="leaveDaysUsed" value="5" min="0"></div>
         </div>
 
-        <div class="section-head">출산·육아 설정</div>
-        <label class="chk-row"><input type="checkbox" id="multiplePreg"><span>다태아 출산 (120일 적용)</span></label>
+        <div class="section-head">출산전후휴가</div>
+        <div class="field">
+        <label>출산 유형</label>
+        <select id="birthType">
+            <option value="single">단태아 (90일)</option>
+            <option value="multiple">다태아 (120일)</option>
+            <option value="premature">미숙아 (100일, 2025년 신설)</option>
+        </select>
+        </div>
+
+        <div class="section-head">배우자 출산휴가 <span style="font-weight:400;text-transform:none;font-size:10px">(2025년: 10일 → 20일)</span></div>
+        <label class="chk-row"><input type="checkbox" id="priorityBiz" checked><span>우선지원대상기업 · 중소기업 (10일 고용보험 지원)</span></label>
+
+        <div class="section-head">유산·사산휴가 <span style="font-weight:400;text-transform:none;font-size:10px">(해당없으면 0)</span></div>
+        <div style="max-width:48%">
+        <div class="field"><label>임신 주수</label><input type="number" id="miscarriageWeeks" value="0" min="0" max="40"></div>
+        </div>
+
+        <div class="section-head">육아휴직</div>
+        <label class="chk-row"><input type="checkbox" id="singleParent"><span>한부모 가정 (첫 3개월 상한 300만원)</span></label>
         <label class="chk-row"><input type="checkbox" id="sixPlus6"><span>6+6 부모육아휴직제 (2024년 개정)</span></label>
         <div style="max-width:48%">
-        <div class="field"><label>육아휴직 신청 개월수</label><input type="number" id="parentalMonths" value="12" min="1" max="12"></div>
+        <div class="field"><label>육아휴직 신청 개월수 <span style="font-size:10px;color:var(--text3)">(최대 18)</span></label><input type="number" id="parentalMonths" value="12" min="1" max="18"></div>
+        </div>
+
+        <div class="section-head">육아기 근로시간 단축 <span style="font-weight:400;text-transform:none;font-size:10px">(단축 없으면 동일하게 입력)</span></div>
+        <div class="grid2">
+        <div class="field"><label>단축 전 주 근로시간</label><input type="number" id="preReduceHours" value="40" min="1" max="52"></div>
+        <div class="field"><label>단축 후 주 근로시간</label><input type="number" id="postReduceHours" value="40" min="1" max="52"></div>
+        </div>
+        <div style="max-width:48%">
+        <div class="field"><label>단축 개월수</label><input type="number" id="reduceMonths" value="6" min="1" max="24"></div>
         </div>
 
         <button class="btn-calc" onclick="calculate()">계산하기</button>
@@ -208,6 +252,7 @@
             <div class="empty-desc">좌측에서 정보를 입력하고 「계산하기」를 눌러주세요</div>
         </div>
         </div>
+        <div id="policyNotice" style="display:none"></div>
     </main>
     </div>
 
@@ -215,12 +260,52 @@
     /* ══════════════════════════════════════════════════════════════
     POLICY DATA (정책 데이터)
     ══════════════════════════════════════════════════════════════ */
+
+    /**
+    * ┌─────────────────────────────────────────────────────────┐
+    * │  수동 업데이트 가이드                                      │
+    * │  이 파일의 정책 수치는 자동 갱신되지 않습니다.              │
+    * │                                                         │
+    * │  항목별 업데이트 시점:                                    │
+    * │  · 최저임금 (minWage)       → 매년 8월 고시, 다음해 1월 적용 │
+    * │  · 출산급여 상한 (matUpper)  → 고용보험법 시행령 개정 시    │
+    * │  · 육아휴직 3구간 (parental) → 고용보험법 시행령 개정 시    │
+    * │  · 배우자 휴가 (spouseLeave) → 남녀고용평등법 개정 시       │
+    * │  · 6+6 상한 (sixPlus6)      → 고용보험법 시행령 개정 시    │
+    * │                                                         │
+    * │  업데이트 후 반드시 POLICY_UPDATED 날짜도 함께 변경하세요.  │
+    * └─────────────────────────────────────────────────────────┘
+    */
+
+    /** 정책 기준일 — 업데이트 시 이 값만 변경하면 화면 전체에 반영됩니다. */
+    const POLICY_UPDATED = '2025년 2월';
+
     const POLICY = {
-    minWage:   {2017:6470,2018:7530,2019:8350,2020:8590,2021:8720,2022:9160,2023:9620,2024:9860,2025:10030},
-    matUpper:  {2022:1800000,2023:2000000,2024:2100000,2025:2100000},
-    parental:  {first3:{rate:0.8,upper:1500000,lower:70000},rest:{rate:0.5,upper:1200000,lower:70000}},
-    sixPlus6:  [2000000,2500000,3000000,3500000,4000000,4500000],
+    minWage:  {2017:6470,2018:7530,2019:8350,2020:8590,2021:8720,2022:9160,2023:9620,2024:9860,2025:10030},
+    matUpper: {2022:1800000,2023:2000000,2024:2100000,2025:2100000},
+    // 2025년 2월 개정 육아휴직급여 3구간 (하한 70만원으로 정정)
+    parental: [
+        { upTo: 3,  rate: 1.0, upper: 2500000, lower: 700000 }, // 1~3개월: 100%, 상한 250만
+        { upTo: 6,  rate: 1.0, upper: 2000000, lower: 700000 }, // 4~6개월: 100%, 상한 200만
+        { upTo: 18, rate: 0.8, upper: 1600000, lower: 700000 }, // 7개월~ : 80%,  상한 160만
+    ],
+    singleParentUpper: 3000000,  // 한부모 특례: 첫 3개월 상한 300만원
+    sixPlus6: [2000000,2500000,3000000,3500000,4000000,4500000],
     deferredRatio: 0.25,
+    // 유산·사산 휴가일수 (2025년 2월 개정 반영)
+    miscarriageDays: [
+        { maxWeek: 11,  days: 10 }, // 11주 이내: 10일 (2025년 확대)
+        { maxWeek: 15,  days: 30 },
+        { maxWeek: 21,  days: 60 },
+        { maxWeek: 999, days: 90 }, // 22주 이상: 90일
+    ],
+    // 육아기 근로시간 단축 급여
+    reduceHours: {
+        first5Rate: 1.0, first5Upper: 2000000, first5Lower: 500000,
+        restRate:   0.8, restUpper:   1500000, restLower:   500000,
+    },
+    // 배우자 출산휴가 (2025년 2월: 20일로 확대)
+    spouseLeave: { days: 20, priorityGovDays: 10 },
     };
 
     function getMinWage(y){
@@ -301,7 +386,7 @@
         log:[
         `▶ 주휴수당 (근로기준법 제55조)`,
         `  주 ${wh}h ✅ (15h 이상 충족)`,
-        `  1일 소정근로시간: ${wh}h ÷ 5일 = ${dh}h`,
+        `  1일 소정근로시간: ${Math.min(wh,40)}h ÷ 5일 = ${dh}h`,
         `  주휴수당: ${dh}h × ${fmt(hrOrd)}원 = ${fmt(amt)}원/주`,
         `  월 환산 (×4.345주): ${fmt(amt*4.345)}원`,
         ]
@@ -360,27 +445,36 @@
     }
 
     /** 출산전후휴가급여 계산 | 근로기준법 제74조 / 고용보험법 제75조 */
-    function calcMaternity(dailyOrd, year, multiple){
-    const leaveDays  = multiple ? 120 : 90;
-    const totalOrd   = dailyOrd * leaveDays;
-    const mu         = getMatUpper(year);
-    const upper      = mu * 3;
-    const actual     = Math.min(totalOrd, upper);
-    const applied    = totalOrd > upper;
-    const empDays    = multiple ? 75 : 60;
-    const empAmt     = Math.min(dailyOrd*empDays, mu*2);
-    const insAmt     = Math.max(actual-empAmt, 0);
+    function calcMaternity(dailyOrd, year, birthType){
+    // birthType: 'single'(단태아 90일) | 'multiple'(다태아 120일) | 'premature'(미숙아 100일, 2025년 신설)
+    let leaveDays, empDays, label;
+    if(birthType==='multiple'){
+        leaveDays=120; empDays=75; label='다태아 (120일)';
+    } else if(birthType==='premature'){
+        leaveDays=100; empDays=60; label='미숙아 (100일, 2025년 신설)';
+    } else {
+        leaveDays=90; empDays=60; label='단태아 (90일)';
+    }
+    const totalOrd    = dailyOrd * leaveDays;
+    const mu          = getMatUpper(year);
+    const capMonths   = Math.ceil(leaveDays / 30); // 단태아 3, 다태아 4, 미숙아 4
+    const empCapMonths= Math.ceil(empDays   / 30); // 단태아·미숙아 2, 다태아 3
+    const upper       = mu * capMonths;
+    const actual      = Math.min(totalOrd, upper);
+    const applied     = totalOrd > upper;
+    const empAmt      = Math.min(dailyOrd * empDays, mu * empCapMonths);
+    const insAmt      = Math.max(actual - empAmt, 0);
     return{
-        leaveDays, totalOrd:Math.round(totalOrd), upper,
+        leaveDays, totalOrd:Math.round(totalOrd), upper, label,
         actual:Math.round(actual), applied,
         empAmt:Math.round(empAmt), insAmt:Math.round(insAmt),
         log:[
         `▶ 출산전후휴가급여 (근로기준법 제74조)`,
-        `  구분: ${multiple?'다태아 (120일)':'단태아 (90일)'}`,
+        `  구분: ${label}`,
         `  1일 통상임금: ${fmt(dailyOrd)}원`,
         `  통상임금 기준 총액: ${leaveDays}일 × ${fmt(dailyOrd)} = ${fmt(totalOrd)}원`,
         `  ${year}년 월 상한액 (고용보험): ${fmt(mu)}원`,
-        `  3개월 상한 합계: ${fmt(upper)}원`,
+        `  ${capMonths}개월 상한 합계: ${fmt(upper)}원`,
         applied?`  ⚠️ 상한 적용 → 실지급액: ${fmt(actual)}원`:`  ✅ 상한 미적용 → 전액 지급: ${fmt(actual)}원`,
         `  ┌ 사업주 부담 (최초 ${empDays}일): ${fmt(empAmt)}원`,
         `  └ 고용보험 부담 (나머지): ${fmt(insAmt)}원`,
@@ -388,48 +482,61 @@
     };
     }
 
-    /** 육아휴직급여 계산 | 고용보험법 제70조 */
-    function calcParental(dailyAvg, months, use6p6){
-    const ma  = dailyAvg * 30;
-    const mo  = Math.min(months, 12);
+    /** 육아휴직급여 계산 | 고용보험법 제70조 (2025년 2월 개정) */
+    function calcParental(dailyAvg, months, use6p6, singleParent){
+    const ma = dailyAvg * 30;
+    const mo = Math.min(months, 18);
     const breakdown = [];
+
     for(let i=0; i<mo; i++){
-        const m=i+1;
-        let rate, upper, label;
+        const m = i+1;
+        let rate, upper, lower, label;
+
         if(use6p6 && m<=6){
-        rate=1.0; upper=POLICY.sixPlus6[i];
-        label=`${m}개월차 (6+6제: 100%, 상한 ${fmt(upper)}원)`;
-        } else if(m<=3){
-        const p=POLICY.parental.first3;
-        rate=p.rate; upper=p.upper;
-        label=`${m}개월차 (80%)`;
+        // 6+6 부모육아휴직제 (생후 18개월 이내 부모 모두 사용 시)
+        rate  = 1.0;
+        upper = POLICY.sixPlus6[i];
+        lower = 700000;
+        label = `${m}개월차 (6+6제: 100%, 상한 ${fmt(upper/10000)}만원)`;
         } else {
-        const p=POLICY.parental.rest;
-        rate=p.rate; upper=p.upper;
-        label=`${m}개월차 (50%)`;
+        // 2025년 2월 개정 3구간
+        const tier = POLICY.parental.find(t => m <= t.upTo) || POLICY.parental[POLICY.parental.length-1];
+        rate  = tier.rate;
+        lower = tier.lower;
+        if(singleParent && m<=3){
+            // 한부모 특례: 첫 3개월 상한 300만원
+            upper = POLICY.singleParentUpper;
+            label = `${m}개월차 (한부모 100%, 상한 ${fmt(upper/10000)}만원)`;
+        } else {
+            upper = tier.upper;
+            label = `${m}개월차 (${Math.round(rate*100)}%, 상한 ${fmt(upper/10000)}만원)`;
         }
-        const lower = POLICY.parental.first3.lower;
-        const calc  = Math.max(Math.min(ma*rate, upper), lower);
-        const def_  = Math.round(calc*POLICY.deferredRatio);
+        }
+
+        const calc = Math.max(Math.min(ma*rate, upper), lower);
+        const def_ = Math.round(calc*POLICY.deferredRatio);
         breakdown.push({m, label, rate, calc:Math.round(calc), def:def_, imm:Math.round(calc-def_)});
     }
-    const total   = breakdown.reduce((s,x)=>s+x.calc,0);
-    const totDef  = breakdown.reduce((s,x)=>s+x.def,0);
+
+    const total  = breakdown.reduce((s,x)=>s+x.calc, 0);
+    const totDef = breakdown.reduce((s,x)=>s+x.def,  0);
     return{
         ma:Math.round(ma), breakdown, total,
         totDef, totImm:total-totDef,
         log:[
-        `▶ 육아휴직급여 (고용보험법 제70조)`,
+        `▶ 육아휴직급여 (고용보험법 제70조, 2025년 2월 개정)`,
         `  1일 평균임금: ${fmt(dailyAvg)}원`,
         `  월 평균임금 (×30일): ${fmt(ma)}원`,
         `  신청 개월: ${months}개월`,
-        use6p6?`  ✅ 6+6 부모육아휴직제 적용 (2024년 개정)`:`  일반 육아휴직급여`,
-        `  지급구조: 1~3개월 80%(상한150만), 4개월~ 50%(상한120만)`,
+        use6p6     ? `  ✅ 6+6 부모육아휴직제 적용` : `  일반 육아휴직급여`,
+        singleParent ? `  ✅ 한부모 특례 적용 (첫 3개월 상한 300만원)` : null,
+        `  2025년 지급구조:`,
+        `    1~3개월: 100% (상한 250만원) | 4~6개월: 100% (상한 200만원) | 7개월~: 80% (상한 160만원)`,
         `  총 예상 지급액: ${fmt(total)}원`,
         `  ┌ 즉시 지급 (75%): ${fmt(total-totDef)}원`,
         `  └ 복귀후 지급 (25%): ${fmt(totDef)}원 (복직 후 6개월 뒤 일시지급)`,
-        `  ※ 실제 지급액은 고용센터 승인 후 확정됩니다`,
-        ]
+        `  ※ 하한 70만원 / 피보험단위기간 180일 이상 요건`,
+        ].filter(Boolean)
     };
     }
 
@@ -457,6 +564,103 @@
         ok?`  ✅ 최저임금 준수 (${fmt(diff)}원/h 초과)`:`  ❌ 최저임금 위반! (${fmt(-diff)}원/h 부족)`,
         `  ※ 상여금·복리후생비 산입범위 초과분은 별도 계산이 필요합니다`,
         ]
+    };
+    }
+
+    /** 배우자 출산휴가 급여 | 남녀고용평등법 제18조의2 (2025년 2월 개정: 20일) */
+    function calcSpouseLeave(dailyOrd, priorityBiz){
+    const { days, priorityGovDays } = POLICY.spouseLeave;
+    const total  = dailyOrd * days;
+    const govAmt = priorityBiz ? dailyOrd * priorityGovDays : 0;
+    const empAmt = total - govAmt;
+    return{
+        days, govDays: priorityBiz ? priorityGovDays : 0,
+        total:Math.round(total), govAmt:Math.round(govAmt), empAmt:Math.round(empAmt), priorityBiz,
+        log:[
+        `▶ 배우자 출산휴가 급여 (남녀고용평등법 제18조의2, 2025년 2월 개정)`,
+        `  2025년 2월부터: 10일 → 20일로 확대 (사용기한 출산 후 120일, 3회 분할)`,
+        `  1일 통상임금: ${fmt(dailyOrd)}원`,
+        `  20일 통상임금 기준 총액: ${fmt(total)}원`,
+        priorityBiz
+            ? `  우선지원대상기업 → 10일분 고용보험 지원: ${fmt(govAmt)}원`
+            : `  대규모기업 → 고용보험 지원 없음 (전액 사업주 부담)`,
+        `  사업주 부담: ${fmt(empAmt)}원`,
+        `  ※ 고용보험 지급 상한은 별도 고시 (실제 지급액은 고용센터 확인)`,
+        `  ※ 배우자 출산 후 120일 이내에 신청`,
+        ]
+    };
+    }
+
+    /** 유산·사산휴가 급여 | 근로기준법 제74조 (2025년 2월 개정 반영) */
+    function calcMiscarriage(weeks, dailyOrd, year){
+    if(!weeks || weeks<=0) return null;
+    const entry = POLICY.miscarriageDays.find(e => weeks <= e.maxWeek);
+    const days = entry ? entry.days : 90;
+    let weekLabel;
+    if(weeks<=11) weekLabel=`11주 이내 → ${days}일 (2025년 확대)`;
+    else if(weeks<=15) weekLabel=`12~15주 → ${days}일`;
+    else if(weeks<=21) weekLabel=`16~21주 → ${days}일`;
+    else weekLabel=`22주 이상 → ${days}일`;
+
+    const totalOrd  = dailyOrd * days;
+    const mu        = getMatUpper(year);
+    const upperTotal= Math.round(mu * days / 30);
+    const actual    = Math.min(totalOrd, upperTotal);
+    const applied   = totalOrd > upperTotal;
+    return{
+        weeks, days, weekLabel,
+        totalOrd:Math.round(totalOrd), actual:Math.round(actual), applied,
+        log:[
+        `▶ 유산·사산휴가 급여 (근로기준법 제74조, 고용보험법 제75조)`,
+        `  임신 주수: ${weeks}주 → ${weekLabel}`,
+        `  1일 통상임금: ${fmt(dailyOrd)}원`,
+        `  통상임금 기준 총액: ${days}일 × ${fmt(dailyOrd)} = ${fmt(totalOrd)}원`,
+        `  ${year}년 월 상한 (${fmt(mu)}원) 기준 ${days}일 상한: ${fmt(upperTotal)}원`,
+        applied?`  ⚠️ 상한 적용 → 실지급액: ${fmt(actual)}원`:`  ✅ 전액 지급: ${fmt(actual)}원`,
+        `  ※ 고용보험 피보험단위기간 180일 이상 요건`,
+        `  ※ 의료기관 진단서 제출 필요 / 우선지원기업 전액·대규모기업 일부 고용보험`,
+        ]
+    };
+    }
+
+    /** 육아기 근로시간 단축 급여 | 남녀고용평등법 제19조의2 */
+    function calcReducedHours(monthlyOrd, preHours, postHours, months){
+    const reduceH = preHours - postHours;
+    if(reduceH <= 0) return null;
+    const { first5Rate, first5Upper, first5Lower, restRate, restUpper, restLower } = POLICY.reduceHours;
+    const first5h = Math.min(reduceH, 5);
+    const restH   = Math.max(reduceH - 5, 0);
+
+    const raw1 = monthlyOrd * first5Rate * (first5h / preHours);
+    const pay1 = Math.max(Math.min(raw1, first5Upper), first5Lower);
+    const raw2 = restH > 0 ? monthlyOrd * restRate * (restH / preHours) : 0;
+    const pay2 = restH > 0 ? Math.max(Math.min(raw2, restUpper), restLower) : 0;
+
+    const govPay     = pay1 + pay2;
+    const workPay    = monthlyOrd * (postHours / preHours);
+    const totalIncome= workPay + govPay;
+    return{
+        reduceH, preHours, postHours, months,
+        pay1:Math.round(pay1), pay2:Math.round(pay2),
+        govPay:Math.round(govPay), workPay:Math.round(workPay),
+        totalIncome:Math.round(totalIncome),
+        totalGov:Math.round(govPay * months),
+        log:[
+        `▶ 육아기 근로시간 단축 급여 (남녀고용평등법 제19조의2)`,
+        `  단축 전: ${preHours}h/주 → 단축 후: ${postHours}h/주 (단축: ${reduceH}h)`,
+        `  월 통상임금: ${fmt(monthlyOrd)}원`,
+        `  [고용보험] 최초 ${first5h}h분: min(${fmt(raw1)}, ${fmt(first5Upper)}) = ${fmt(pay1)}원/월`,
+        restH>0
+            ? `  [고용보험] 나머지 ${restH}h분: min(${fmt(raw2)}, ${fmt(restUpper)}) = ${fmt(pay2)}원/월`
+            : `  나머지 단축시간 없음 (단축 5시간 이하)`,
+        `  고용보험 지원 합계: ${fmt(govPay)}원/월`,
+        `  사업주 비례 급여 (${postHours}h/${preHours}h): ${fmt(workPay)}원/월`,
+        `  월 총 소득: ${fmt(totalIncome)}원`,
+        `  ${months}개월 총 고용보험 지원: ${fmt(govPay*months)}원`,
+        `  ※ 대상 자녀: 만 12세 이하 또는 초등학교 6학년 이하 (2025년 2월 확대)`,
+        `  ※ 최소 1개월 단위 / 주 5~25시간 단축 범위 내`,
+        postHours < 15 ? `  ⚠️ 단축 후 주 소정근로시간(${postHours}h)이 법정 최소(15h)에 미달 — 실제 적용 불가` : null,
+        ].filter(Boolean)
     };
     }
 
@@ -554,29 +758,43 @@
     MAIN CALCULATE
     ══════════════════════════════════════════════════════════════ */
     function calculate(){
-    const base        = parseInput(v('baseSalary').value);
-    const wh          = parseFloat(v('weeklyHours').value)||40;
-    const year        = parseInt(v('year').value)||2025;
-    const hireDate    = v('hireDate').value;
-    const refDate     = v('refDate').value||'';
-    const usedDays    = parseFloat(v('leaveDaysUsed').value)||0;
-    const m3          = [parseInput(v('m1').value), parseInput(v('m2').value), parseInput(v('m3').value)];
-    const multiple    = v('multiplePreg').checked;
-    const use6p6      = v('sixPlus6').checked;
-    const pMonths     = parseInt(v('parentalMonths').value)||12;
+    const base             = parseInput(v('baseSalary').value);
+    const wh               = parseFloat(v('weeklyHours').value)||40;
+    const year             = parseInt(v('year').value)||2025;
+    const hireDate         = v('hireDate').value;
+    if(!hireDate){
+        v('resultsGrid').className = 'results-grid no-results';
+        v('resultsGrid').innerHTML = '<div class="empty"><div class="empty-icon">📅</div><div class="empty-title">입사일을 입력해 주세요</div><div class="empty-desc">연차 계산에 입사일이 필요합니다</div></div>';
+        return;
+    }
+    const refDate          = v('refDate').value||'';
+    const usedDays         = Math.max(parseFloat(v('leaveDaysUsed').value)||0, 0);
+    const m3               = [parseInput(v('m1').value), parseInput(v('m2').value), parseInput(v('m3').value)];
+    const birthType        = v('birthType').value;              // 'single'|'multiple'|'premature'
+    const priorityBiz      = v('priorityBiz').checked;          // 우선지원대상기업
+    const miscarriageWeeks = parseInt(v('miscarriageWeeks').value)||0;
+    const singleParent     = v('singleParent').checked;         // 한부모 특례
+    const use6p6           = v('sixPlus6').checked;
+    const pMonths          = parseInt(v('parentalMonths').value)||12;
+    const preReduceH       = parseFloat(v('preReduceHours').value)||40;
+    const postReduceH      = parseFloat(v('postReduceHours').value)||40;
+    const reduceMonths     = parseInt(v('reduceMonths').value)||6;
 
     // ── 계산 실행 ──
-    const ow  = calcOrdinaryWage(base, fixedAllowances, wh);
-    const av  = calcAverageWage(m3);
-    const wk  = calcWeeklyAllowance(wh, ow.hourly);
-    const al  = calcAnnualLeave(hireDate, refDate, usedDays);
-    const ala = calcAnnualLeaveAllowance(al.remaining, ow.daily);
-    const mat = calcMaternity(ow.daily, year, multiple);
+    const ow     = calcOrdinaryWage(base, fixedAllowances, wh);
+    const av     = calcAverageWage(m3);
+    const wk     = calcWeeklyAllowance(wh, ow.hourly);
+    const al     = calcAnnualLeave(hireDate, refDate, usedDays);
+    const ala    = calcAnnualLeaveAllowance(al.remaining, ow.daily);
+    const mat    = calcMaternity(ow.daily, year, birthType);
+    const spouse = calcSpouseLeave(ow.daily, priorityBiz);
+    const miscar = calcMiscarriage(miscarriageWeeks, ow.daily, year);
 
     // 평균임금 < 통상임금이면 통상임금으로 대체 (근로기준법 제2조 제2항)
     const effDaily = Math.max(av.daily, ow.daily);
-    const par = calcParental(effDaily, pMonths, use6p6);
-    const mw  = calcMinWage(base, fixedAllowances, varAllowances, wh, year);
+    const par      = calcParental(effDaily, pMonths, use6p6, singleParent);
+    const mw       = calcMinWage(base, fixedAllowances, varAllowances, wh, year);
+    const reduced  = calcReducedHours(ow.monthly, preReduceH, postReduceH, reduceMonths);
 
     logCounter = 0;
     let html = '';
@@ -640,13 +858,16 @@
         {label:'실지급',value:`${fmt(mw.actual)}원/h`},
         {label:mw.ok?'초과':'부족',value:`${fmt(Math.abs(mw.diff))}원/h`,accent:mw.ok}
         ],
-        mw.log) + mwExtra.replace('</div>', '</div>');
+        mw.log);
+    // 진행바를 카드 마지막 </div> 직전에 삽입
+    const mwLast = html.lastIndexOf('</div>');
+    html = html.slice(0, mwLast) + mwExtra + '</div>';
 
     // 7. 출산전후휴가급여
     html += makeCard('', '출산전후휴가급여',
         mat.applied?{cls:'badge-info',text:'상한 적용'}:null,
         `${fmt(mat.actual)}원`,
-        `${mat.leaveDays}일 기준`,
+        `${mat.label} · ${mat.leaveDays}일 기준`,
         [
         {label:'통상임금 기준 총액',value:`${fmt(mat.totalOrd)}원`},
         {label:'사업주 부담',value:`${fmt(mat.empAmt)}원`},
@@ -654,7 +875,33 @@
         ],
         mat.log);
 
-    // 8. 육아휴직급여 (전체 너비)
+    // 8. 배우자 출산휴가 급여 (2025년 20일)
+    html += makeCard('', '배우자 출산휴가 급여',
+        spouse.priorityBiz?{cls:'badge-pass',text:'우선지원기업'}:{cls:'badge-info',text:'대규모기업'},
+        `${fmt(spouse.total)}원`,
+        `${spouse.days}일 기준 (분할 3회 / 출산 후 120일 이내)`,
+        [
+        {label:'고용보험 지원 (10일)',value:spouse.priorityBiz?`${fmt(spouse.govAmt)}원`:'미지원'},
+        {label:'사업주 부담',value:`${fmt(spouse.empAmt)}원`},
+        {label:'우선지원기업 여부',value:spouse.priorityBiz?'✅ 해당':'—'}
+        ],
+        spouse.log);
+
+    // 9. 유산·사산휴가급여 (임신 주수 입력 시)
+    if(miscar){
+        html += makeCard('', '유산·사산휴가 급여',
+        miscar.applied?{cls:'badge-info',text:'상한 적용'}:null,
+        `${fmt(miscar.actual)}원`,
+        `임신 ${miscar.weeks}주 · ${miscar.weekLabel}`,
+        [
+            {label:'휴가 기간',value:`${miscar.days}일`},
+            {label:'통상임금 기준 총액',value:`${fmt(miscar.totalOrd)}원`},
+            {label:'실지급 예상액',value:`${fmt(miscar.actual)}원`,accent:true}
+        ],
+        miscar.log);
+    }
+
+    // 10. 육아휴직급여 (전체 너비)
     const parRows = par.breakdown.map(x=>`
         <tr>
         <td>${x.label}</td>
@@ -691,6 +938,41 @@
         <div class="log-box" id="${lid}">${par.log.join('\n')}</div>
         </div>`;
 
+    // 11. 육아기 근로시간 단축 급여 (단축 시간 입력 시, 전체 너비)
+    if(reduced){
+        const lid = `log_${++logCounter}`;
+        html += `
+        <div class="card full">
+        <div class="card-title">육아기 근로시간 단축 급여 (${reduced.preHours}h→${reduced.postHours}h · ${reduced.months}개월)</div>
+        <div class="card-value">${fmt(reduced.totalIncome)}원<small style="font-size:12px;font-weight:400;color:var(--text2)">/월 총소득</small></div>
+        <div class="card-sub">고용보험 지원 ${fmt(reduced.govPay)}원 + 사업주 비례급여 ${fmt(reduced.workPay)}원</div>
+        <div class="card-rows">
+            <div class="card-row">
+            <span class="card-row-label">단축 시간</span>
+            <span class="card-row-val">${reduced.preHours}h → ${reduced.postHours}h (단축 ${reduced.reduceH}h/주)</span>
+            </div>
+            <div class="card-row">
+            <span class="card-row-label">최초 5시간분 지원 (100%, 상한 200만)</span>
+            <span class="card-row-val accent">${fmt(reduced.pay1)}원/월</span>
+            </div>
+            <div class="card-row">
+            <span class="card-row-label">추가 단축분 지원 (80%, 상한 150만)</span>
+            <span class="card-row-val accent">${fmt(reduced.pay2)}원/월</span>
+            </div>
+            <div class="card-row">
+            <span class="card-row-label">사업주 비례 급여</span>
+            <span class="card-row-val">${fmt(reduced.workPay)}원/월</span>
+            </div>
+            <div class="card-row">
+            <span class="card-row-label">${reduced.months}개월 총 고용보험 지원</span>
+            <span class="card-row-val accent">${fmt(reduced.totalGov)}원</span>
+            </div>
+        </div>
+        <button class="log-toggle" onclick="toggleLog('${lid}')">▸ 계산 과정 보기</button>
+        <div class="log-box" id="${lid}">${reduced.log.join('\n')}</div>
+        </div>`;
+    }
+
     // ── DOM 업데이트 ──
     const grid = v('resultsGrid');
     grid.className = 'results-grid';
@@ -699,6 +981,10 @@
     const ct = v('calcTime');
     ct.style.display='block';
     ct.textContent='마지막 계산: '+new Date().toLocaleTimeString('ko-KR');
+
+    // 면책 고지 표시
+    const notice = v('policyNotice');
+    notice.style.display = 'block';
     }
 
     /* ══════════════════════════════════════════════════════════════
@@ -707,6 +993,26 @@
     document.getElementById('refDate').value = new Date().toISOString().split('T')[0];
     renderAllowances('fixed');
     renderAllowances('var');
+
+    // 헤더 정책기준일 배지를 POLICY_UPDATED 상수에서 자동 주입
+    document.getElementById('policyBadge').textContent = '정책기준: ' + POLICY_UPDATED;
+
+    // 면책 고지 내용 (POLICY_UPDATED 단일 상수 참조)
+    document.getElementById('policyNotice').innerHTML = `
+    <div class="policy-notice">
+        <span class="policy-notice-icon">ℹ️</span>
+        <div class="policy-notice-body">
+        <div class="policy-notice-main">
+            이 계산 결과는 <strong>${POLICY_UPDATED} 기준</strong> 정책 수치를 적용한 <strong>참고용</strong>입니다.
+            실제 지급액은 재직 중인 회사 또는 고용24(ei.go.kr) · 관할 고용센터에서 확인하세요.
+        </div>
+        <div class="policy-notice-sub">
+            📅 다음 업데이트 시점 — 최저임금: 매년 8월 고시 후 반영 &nbsp;·&nbsp;
+            육아지원 급여 상한 · 배우자 출산휴가: 고용보험법 시행령 / 남녀고용평등법 개정 시 반영
+        </div>
+        </div>
+    </div>`;
     </script>
     </body>
     </html>
+    
