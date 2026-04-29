@@ -22,7 +22,6 @@
             --shadow-lg: 0 12px 40px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.06);
             --radius: 14px;
             --radius-sm: 8px;
-
             --cat-basic: #2563eb;
             --cat-basic-bg: #eff6ff;
             --cat-advanced: #7c3aed;
@@ -59,542 +58,192 @@
             align-items: center;
             gap: 32px;
         }
-        .logo {
-            font-size: 1.15rem;
-            font-weight: 900;
-            color: var(--text-primary);
-            letter-spacing: -.02em;
-            white-space: nowrap;
-        }
+        .logo { font-size: 1.15rem; font-weight: 900; color: var(--text-primary); letter-spacing: -.02em; white-space: nowrap; }
         .logo span { color: var(--accent); }
 
-        .search-wrap {
-            flex: 1;
-            max-width: 420px;
-            position: relative;
-        }
+        .search-wrap { flex: 1; max-width: 420px; position: relative; }
         .search-wrap svg {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            width: 16px; height: 16px;
-            pointer-events: none;
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); width: 16px; height: 16px; pointer-events: none;
         }
         .search-wrap input {
-            width: 100%;
-            padding: 9px 16px 9px 40px;
-            border: 1.5px solid var(--border);
-            border-radius: 50px;
-            font-size: 14px;
-            font-family: inherit;
-            background: var(--surface2);
-            color: var(--text-primary);
-            outline: none;
-            transition: border-color .2s, box-shadow .2s;
+            width: 100%; padding: 9px 16px 9px 40px;
+            border: 1.5px solid var(--border); border-radius: 50px;
+            font-size: 14px; font-family: inherit;
+            background: var(--surface2); color: var(--text-primary);
+            outline: none; transition: border-color .2s, box-shadow .2s;
         }
-        .search-wrap input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(37,99,235,.1);
-            background: var(--surface);
-        }
+        .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); background: var(--surface); }
         .search-wrap input::placeholder { color: var(--text-muted); }
 
         /* ── HERO ── */
-        .hero {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 48px 24px 32px;
-        }
-        .hero h1 {
-            font-size: 2rem;
-            font-weight: 900;
-            letter-spacing: -.04em;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-        }
+        .hero { max-width: 1200px; margin: 0 auto; padding: 48px 24px 32px; }
+        .hero h1 { font-size: 2rem; font-weight: 900; letter-spacing: -.04em; color: var(--text-primary); margin-bottom: 6px; }
         .hero p { font-size: .95rem; color: var(--text-secondary); }
 
-        /* ── PROMO / SUPPORT ── */
-        .top-panels {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px 16px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
-        .panel {
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            border-radius: 16px;
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-        }
+        /* ── TOP PANELS ── */
+        .top-panels { max-width: 1200px; margin: 0 auto; padding: 0 24px 16px; display: grid; gap: 12px; }
+        .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
         .panel-body { padding: 16px 16px 14px; }
         .panel-kicker {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 9px;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent);
-            background: var(--accent-light);
-            margin-bottom: 10px;
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 9px; border-radius: 999px;
+            font-size: 11px; font-weight: 700;
+            color: var(--accent); background: var(--accent-light); margin-bottom: 10px;
         }
-        .panel-title {
-            font-size: 1.02rem;
-            font-weight: 800;
-            letter-spacing: -.02em;
-            margin-bottom: 6px;
-        }
-        .panel-desc {
-            color: var(--text-secondary);
-            font-size: .82rem;
-            line-height: 1.55;
-            margin-bottom: 12px;
-        }
-        .store-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-        }
+        .panel-title { font-size: 1.02rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
+        .panel-desc { color: var(--text-secondary); font-size: .82rem; line-height: 1.55; margin-bottom: 12px; }
+
+        /* ── STORE ── */
+        .store-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
         .store-link {
-            display: block;
-            text-decoration: none;
-            color: inherit;
+            display: block; text-decoration: none; color: inherit;
             background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+            border: 1.5px solid var(--border); border-radius: 12px; padding: 12px;
+            transition: transform .18s, box-shadow .18s, border-color .18s;
         }
-        .store-link:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            border-color: rgba(37,99,235,.25);
-        }
-        .store-link.disabled {
-            cursor: default;
-            opacity: .78;
-        }
-        .store-label {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 7px;
-            border-radius: 999px;
-            background: var(--accent-light);
-            color: var(--accent);
-            margin-bottom: 8px;
-        }
-        .store-name {
-            font-size: .9rem;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-        #store-promo-panel .panel-body {
-            padding: 12px 12px 11px;
-        }
-        #store-promo-panel .panel-kicker {
-            margin-bottom: 8px;
-        }
-        #store-promo-panel .store-grid {
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 8px;
-        }
-        #store-promo-panel .store-link {
-            border-radius: 10px;
-            padding: 9px 10px;
-        }
-        #store-promo-panel .store-label {
-            margin-bottom: 6px;
-        }
-        #store-promo-panel .store-name {
-            font-size: .84rem;
-            margin-bottom: 0;
-            line-height: 1.35;
-        }
-        .store-desc {
-            font-size: .76rem;
-            color: var(--text-secondary);
-            line-height: 1.45;
-        }
-        .support-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        .support-note {
-            font-size: .74rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-        .support-section {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px 24px;
-        }
-        .support-form {
-            display: grid;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .support-label {
-            font-size: .78rem;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-        .support-input,
-        .support-textarea,
-        .support-file {
-            width: 100%;
-            font-family: inherit;
-            font-size: .86rem;
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            background: var(--surface2);
-            color: var(--text-primary);
-        }
-        .support-input,
-        .support-file {
-            padding: 10px 12px;
-        }
-        .support-textarea {
-            min-height: 120px;
-            resize: vertical;
-            padding: 11px 12px;
-            line-height: 1.5;
-        }
-        .support-submit {
-            justify-self: start;
-        }
-        .support-placeholder {
-            display: inline-flex;
-            align-items: center;
-            padding: 9px 13px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1.5px dashed var(--border);
-            color: var(--text-muted);
-            background: var(--surface2);
-        }
+        .store-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(37,99,235,.25); }
+        .store-link.disabled { cursor: default; opacity: .78; }
+        .store-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: var(--accent-light); color: var(--accent); margin-bottom: 8px; }
+        .store-name { font-size: .9rem; font-weight: 800; }
+
+        #store-promo-panel .panel-body { padding: 12px 12px 11px; }
+        #store-promo-panel .panel-kicker { margin-bottom: 8px; }
+        #store-promo-panel .store-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+        #store-promo-panel .store-link { border-radius: 10px; padding: 9px 10px; }
+        #store-promo-panel .store-label { margin-bottom: 6px; }
+        #store-promo-panel .store-name { font-size: .84rem; line-height: 1.35; }
+
+        /* ── SUPPORT ── */
+        .support-section { max-width: 1200px; margin: 0 auto; padding: 0 24px 24px; }
+        .support-note { font-size: .74rem; color: var(--text-muted); line-height: 1.5; margin-top: 10px; }
 
         /* ── FILTER TABS ── */
-        .filter-bar {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px 28px;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .filter-bar { max-width: 1200px; margin: 0 auto; padding: 0 24px 28px; display: flex; gap: 8px; flex-wrap: wrap; }
         .filter-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 7px 16px;
-            border-radius: 50px;
-            border: 1.5px solid var(--border);
-            background: var(--surface);
-            font-size: 13px;
-            font-weight: 500;
-            font-family: inherit;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all .18s;
+            display: flex; align-items: center; gap: 6px; padding: 7px 16px;
+            border-radius: 50px; border: 1.5px solid var(--border); background: var(--surface);
+            font-size: 13px; font-weight: 500; font-family: inherit; color: var(--text-secondary);
+            cursor: pointer; transition: all .18s;
         }
         .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-        .filter-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
-        .filter-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: currentColor;
-            opacity: .6;
-        }
-        .filter-btn[data-category="basic"] .filter-dot { background: var(--cat-basic); }
+        .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .filter-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: .6; }
+        .filter-btn[data-category="basic"]    .filter-dot { background: var(--cat-basic); }
         .filter-btn[data-category="advanced"] .filter-dot { background: var(--cat-advanced); }
-        .filter-btn[data-category="salary"] .filter-dot { background: var(--cat-salary); }
-        .filter-btn[data-category="health"] .filter-dot { background: var(--cat-health); }
+        .filter-btn[data-category="salary"]   .filter-dot { background: var(--cat-salary); }
+        .filter-btn[data-category="health"]   .filter-dot { background: var(--cat-health); }
         .filter-btn.active .filter-dot { background: rgba(255,255,255,.7); }
 
-        /* ── MAIN CONTENT ── */
-        .main {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 24px 80px;
-        }
-
+        /* ── MAIN ── */
+        .main { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
         .category-section { margin-bottom: 48px; }
         .category-section:last-child { margin-bottom: 0; }
 
-        .section-head {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 18px;
-        }
-        .section-color-bar {
-            width: 4px;
-            height: 22px;
-            border-radius: 2px;
-        }
-        .basic-section .section-color-bar { background: var(--cat-basic); }
+        .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+        .section-color-bar { width: 4px; height: 22px; border-radius: 2px; }
+        .basic-section    .section-color-bar { background: var(--cat-basic); }
         .advanced-section .section-color-bar { background: var(--cat-advanced); }
-        .salary-section .section-color-bar { background: var(--cat-salary); }
-        .health-section .section-color-bar { background: var(--cat-health); }
+        .salary-section   .section-color-bar { background: var(--cat-salary); }
+        .health-section   .section-color-bar { background: var(--cat-health); }
+        .section-head h2 { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .section-count { margin-left: auto; font-size: 12px; color: var(--text-muted); font-weight: 500; }
 
-        .section-head h2 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .section-count {
-            margin-left: auto;
-            font-size: 12px;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-            gap: 16px;
-        }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
 
         /* ── CARD ── */
         .card {
-            background: var(--surface);
-            border-radius: var(--radius);
-            border: 1.5px solid var(--border);
-            overflow: hidden;
-            cursor: pointer;
+            background: var(--surface); border-radius: var(--radius); border: 1.5px solid var(--border);
+            overflow: hidden; cursor: pointer;
             transition: transform .22s ease, box-shadow .22s ease, border-color .22s;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
-        .card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow-lg);
-            border-color: transparent;
-        }
-        .card.ready:hover { border-color: transparent; }
+        .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: transparent; }
 
         .card-thumb {
-            height: 130px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.8rem;
-            position: relative;
-            overflow: hidden;
+            height: 130px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.8rem; position: relative; overflow: hidden;
         }
-        .basic-section .card-thumb { background: var(--cat-basic-bg); }
+        .basic-section    .card-thumb { background: var(--cat-basic-bg); }
         .advanced-section .card-thumb { background: var(--cat-advanced-bg); }
-        .salary-section .card-thumb { background: var(--cat-salary-bg); }
-        .health-section .card-thumb { background: var(--cat-health-bg); }
+        .salary-section   .card-thumb { background: var(--cat-salary-bg); }
+        .health-section   .card-thumb { background: var(--cat-health-bg); }
+        .card-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
-        .card-thumb img {
-            width: 100%; height: 100%;
-            object-fit: cover;
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 20px;
-            letter-spacing: .03em;
-        }
-        .badge-ready {
-            background: #dcfce7;
-            color: #15803d;
-        }
-        .badge-soon {
-            background: rgba(255,255,255,.85);
-            color: var(--text-muted);
-        }
+        .status-badge { position: absolute; top: 10px; right: 10px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; letter-spacing: .03em; }
+        .badge-ready { background: #dcfce7; color: #15803d; }
+        .badge-soon  { background: rgba(255,255,255,.85); color: var(--text-muted); }
 
         .card-body { padding: 16px 18px 18px; flex: 1; display: flex; flex-direction: column; }
-        .card-title {
-            font-size: .95rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-            letter-spacing: -.02em;
-        }
-        .card-desc {
-            font-size: .8rem;
-            color: var(--text-secondary);
-            line-height: 1.55;
-            flex: 1;
-        }
-        .card-footer {
-            margin-top: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .card-tag {
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 9px;
-            border-radius: 6px;
-        }
-        .basic-section .card-tag { background: var(--cat-basic-bg); color: var(--cat-basic); }
+        .card-title { font-size: .95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; letter-spacing: -.02em; }
+        .card-desc  { font-size: .8rem; color: var(--text-secondary); line-height: 1.55; flex: 1; }
+        .card-footer { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; }
+
+        .card-tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
+        .basic-section    .card-tag { background: var(--cat-basic-bg);    color: var(--cat-basic); }
         .advanced-section .card-tag { background: var(--cat-advanced-bg); color: var(--cat-advanced); }
-        .salary-section .card-tag { background: var(--cat-salary-bg); color: var(--cat-salary); }
-        .health-section .card-tag { background: var(--cat-health-bg); color: var(--cat-health); }
+        .salary-section   .card-tag { background: var(--cat-salary-bg);   color: var(--cat-salary); }
+        .health-section   .card-tag { background: var(--cat-health-bg);   color: var(--cat-health); }
 
         .card-arrow {
-            width: 26px; height: 26px;
-            border-radius: 50%;
+            width: 26px; height: 26px; border-radius: 50%;
             border: 1.5px solid var(--border);
             display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted);
-            transition: all .18s;
+            color: var(--text-muted); transition: all .18s;
         }
-        .card:hover .card-arrow {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #fff;
-        }
+        .card:hover .card-arrow { background: var(--accent); border-color: var(--accent); color: #fff; }
         .card.soon .card-arrow { opacity: 0; }
 
         /* ── EMPTY STATE ── */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            color: var(--text-muted);
-        }
+        .empty-state { text-align: center; padding: 80px 20px; color: var(--text-muted); }
         .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
         .empty-state p { font-size: .95rem; }
 
         /* ── MODAL ── */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(10,14,26,.5);
-            z-index: 500;
+            display: none; position: fixed; inset: 0;
+            background: rgba(10,14,26,.5); z-index: 500;
             backdrop-filter: blur(4px);
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            align-items: center; justify-content: center; padding: 20px;
         }
         .modal-overlay.open { display: flex; }
-
         .modal {
-            background: var(--surface);
-            border-radius: 20px;
-            width: 100%;
-            max-width: 520px;
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
+            background: var(--surface); border-radius: 20px; width: 100%; max-width: 520px;
+            box-shadow: var(--shadow-lg); overflow: hidden;
             animation: modalIn .22s cubic-bezier(.34,1.56,.64,1);
         }
         @keyframes modalIn {
             from { opacity: 0; transform: scale(.93) translateY(8px); }
             to   { opacity: 1; transform: scale(1)  translateY(0); }
         }
-
-        .modal-thumb {
-            height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            position: relative;
-        }
+        .modal-thumb { height: 180px; display: flex; align-items: center; justify-content: center; font-size: 4rem; }
         .modal-thumb img { width: 100%; height: 100%; object-fit: cover; }
-
         .modal-body { padding: 24px 28px 28px; }
-        .modal-cat {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .modal-title {
-            font-size: 1.4rem;
-            font-weight: 900;
-            letter-spacing: -.03em;
-            margin-bottom: 12px;
-        }
-        .modal-desc {
-            font-size: .875rem;
-            color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: 24px;
-        }
+        .modal-cat   { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+        .modal-title { font-size: 1.4rem; font-weight: 900; letter-spacing: -.03em; margin-bottom: 12px; }
+        .modal-desc  { font-size: .875rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 24px; }
         .modal-actions { display: flex; gap: 10px; }
 
         .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 11px 20px;
-            border-radius: 50px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            transition: all .18s;
+            display: inline-flex; align-items: center; gap: 6px; padding: 11px 20px;
+            border-radius: 50px; font-size: 14px; font-weight: 600; font-family: inherit;
+            cursor: pointer; border: none; transition: all .18s;
         }
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-            flex: 1;
-            justify-content: center;
-        }
+        .btn-primary { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
         .btn-primary:hover { background: #1d4ed8; }
-        .btn-primary:disabled {
-            background: var(--border);
-            color: var(--text-muted);
-            cursor: not-allowed;
-        }
-        .btn-ghost {
-            background: var(--surface2);
-            color: var(--text-secondary);
-            border: 1.5px solid var(--border);
-        }
+        .btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+        .btn-ghost { background: var(--surface2); color: var(--text-secondary); border: 1.5px solid var(--border); }
         .btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
 
         /* ── FOOTER ── */
-        footer {
-            text-align: center;
-            padding: 24px;
-            color: var(--text-muted);
-            font-size: .8rem;
-            border-top: 1px solid var(--border);
-            background: var(--surface);
-        }
+        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: .8rem; border-top: 1px solid var(--border); background: var(--surface); }
 
         /* ── RESPONSIVE ── */
         @media (max-width: 600px) {
             .header-inner { gap: 12px; }
             .hero { padding: 32px 16px 24px; }
             .hero h1 { font-size: 1.5rem; }
-            .top-panels {
-                grid-template-columns: 1fr;
-                padding-left: 16px;
-                padding-right: 16px;
-            }
-            .filter-bar, .main, .support-section { padding-left: 16px; padding-right: 16px; }
+            .top-panels, .filter-bar, .main, .support-section { padding-left: 16px; padding-right: 16px; }
             .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         }
     </style>
@@ -620,27 +269,18 @@
     <p>급여부터 건강까지, 자주 쓰는 계산기를 한 곳에서</p>
 </div>
 
+<!-- TOP PANELS -->
 <section class="top-panels">
     <div class="panel" id="store-promo-panel"></div>
 </section>
 
 <!-- FILTER -->
 <div class="filter-bar">
-    <button class="filter-btn active" data-category="all">
-        <span>전체</span>
-    </button>
-    <button class="filter-btn" data-category="basic">
-        <span class="filter-dot"></span>기본 계산기
-    </button>
-    <button class="filter-btn" data-category="advanced">
-        <span class="filter-dot"></span>고급 계산기
-    </button>
-    <button class="filter-btn" data-category="salary">
-        <span class="filter-dot"></span>급여 계산기
-    </button>
-    <button class="filter-btn" data-category="health">
-        <span class="filter-dot"></span>건강 계산기
-    </button>
+    <button class="filter-btn active" data-category="all"><span>전체</span></button>
+    <button class="filter-btn" data-category="basic"><span class="filter-dot"></span>기본 계산기</button>
+    <button class="filter-btn" data-category="advanced"><span class="filter-dot"></span>고급 계산기</button>
+    <button class="filter-btn" data-category="salary"><span class="filter-dot"></span>급여 계산기</button>
+    <button class="filter-btn" data-category="health"><span class="filter-dot"></span>건강 계산기</button>
 </div>
 
 <!-- MAIN -->
@@ -671,59 +311,48 @@
 </div>
 
 <script>
-// ── 데이터 ──────────────────────────────────────────────
+// ── 설정 ──────────────────────────────────────────────
 const smartStores = [
-    {
-        name: "스마트스토어 1",
-        label: "대표 스토어",
-        desc: "대표 상품 또는 주력 브랜드 스토어 링크를 연결하세요.",
-        url: ""
-    },
-    {
-        name: "스마트스토어 2",
-        label: "추가 스토어",
-        desc: "별도 카테고리나 두 번째 스토어가 있다면 함께 노출할 수 있습니다.",
-        url: ""
-    }
+    { name: "스마트스토어 1", label: "대표 스토어", url: "" },
+    { name: "스마트스토어 2", label: "추가 스토어", url: "" }
 ];
 
+// ✅ 수정: 올바른 구글폼 URL (프리필 없이 바로 열기)
 const supportConfig = {
-    contactUrl: "",
-    reportUrl: "",
-    contactEmail: ""
+    googleFormUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd-F_LXK5esFltWrCGySJynlfXoi622M8vLrOxokcPUB8At1w/viewform"
 };
 
+// ── 카테고리 ──────────────────────────────────────────
 const categories = [
-    { id: "basic",    name: "기본 계산기",   color: "#2563eb" },
-    { id: "advanced", name: "고급 계산기",   color: "#7c3aed" },
-    { id: "salary",   name: "급여 계산기",   color: "#059669" },
-    { id: "health",   name: "건강 계산기",   color: "#dc2626" },
+    { id: "basic",    name: "기본 계산기",  color: "#2563eb" },
+    { id: "advanced", name: "고급 계산기",  color: "#7c3aed" },
+    { id: "salary",   name: "급여 계산기",  color: "#059669" },
+    { id: "health",   name: "건강 계산기",  color: "#dc2626" },
 ];
 
+// ── 계산기 목록 ───────────────────────────────────────
 const calculators = [
     // 기본
-    { id:1, title:"베이직1 계산기",   desc:"5가지 컬러 테마로 기본 사칙연산과 평형 계산 제공", detail:"그레이·코랄·퍼플·블루·민트 5가지 색상 테마를 지원합니다. 사칙연산 외 평형 계산과 메모리 기능이 포함되어 있습니다.", icon:"🧮", category:"basic", url:"calculators/calculator_Basic_A/index.html", ready:true  },
-    { id:2, title:"베이직2 계산기",   desc:"슬림 디자인의 기본 계산기. 5가지 색상 테마 지원",   detail:"심플하고 슬림한 디자인의 기본 계산기입니다. 그레이·코랄·퍼플·블루·민트 색상을 선택할 수 있습니다.", icon:"🔢", category:"basic", url:"calculators/calculator_Basic_B/index.html", ready:true  },
-    { id:3, title:"디데이 계산기",    desc:"중요한 날까지 남은 일수를 실시간으로 계산",          detail:"시작일과 목표일을 설정하면 남은 일·시·분·초를 실시간으로 표시합니다. 여러 이벤트를 동시에 관리할 수 있습니다.", icon:"📅", category:"basic", url:"calculators/calculator_D-day/index.html",   ready:true },
-    { id:4, title:"증감율 계산기",    desc:"두 값 사이의 증가·감소 비율을 즉시 계산",            detail:"이전 값과 현재 값을 입력하면 증가율 또는 감소율을 자동으로 계산합니다. 매출·주가·성적 비교에 유용합니다.", icon:"📈", category:"basic", url:"calculators/calculator_Change_rate/index.html", ready:true },
-    { id:5, title:"나이 계산기",      desc:"생년월일 입력으로 만 나이·세는 나이 동시 확인",      detail:"생년월일을 입력하면 만 나이와 세는 나이를 동시에 표시합니다. 2023년 만 나이 통일법 기준을 반영합니다.", icon:"👶", category:"basic", url:"calculators/calculator_Age/index.html",    ready:true },
-    { id:16, title:"할인 계산기",     desc:"할인 금액·할인율·원래 가격을 3가지 방식으로 계산",   detail:"정가+할인율로 최종 가격을 계산하고, 정가+할인가로 할인율을 계산하며, 할인가+할인율로 원래 가격을 역산할 수 있습니다.", icon:"🏷️", category:"basic", url:"calculators/calculator_Discount/index.html", ready:true },
+    { id:1,  title:"베이직1 계산기",           desc:"5가지 컬러 테마로 기본 사칙연산과 평형 계산 제공",         detail:"그레이·코랄·퍼플·블루·민트 5가지 색상 테마를 지원합니다. 사칙연산 외 평형 계산과 메모리 기능이 포함되어 있습니다.",                                                                                                                  icon:"🧮", category:"basic",    url:"calculators/calculator_Basic_A/index.html",     ready:true  },
+    { id:2,  title:"베이직2 계산기",           desc:"슬림 디자인의 기본 계산기. 5가지 색상 테마 지원",          detail:"심플하고 슬림한 디자인의 기본 계산기입니다. 그레이·코랄·퍼플·블루·민트 색상을 선택할 수 있습니다.",                                                                                                                                    icon:"🔢", category:"basic",    url:"calculators/calculator_Basic_B/index.html",     ready:true  },
+    { id:3,  title:"디데이 계산기",            desc:"중요한 날까지 남은 일수를 실시간으로 계산",                 detail:"시작일과 목표일을 설정하면 남은 일·시·분·초를 실시간으로 표시합니다. 여러 이벤트를 동시에 관리할 수 있습니다.",                                                                                                                            icon:"📅", category:"basic",    url:"calculators/calculator_D-day/index.html",        ready:true  },
+    { id:4,  title:"증감율 계산기",            desc:"두 값 사이의 증가·감소 비율을 즉시 계산",                   detail:"이전 값과 현재 값을 입력하면 증가율 또는 감소율을 자동으로 계산합니다. 매출·주가·성적 비교에 유용합니다.",                                                                                                                                icon:"📈", category:"basic",    url:"calculators/calculator_Chang_rate/index.html",  ready:true  },
+    { id:5,  title:"나이 계산기",              desc:"생년월일 입력으로 만 나이·세는 나이 동시 확인",             detail:"생년월일을 입력하면 만 나이와 세는 나이를 동시에 표시합니다. 2023년 만 나이 통일법 기준을 반영합니다.",                                                                                                                                  icon:"👶", category:"basic",    url:"calculators/calculator_Age/index.html",         ready:true  },
+    { id:16, title:"할인 계산기",              desc:"할인 금액·할인율·원래 가격을 3가지 방식으로 계산",          detail:"정가+할인율로 최종 가격을 계산하고, 정가+할인가로 할인율을 계산하며, 할인가+할인율로 원래 가격을 역산할 수 있습니다.",                                                                                                                    icon:"🏷️", category:"basic",    url:"calculators/calculator_Discount/index.html",    ready:true  },
     // 고급
-    { id:6, title:"방정식 계산기",      desc:"1·2차 방정식의 근을 자동으로 풀어주는 계산기",          detail:"1차·2차 방정식의 계수를 입력하면 근의 공식을 통해 해를 자동으로 구해줍니다. 복소수 근도 처리합니다.", icon:"🧮", category:"advanced", url:"calculators/equation.html", ready:false },
-    { id:7, title:"사채·전환사채 계산기", desc:"사채 발행가액, 이자율, 전환사채 관련 계산",            detail:"액면금액·표시이자율·유효이자율을 입력하면 발행가액과 기간별 상각표를 자동으로 생성합니다. 회계사 필수 도구.", icon:"💼", category:"advanced", url:"calculators/bond.html",     ready:false },
-    { id:8, title:"이자 계산기",         desc:"단리·복리 이자와 원리금 상환 스케줄 계산",              detail:"원금·이자율·기간을 입력하면 단리/복리 이자를 계산하고, 대출 원리금 균등상환 스케줄표를 출력합니다.", icon:"💰", category:"advanced", url:"calculators/calculator_Interest/index.html", ready:true },
-    { id:9, title:"양력·음력 변환기",    desc:"양력↔음력 날짜를 간편하게 상호 변환",                  detail:"양력 날짜를 음력으로 또는 음력을 양력으로 변환합니다. 윤달 처리와 24절기 표시 기능을 포함합니다.", icon:"🌙", category:"advanced", url:"calculators/calculator_DualCalendar/index.html",   ready:true },
+    { id:6,  title:"방정식 계산기",            desc:"1·2차 방정식의 근을 자동으로 풀어주는 계산기",              detail:"1차·2차 방정식의 계수를 입력하면 근의 공식을 통해 해를 자동으로 구해줍니다. 복소수 근도 처리합니다.",                                                                                                                                    icon:"🧮", category:"advanced", url:"calculators/equation.html",                     ready:false },
+    { id:7,  title:"사채·전환사채 계산기",     desc:"사채 발행가액, 이자율, 전환사채 관련 계산",                 detail:"액면금액·표시이자율·유효이자율을 입력하면 발행가액과 기간별 상각표를 자동으로 생성합니다. 회계사 필수 도구.",                                                                                                                                icon:"💼", category:"advanced", url:"calculators/bond.html",                          ready:false },
+    { id:8,  title:"이자 계산기",              desc:"단리·복리 이자와 원리금 상환 스케줄 계산",                   detail:"원금·이자율·기간을 입력하면 단리/복리 이자를 계산하고, 대출 원리금 균등상환 스케줄표를 출력합니다.",                                                                                                                                        icon:"💰", category:"advanced", url:"calculators/calculator_Interest/index.html",     ready:true  },
+    { id:9,  title:"양력·음력 변환기",         desc:"양력↔음력 날짜를 간편하게 상호 변환",                       detail:"양력 날짜를 음력으로 또는 음력을 양력으로 변환합니다. 윤달 처리와 24절기 표시 기능을 포함합니다.",                                                                                                                                          icon:"🌙", category:"advanced", url:"calculators/calculator_DualCalendar/index.html", ready:true  },
     // 급여
-    { id:10, title:"소득세 계산기",    desc:"연봉·시급 입력으로 세후 실수령액 즉시 계산",    detail:"연봉 또는 월급을 입력하면 4대 보험료·소득세·주민세를 공제한 실수령액을 계산합니다. 2025년 기준 세율 반영.", icon:"💵", category:"salary", url:"calculators/calculator_TaxPlatform/index.html",   ready:true },
-    // id:11 퇴직급여 계산기 
-    { id:11, title:"퇴직급여 계산기", desc:"퇴직금 및 퇴직연금(DB·DC) 예상액 계산", detail:"...", icon:"🏦", category:"salary", url:"calculators/calculator_Retire/index.html", ready:true },
-    { id:12, title:"4대 보험 계산기", desc:"국민연금·건강·고용·산재보험 부담금 계산",      detail:"월 보수액을 입력하면 국민연금·건강보험·장기요양·고용보험의 근로자 부담금과 회사 부담금을 계산합니다.", icon:"🏥", category:"salary", url:"calculators/calculator_4insurance/index.html", ready:true },
-    { id:17, title:"급여 노무 계산기 플랫폼", desc:"평균임금·통상임금·연차수당 등 급여·노무 항목을 통합 계산", detail:"평균임금, 통상임금, 연차휴가 및 연차수당, 주휴수당, 출산휴가급여와 육아휴직급여 등 다양한 급여·노무 항목을 한 곳에서 간편하게 계산할 수 있습니다. 최신 기준을 반영해 실무에 바로 활용할 수 있는 통합 계산기입니다.", icon:"🧾", category:"salary", url:"calculators/calculator_PayLab/index.html", ready:true },
-     // 건강
-    { id:13, title:"비만도(BMI) 계산기",     desc:"키·몸무게로 비만도 측정 및 표준 체중 계산",   detail:"키와 체중을 입력하면 BMI 지수를 계산하고, 저체중·정상·과체중·비만을 판정합니다. 이상 체중 범위도 함께 안내합니다.", icon:"⚖️", category:"health", url:"calculators/calculator_BMI/index.html",        ready:true },
-    { id:14, title:"배란일 계산기",     desc:"생리 주기 기반 배란일·임신 가능일 예측",      detail:"마지막 생리 시작일과 주기를 입력하면 배란 예정일과 임신 가능 기간을 계산합니다. 다음 3회 주기까지 예측합니다.", icon:"📆", category:"health", url:"calculators/calculator_LunaCycle/index.html", ready:true },
-    { id:15, title:"칼로리 & 다이어트 계산기", desc:"BMR + 활동량으로 하루 필요 칼로리와 목표별 식단 계산", detail:"성별·나이·키·몸무게와 활동량을 입력하면 기초대사량(BMR)과 하루 필요 칼로리를 계산합니다. 감량·유지·증량 목표별 권장 칼로리와 목표 대비 섭취 그래프를 제공합니다.", icon:"🔥", category:"health", url:"calculators/calculator_Calorie/index.html", ready:true },
-    
+    { id:10, title:"소득세 계산기",            desc:"연봉·시급 입력으로 세후 실수령액 즉시 계산",                detail:"연봉 또는 월급을 입력하면 4대 보험료·소득세·주민세를 공제한 실수령액을 계산합니다. 2025년 기준 세율 반영.",                                                                                                                                icon:"💵", category:"salary",   url:"calculators/calculator_TaxPlatform/index.html", ready:true  },
+    { id:11, title:"퇴직급여 계산기",          desc:"퇴직금 및 퇴직연금(DB·DC) 예상액 계산",                     detail:"입사일·퇴직일·최종 3개월 평균임금을 입력하면 법정 퇴직금을 계산합니다. DB형/DC형 퇴직연금 비교도 지원합니다.",                                                                                                                            icon:"🏦", category:"salary",   url:"calculators/calculator_Retire/index.html",      ready:true  },
+    { id:12, title:"4대 보험 계산기",          desc:"국민연금·건강·고용·산재보험 부담금 계산",                    detail:"월 보수액을 입력하면 국민연금·건강보험·장기요양·고용보험의 근로자 부담금과 회사 부담금을 계산합니다.",                                                                                                                                      icon:"🏥", category:"salary",   url:"calculators/calculator_4insurance/index.html",  ready:true  },
+    { id:17, title:"급여 노무 계산기 플랫폼",  desc:"평균임금·통상임금·연차수당 등 급여·노무 항목을 통합 계산",  detail:"평균임금, 통상임금, 연차휴가 및 연차수당, 주휴수당, 출산휴가급여와 육아휴직급여 등 다양한 급여·노무 항목을 한 곳에서 간편하게 계산할 수 있습니다. 최신 기준을 반영해 실무에 바로 활용할 수 있는 통합 계산기입니다.",                icon:"🧾", category:"salary",   url:"calculators/calculator_PayLab/index.html",      ready:true  },
+    // 건강
+    { id:13, title:"비만도(BMI) 계산기",       desc:"키·몸무게로 비만도 측정 및 표준 체중 계산",                 detail:"키와 체중을 입력하면 BMI 지수를 계산하고, 저체중·정상·과체중·비만을 판정합니다. 이상 체중 범위도 함께 안내합니다.",                                                                                                                        icon:"⚖️", category:"health",   url:"calculators/calculator_BMI/index.html",         ready:true  },
+    { id:14, title:"배란일 계산기",            desc:"생리 주기 기반 배란일·임신 가능일 예측",                     detail:"마지막 생리 시작일과 주기를 입력하면 배란 예정일과 임신 가능 기간을 계산합니다. 다음 3회 주기까지 예측합니다.",                                                                                                                            icon:"📆", category:"health",   url:"calculators/calculator_LunaCycle/index.html",   ready:true  },
+    { id:15, title:"칼로리 & 다이어트 계산기", desc:"BMR + 활동량으로 하루 필요 칼로리와 목표별 식단 계산",       detail:"성별·나이·키·몸무게와 활동량을 입력하면 기초대사량(BMR)과 하루 필요 칼로리를 계산합니다. 감량·유지·증량 목표별 권장 칼로리와 목표 대비 섭취 그래프를 제공합니다.",                                                                      icon:"🔥", category:"health",   url:"calculators/calculator_Calorie/index.html",     ready:true  },
 ];
 
 // ── 렌더링 ──────────────────────────────────────────────
@@ -732,94 +361,50 @@ function getCatMeta(catId) {
 }
 
 function renderTopPanels() {
-    const storePanel = document.getElementById('store-promo-panel');
+    const storePanel   = document.getElementById('store-promo-panel');
     const supportPanel = document.getElementById('support-panel');
 
+    // 스토어 패널
     storePanel.innerHTML = `
         <div class="panel-body">
             <div class="panel-kicker">스토어 홍보</div>
             <div class="store-grid">
-                ${smartStores.map(store => {
-                    if (!store.url) {
-                        return `
-                            <div class="store-link disabled">
-                                <div class="store-label">${store.label}</div>
-                                <div class="store-name">${store.name}</div>
-                            </div>`;
-                    }
-
-                    return `
-                        <a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
-                            <div class="store-label">${store.label}</div>
-                            <div class="store-name">${store.name}</div>
-                        </a>`;
-                }).join('')}
+                ${smartStores.map(store => store.url
+                    ? `<a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
+                           <div class="store-label">${store.label}</div>
+                           <div class="store-name">${store.name}</div>
+                       </a>`
+                    : `<div class="store-link disabled">
+                           <div class="store-label">${store.label}</div>
+                           <div class="store-name">${store.name}</div>
+                       </div>`
+                ).join('')}
             </div>
         </div>`;
 
-    const contactLink = supportConfig.contactUrl || (supportConfig.contactEmail ? `mailto:${supportConfig.contactEmail}` : "");
+    // 문의 패널
     supportPanel.innerHTML = `
         <div class="panel-body">
             <div class="panel-kicker">문의 접수</div>
-            <div class="panel-title">문의 내용 작성 + 캡처 파일 첨부</div>
-            <div class="panel-desc">아래에서 문의 내용을 입력하고 캡처 파일을 첨부할 수 있습니다. 제출하면 설정된 문의 채널(폼 링크 또는 이메일)로 바로 이동합니다.</div>
-            <form class="support-form" id="support-form">
-                <div>
-                    <label class="support-label" for="support-subject">문의 제목</label>
-                    <input class="support-input" id="support-subject" type="text" placeholder="예) 계산 결과가 다르게 보여요" required>
-                </div>
-                <div>
-                    <label class="support-label" for="support-message">문의 내용</label>
-                    <textarea class="support-textarea" id="support-message" placeholder="문제 화면, 입력값, 발생 시점 등을 자세히 적어주세요." required></textarea>
-                </div>
-                <div>
-                    <label class="support-label" for="support-files">첨부 파일 (캡처, 로그 등)</label>
-                    <input class="support-file" id="support-files" type="file" accept="image/*,.pdf,.txt,.log" multiple>
-                </div>
-                <button class="btn btn-primary support-submit" type="submit">문의 접수 보내기</button>
-            </form>
-            <div class="support-note">첨부 파일은 대상 폼/메일 화면에서 최종 전송됩니다.</div>
+            <div class="panel-title">불편한 점이나 개선 아이디어를 알려주세요</div>
+            <div class="panel-desc">버그 신고, 기능 제안, 사용 문의 등 소중한 의견을 남겨 주시면 더 나은 계산기를 만드는 데 반영하겠습니다.</div>
+            <button class="btn btn-primary" id="open-form-btn" style="width:100%; justify-content:center;">
+                문의하기 →
+            </button>
+            <p class="support-note">버튼을 누르면 구글폼이 새 탭에서 열립니다.</p>
         </div>`;
 
-    initSupportForm(contactLink);
-}
-
-function initSupportForm(contactLink) {
-    const form = document.getElementById('support-form');
-    if (!form) return;
-
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-
-        const subject = document.getElementById('support-subject').value.trim();
-        const message = document.getElementById('support-message').value.trim();
-        const fileInput = document.getElementById('support-files');
-        const attachedFiles = Array.from(fileInput.files || []).map(file => `- ${file.name}`);
-
-        if (!subject || !message) return;
-
-        if (contactLink) {
-            if (contactLink.startsWith('mailto:')) {
-                const bodyLines = [
-                    message,
-                    "",
-                    "[첨부 예정 파일]",
-                    attachedFiles.length ? attachedFiles.join("\n") : "- 없음"
-                ];
-                window.location.href = `${contactLink}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
-                return;
-            }
-
-            window.open(contactLink, '_blank', 'noopener,noreferrer');
-            alert('문의 폼이 새 탭에서 열렸습니다. 방금 입력한 내용과 첨부 파일을 해당 폼에 붙여 넣어 접수해 주세요.');
+    document.getElementById('open-form-btn').addEventListener('click', () => {
+        const { googleFormUrl } = supportConfig;
+        if (!googleFormUrl) {
+            alert('구글폼 URL이 설정되지 않았습니다.');
             return;
         }
-
-        alert('현재 문의 접수 채널을 준비 중입니다.');
+        window.open(googleFormUrl, '_blank', 'noopener,noreferrer');
     });
 }
 
-function renderCard(calc, sectionClass) {
+function renderCard(calc) {
     const thumb = calc.image
         ? `<img src="${calc.image}" alt="${calc.title}" onerror="this.parentElement.innerHTML='${calc.icon}'">`
         : calc.icon;
@@ -847,15 +432,12 @@ function renderCard(calc, sectionClass) {
 
 function renderAll(list, activeCategory) {
     const container = document.getElementById('main-container');
-
     if (!list.length) {
         container.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>검색 결과가 없습니다</p></div>`;
         return;
     }
-
     const filtered = activeCategory === 'all' ? categories : categories.filter(c => c.id === activeCategory);
     let html = '';
-
     filtered.forEach(cat => {
         const items = list.filter(c => c.category === cat.id);
         if (!items.length) return;
@@ -867,11 +449,10 @@ function renderAll(list, activeCategory) {
                     <span class="section-count">${items.filter(c=>c.ready).length}/${items.length} 사용 가능</span>
                 </div>
                 <div class="card-grid">
-                    ${items.map(c => renderCard(c, cat.id + '-section')).join('')}
+                    ${items.map(c => renderCard(c)).join('')}
                 </div>
             </section>`;
     });
-
     container.innerHTML = html;
 }
 
@@ -881,10 +462,8 @@ let currentSearch = '';
 
 function getFiltered() {
     return calculators.filter(c => {
-        const matchCat = currentFilter === 'all' || c.category === currentFilter;
-        const matchSearch = !currentSearch ||
-            c.title.includes(currentSearch) ||
-            c.desc.includes(currentSearch);
+        const matchCat    = currentFilter === 'all' || c.category === currentFilter;
+        const matchSearch = !currentSearch || c.title.includes(currentSearch) || c.desc.includes(currentSearch);
         return matchCat && matchSearch;
     });
 }
@@ -908,13 +487,13 @@ document.getElementById('search-input').addEventListener('input', e => {
 });
 
 // ── 모달 ──────────────────────────────────────────────
-const overlay   = document.getElementById('modal-overlay');
-const modalThumb= document.getElementById('modal-thumb');
-const modalCat  = document.getElementById('modal-cat');
-const modalTitle= document.getElementById('modal-title');
-const modalDesc = document.getElementById('modal-desc');
-const openBtn   = document.getElementById('modal-open-btn');
-const closeBtn2 = document.getElementById('modal-close-btn');
+const overlay    = document.getElementById('modal-overlay');
+const modalThumb = document.getElementById('modal-thumb');
+const modalCat   = document.getElementById('modal-cat');
+const modalTitle = document.getElementById('modal-title');
+const modalDesc  = document.getElementById('modal-desc');
+const openBtn    = document.getElementById('modal-open-btn');
+const closeBtn2  = document.getElementById('modal-close-btn');
 
 function openModal(calc) {
     const cat = getCatMeta(calc.category);
@@ -922,16 +501,13 @@ function openModal(calc) {
         ? `<img src="${calc.image}" alt="${calc.title}" onerror="this.parentElement.innerHTML='${calc.icon}'">`
         : calc.icon;
     modalThumb.style.background = `var(--cat-${calc.category}-bg)`;
-
-    modalCat.style.color = cat.color;
-    modalCat.textContent = cat.name;
+    modalCat.style.color   = cat.color;
+    modalCat.textContent   = cat.name;
     modalTitle.textContent = calc.title;
-    modalDesc.textContent = calc.detail || calc.desc;
-
-    openBtn.disabled = !calc.ready;
+    modalDesc.textContent  = calc.detail || calc.desc;
+    openBtn.disabled    = !calc.ready;
     openBtn.textContent = calc.ready ? '계산기 열기' : '준비 중입니다';
-    openBtn.onclick = calc.ready ? () => { window.location.href = calc.url; } : null;
-
+    openBtn.onclick     = calc.ready ? () => { window.location.href = calc.url; } : null;
     overlay.classList.add('open');
 }
 
@@ -944,7 +520,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 document.addEventListener('click', e => {
     const card = e.target.closest('.card');
     if (!card) return;
-    const id = parseInt(card.dataset.id);
+    const id   = parseInt(card.dataset.id);
     const calc = calculators.find(c => c.id === id);
     if (calc) openModal(calc);
 });
