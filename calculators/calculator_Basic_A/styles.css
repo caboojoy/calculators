@@ -34,7 +34,7 @@ body {
     padding: 10px;
     padding-bottom: 15px;
     margin-bottom: 0px;
-    margin-top: 35px;
+    margin-top: 14px;
     border-radius: 5px;
     width: 100%;
 }
@@ -58,15 +58,15 @@ body {
 }
 
 .settings {
-    margin-top: 30px;
-    margin-bottom: 30px;
+    margin-top: 16px;
+    margin-bottom: 16px;
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     font-size: 1rem;
     width: 100%;
-    gap: 8px;
+    gap: 6px;
 }
 
 .setting-block {
@@ -79,7 +79,7 @@ body {
 /* 라벨 텍스트를 진하게 설정 */
 .setting-block label {
     font-weight: bold;
-    font-size: 1rem;
+    font-size: 0.92rem;
     color: inherit;
 }
 
@@ -87,10 +87,10 @@ body {
 #rounding-method,
 #color-select {
     width: 100%;
-    padding: 7px;
+    padding: 6px;
     border-radius: 5px;
     border: none;
-    font-size: 1rem;
+    font-size: 0.92rem;
 }
 
 .buttons {
@@ -98,12 +98,13 @@ body {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
     width: 100%;
+    grid-auto-rows: minmax(50px, auto); /* 행 높이 자동 조정 */
 }
 
 /* 전체 버튼 공통 스타일 */
 button {
-    padding: 12px;
-    font-size: 1.4rem;
+    padding: 10px 6px;
+    font-size: 1rem;
     border: none;
     background-color: #4a4a4a;
     color: white;
@@ -121,6 +122,7 @@ button:hover {
     font-size: 1rem;
 }
 
+/* 모바일 환경 최적화 */
 @media (max-width: 480px) {
     .calculator {
         width: 100%;
@@ -129,37 +131,58 @@ button:hover {
         padding: 14px 12px;
     }
 
-    .display {
-        margin-top: 14px;
+    .buttons {
+        gap: 6px; /* 버튼 간격 축소 */
     }
 
     button {
-        font-size: 1rem;
-        padding: 10px 6px;
+        font-size: 1.1rem;
+        padding: 14px 8px; /* 패딩 조정 */
+        min-height: 50px; /* 최소 높이 보장 */
     }
 
-    .settings {
-        margin-top: 16px;
-        margin-bottom: 16px;
-        gap: 6px;
-    }
-
-    .setting-block label {
-        font-size: 0.92rem;
-    }
-
-    #decimal-places,
-    #rounding-method,
-    #color-select {
-        font-size: 0.92rem;
-        padding: 6px;
-    }
-
+        /* 숫자와 사칙연산 기호 버튼을 진하게 */
     button[data-value],
     button[data-action="appendDoubleZero"],
     button[data-action="appendDecimal"],
     button[data-action="operate"] {
-        font-size: 1.45rem;
+        font-weight: bold;
+        font-size: 2rem;
+    }
+
+    /* 작은 텍스트 버튼 */
+    .small-text {
+        font-size: 0.85rem;
+        padding: 10px 4px;
+    }
+
+    /* 디스플레이 크기 조정 */
+    #main-display {
+        font-size: 2rem;
+        height: 50px;
+    }
+
+    #sub-display {
+        font-size: 1rem;
+        height: 25px;
+    }
+}
+
+/* 매우 작은 화면 (320px 이하) */
+@media (max-width: 360px) {
+    button {
+        font-size: 1rem;
+        padding: 12px 6px;
+        min-height: 45px;
+    }
+
+    button[data-value],
+    button[data-action="operate"] {
+        font-size: 1.3rem;
+    }
+
+    .small-text {
+        font-size: 0.75rem;
     }
 }
 
@@ -178,13 +201,11 @@ button[data-action="appendDecimal"]:hover {
     background-color: #f0f0f0;
 }
 
-/* 숫자와 사칙연산 기호 버튼을 진하게 */
-button[data-value],
-button[data-action="appendDoubleZero"],
-button[data-action="appendDecimal"],
+/* 연산 기호만 별도로 더 크고 굵게 설정 */
 button[data-action="operate"] {
-    font-weight: bold;
-    font-size: 1.7rem;
+    font-size: 2.5rem; /* 연산 기호만 더 크게 */
+    font-weight: 900; /* 연산 기호만 더 굵게 */
+    line-height: 1; /* 버튼 내 정렬 조정 */
 }
 
 /* 숫자 외 기능 버튼 */

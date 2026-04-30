@@ -1,265 +1,548 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>근로소득 계산기</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    :root { --accent: #3B82F6; }
-    body  { background: radial-gradient(ellipse 70% 40% at 50% 0%, rgba(59,130,246,0.07) 0%, var(--bg) 60%); }
+    :root { --accent: #3D7EFF; }
+
+    /* 4대보험 자동계산 블록 */
+    .ins-block {
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-sm);
+      padding: 14px 16px;
+      margin-top: 4px;
+    }
+
+    .ins-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.83rem;
+    }
+    .ins-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .ins-row:first-child { padding-top: 0; }
+
+    .ins-name { color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+    .ins-rate {
+      font-size: 0.68rem; font-family: var(--mono);
+      background: var(--accent-dim); color: var(--accent);
+      padding: 1px 6px; border-radius: 3px;
+    }
+    .ins-amt  { font-family: var(--mono); font-size: 0.83rem; font-weight: 500; }
+
+    .ins-total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-hi);
+      font-size: 0.87rem;
+    }
+    .ins-total-row .it-lbl { font-weight: 600; color: var(--text); }
+    .ins-total-row .it-val { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+
+    .ins-limit-note {
+      margin-top: 8px;
+      font-size: 0.70rem;
+      color: var(--text-3);
+      line-height: 1.5;
+    }
+
+    .mode-tabs {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--r-sm);
+      padding: 3px;
+      gap: 3px;
+    }
+    .mode-tab {
+      flex: 1; padding: 7px;
+      border-radius: 5px; border: none;
+      font-family: var(--font); font-size: 0.81rem;
+      cursor: pointer; transition: all 0.15s;
+      background: transparent; color: var(--text-2);
+    }
+    .mode-tab.active {
+      background: var(--card-hi);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    /* 결과 패널 내 4대보험 섹션 */
+    .r-section-head {
+      padding: 7px 18px 5px;
+      font-size: 0.69rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      background: rgba(0,0,0,0.12);
+      border-bottom: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
 <div class="page-wrap">
+  <div class="top-nav">
+    <a href="index.html" class="back-btn">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+           style="width:13px;height:13px"><path d="M10 3L5 8l5 5"/></svg>
+      메인
+    </a>
+  </div>
 
-  <!-- 헤더 -->
   <div class="page-header">
-    <div class="breadcrumb">
-      <a href="index.html">🏠 메인</a>
-      <span class="sep">›</span>
-      <span>근로소득</span>
-    </div>
-    <div class="page-title">
-      <div class="icon">💼</div>
+    <div class="ph-meta">
+      <div class="ph-icon">💼</div>
       <div>
         <h1>근로소득 계산기</h1>
-        <div class="subtitle" id="earnedYearText">연간 총급여 기준</div>
+        <div class="ph-sub">연간 총급여 기준 · 4대보험 자동계산 · 2026년 기준</div>
       </div>
     </div>
   </div>
 
-  <!-- 입력 -->
+  <!-- ① 소득 정보 -->
   <div class="card">
-    <div class="card-title">소득 정보</div>
-
+    <div class="card-label">소득 정보</div>
     <div class="field">
       <label>연간 총급여액 <span class="req">*</span></label>
-      <input type="text" id="wage" placeholder="예) 50,000,000" inputmode="numeric">
-      <div class="field-hint">세전 연봉 + 상여금 합계 (식대·차량유지비 등 비과세 제외 전)</div>
+      <input type="text" id="wage" placeholder="50,000,000" inputmode="numeric"
+             oninput="onWageChange()">
+      <div class="field-hint">세전 연봉 + 상여금 합계 (비과세 포함 총액)</div>
     </div>
-
     <div class="field">
       <label>비과세소득 합계</label>
-      <input type="text" id="nontax" placeholder="예) 2,400,000" inputmode="numeric">
-      <div class="field-hint">식대(월 20만원), 차량유지비(월 20만원), 출산보육수당 등</div>
-    </div>
-
-    <div class="field">
-      <label>4대보험 본인부담금 (연간)</label>
-      <input type="text" id="insurance" placeholder="자동계산 또는 직접입력" inputmode="numeric">
-      <div class="field-hint">건강보험료 + 고용보험료 (소득공제 항목)</div>
+      <input type="text" id="nontax" placeholder="2,400,000" inputmode="numeric"
+             oninput="onWageChange()">
+      <div class="field-hint">식대 월20만 · 차량유지비 월20만 · 출산보육수당 등</div>
     </div>
   </div>
 
+  <!-- ② 4대보험 -->
   <div class="card">
-    <div class="card-title">인적공제</div>
+    <div class="card-label">4대보험 본인부담금</div>
 
+    <div class="field">
+      <label>계산 방식</label>
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-auto" onclick="setMode('auto')">자동계산</button>
+        <button class="mode-tab"        id="tab-manual" onclick="setMode('manual')">직접입력</button>
+      </div>
+    </div>
+
+    <!-- 자동계산 결과 뷰 -->
+    <div id="ins-auto-view">
+      <div class="ins-block">
+        <div class="ins-row">
+          <span class="ins-name">
+            국민연금
+            <span class="ins-rate">4.75%</span>
+          </span>
+          <span class="ins-amt" id="ins-pension">—</span>
+        </div>
+        <div class="ins-row">
+          <span class="ins-name">
+            건강보험료
+            <span class="ins-rate">3.595%</span>
+          </span>
+          <span class="ins-amt" id="ins-health">—</span>
+        </div>
+        <div class="ins-row">
+          <span class="ins-name">
+            장기요양보험료
+            <span class="ins-rate">×13.14%</span>
+          </span>
+          <span class="ins-amt" id="ins-ltc">—</span>
+        </div>
+        <div class="ins-row">
+          <span class="ins-name">
+            고용보험료
+            <span class="ins-rate">0.90%</span>
+          </span>
+          <span class="ins-amt" id="ins-employ">—</span>
+        </div>
+        <div class="ins-total-row">
+          <span class="it-lbl">4대보험 합계 (연간)</span>
+          <span class="it-val" id="ins-total">총급여 입력 후 자동계산</span>
+        </div>
+        <div class="ins-limit-note" id="ins-limit-note"></div>
+      </div>
+      <div class="field-hint" style="margin-top:8px">
+        ※ 국민연금 상한: 월 637만원 (2025.7~2026.6) · 하한: 월 40만원 · 건강보험 장기요양 13.14% 적용 · 2026년 기준
+      </div>
+    </div>
+
+    <!-- 직접입력 뷰 -->
+    <div id="ins-manual-view" style="display:none">
+      <div class="field-row" style="margin-top:4px">
+        <div class="field">
+          <label>국민연금 (연간)</label>
+          <input type="text" id="m-pension" placeholder="2,394,000" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>건강보험료 (연간)</label>
+          <input type="text" id="m-health" placeholder="1,770,000" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>장기요양보험료 (연간)</label>
+          <input type="text" id="m-ltc" placeholder="226,000" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>고용보험료 (연간)</label>
+          <input type="text" id="m-employ" placeholder="450,000" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 인적공제 -->
+  <div class="card">
+    <div class="card-label">인적공제</div>
     <div class="field-row">
       <div class="field">
         <label>배우자 공제</label>
         <div class="toggle-group">
           <button class="toggle-btn active" data-group="spouse" data-val="0">없음</button>
-          <button class="toggle-btn"        data-group="spouse" data-val="1" id="spouseDedLabel">있음</button>
+          <button class="toggle-btn" data-group="spouse" data-val="1500000">있음 +150만</button>
         </div>
       </div>
       <div class="field">
         <label>부양가족 수 (본인 제외)</label>
-        <input type="text" id="dependents" value="0" inputmode="numeric" style="text-align:center;">
+        <input type="text" id="dependents" value="0" inputmode="numeric"
+               style="text-align:center">
       </div>
     </div>
-
     <div class="field">
       <label>추가공제</label>
-      <div class="toggle-group" style="flex-wrap:wrap;gap:6px;">
-        <button class="toggle-btn" data-group="extra" data-val="경로우대">경로우대 (+100만)</button>
-        <button class="toggle-btn" data-group="extra" data-val="장애인">장애인 (+200만)</button>
-        <button class="toggle-btn" data-group="extra" data-val="한부모">한부모 (+100만)</button>
+      <div class="toggle-group">
+        <button class="toggle-btn" data-group="extra" data-val="경로우대">경로우대 +100만</button>
+        <button class="toggle-btn" data-group="extra" data-val="장애인">장애인 +200만</button>
+        <button class="toggle-btn" data-group="extra" data-val="한부모">한부모 +100만</button>
       </div>
     </div>
   </div>
 
-  <button class="btn btn-primary" onclick="calculate()">💼 근로소득세 계산하기</button>
+  <button class="btn btn-primary" onclick="calculate()">근로소득세 계산하기</button>
 
-  <!-- 결과 -->
-  <div class="result-card" id="resultCard">
-    <div class="card-title">계산 결과</div>
-    <div id="resultRows"></div>
-    <div class="result-note" id="resultNote"></div>
+  <!-- 결과 패널 -->
+  <div class="result-panel" id="resultPanel">
+    <div class="receipt-head">
+      <span class="receipt-title">근로소득세 계산 결과</span>
+      <span class="rate-badge" id="rateBadge">—</span>
+    </div>
+    <div class="receipt-body" id="receiptBody"></div>
+    <div class="receipt-foot">
+      <div>
+        <div class="foot-lbl">총 납부세액<small>소득세 + 지방소득세</small></div>
+      </div>
+      <div class="foot-amount" id="footAmount">—</div>
+    </div>
+    <div class="result-note">
+      ※ 표준세액공제·특별세액공제(교육비·의료비 등) 미포함. 실제 결정세액과 차이가 있을 수 있습니다.
+    </div>
   </div>
 
-  <div class="action-row" id="actionRow" style="display:none">
-    <button class="btn btn-ghost" onclick="toggleJson()">{ } JSON 보기</button>
-    <button class="btn btn-primary" onclick="saveResult()">💾 종합소득세로 저장</button>
+  <!-- 4대보험 요약 패널 (계산 후 표시) -->
+  <div class="result-panel" id="insPanel">
+    <div class="receipt-head">
+      <span class="receipt-title">4대보험 부담금 요약</span>
+      <span class="rate-badge">연간 합산</span>
+    </div>
+    <div class="receipt-body" id="insReceiptBody"></div>
+    <div class="receipt-foot">
+      <div>
+        <div class="foot-lbl">4대보험 연간 합계<small>근로자 부담분</small></div>
+      </div>
+      <div class="foot-amount" id="insTotalAmount">—</div>
+    </div>
   </div>
 
-  <pre class="json-block" id="jsonBlock"></pre>
+  <div class="action-bar" id="actionBar">
+    <button class="btn btn-ghost btn-sm" onclick="toggleJson()">{ } JSON</button>
+    <button class="btn btn-save" onclick="doSave()">💾 종합소득세로 저장</button>
+  </div>
+  <div class="json-viewer" id="jsonViewer"></div>
 
-  <div style="margin-top:12px;text-align:center">
+  <div style="text-align:center;margin-top:12px">
     <a href="comprehensive.html" class="btn btn-ghost btn-sm">📊 종합소득세 계산기 →</a>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script src="shared.js"></script>
 <script>
-  const PERSONAL_PER_PERSON = TAX_RULES.deductions.personalPerPerson;
+/* ═══════════════════════════════════════════════
+   4대보험 2026년 요율 상수
+   ═══════════════════════════════════════════════ */
+const INS = {
+  // 국민연금
+  NPS_RATE:       0.0475,         // 4.75%  ← 2026 인상 (9.0→9.5%, 27년만)
+  NPS_CAP_MON:    6_370_000,      // 월 기준소득 상한 637만원 (2025.7~2026.6)
+  NPS_FLOOR_MON:    400_000,      // 월 기준소득 하한 40만원 (2025.7~)
 
-  // ── 상태 ──
-  const state = { spouseVal: 0, extras: new Set() };
-  let lastResult = null;
+  // 건강보험료
+  HI_RATE:        0.03595,        // 3.595%  ← 2026 인상 (7.09→7.19%)
 
-  document.getElementById('earnedYearText').textContent = `연간 총급여 기준 · ${TAX_RULES.meta.label}`;
-  document.getElementById('spouseDedLabel').textContent = `있음 (+${Fmt.eok(PERSONAL_PER_PERSON)})`;
+  // 장기요양보험료 = 건강보험료 × 13.14%  ← 2026 인상
+  LTC_RATE:       0.1314,
 
-  // ── 입력 자동 콤마 ──
-  ['wage','nontax','insurance'].forEach(id => addCommaInput(document.getElementById(id)));
+  // 고용보험료
+  EI_RATE:        0.009,          // 0.9%
+};
 
-  // ── 토글 버튼 ──
-  document.querySelectorAll('[data-group]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const g = btn.dataset.group;
-      if (g === 'spouse') {
-        document.querySelectorAll('[data-group="spouse"]').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.spouseVal = +btn.dataset.val;
-      } else if (g === 'extra') {
-        btn.classList.toggle('active');
-        const v = btn.dataset.val;
-        state.extras.has(v) ? state.extras.delete(v) : state.extras.add(v);
-      }
+/* ═══════════════════════════════════════════════
+   4대보험 자동계산
+   taxableWage: 과세급여 (비과세 제외된 연간 금액)
+   ═══════════════════════════════════════════════ */
+function calcInsurance(taxableWage) {
+  const monthlyWage = taxableWage / 12;
+
+  // 국민연금 (월 상·하한 적용)
+  const npsBasis   = Math.max(INS.NPS_FLOOR_MON, Math.min(monthlyWage, INS.NPS_CAP_MON));
+  const npsMonthly = Math.floor(npsBasis * INS.NPS_RATE);
+  const npsAnnual  = npsMonthly * 12;
+  const npsCapHit  = monthlyWage > INS.NPS_CAP_MON;
+  const npsFlrHit  = monthlyWage < INS.NPS_FLOOR_MON;
+
+  // 건강보험료 (원 단위 절사)
+  const hiMonthly  = Math.floor(monthlyWage * INS.HI_RATE);
+  const hiAnnual   = hiMonthly * 12;
+
+  // 장기요양보험료 (건강보험료 기준)
+  const ltcMonthly = Math.floor(hiMonthly * INS.LTC_RATE);
+  const ltcAnnual  = ltcMonthly * 12;
+
+  // 고용보험료 (연간 과세급여 기준)
+  const eiAnnual   = Math.floor(taxableWage * INS.EI_RATE);
+
+  const total = npsAnnual + hiAnnual + ltcAnnual + eiAnnual;
+
+  return {
+    nps: npsAnnual, npsCapHit, npsFlrHit, npsMonthly,
+    hi:  hiAnnual,  hiMonthly,
+    ltc: ltcAnnual, ltcMonthly,
+    ei:  eiAnnual,
+    total,
+    // 소득공제 분류
+    deductPension: npsAnnual,              // 연금보험료공제
+    deductSpecial:  hiAnnual + ltcAnnual + eiAnnual, // 특별소득공제
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   UI 상태
+   ═══════════════════════════════════════════════ */
+const state  = { spouse: 0, extras: new Set(), insMode: 'auto' };
+let lastResult = null;
+let lastIns    = null;  // 마지막 계산된 4대보험 내역
+
+// 콤마 입력
+['wage','nontax','m-pension','m-health','m-ltc','m-employ']
+  .forEach(id => { const el = document.getElementById(id); if (el) addCommaInput(el); });
+
+// 토글 버튼
+document.querySelectorAll('[data-group]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const g = btn.dataset.group;
+    if (g === 'spouse') {
+      document.querySelectorAll('[data-group="spouse"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.spouse = +btn.dataset.val;
+    } else if (g === 'extra') {
+      btn.classList.toggle('active');
+      const v = btn.dataset.val;
+      state.extras.has(v) ? state.extras.delete(v) : state.extras.add(v);
+    }
+  });
+});
+
+/* 계산 모드 전환 */
+function setMode(mode) {
+  state.insMode = mode;
+  document.getElementById('tab-auto').classList.toggle('active',   mode === 'auto');
+  document.getElementById('tab-manual').classList.toggle('active', mode === 'manual');
+  document.getElementById('ins-auto-view').style.display   = mode === 'auto'   ? '' : 'none';
+  document.getElementById('ins-manual-view').style.display = mode === 'manual' ? '' : 'none';
+}
+
+/* 총급여 입력 시 자동 미리계산 */
+function onWageChange() {
+  const wage   = Fmt.parse(document.getElementById('wage').value);
+  const nontax = Fmt.parse(document.getElementById('nontax').value);
+  if (!wage) {
+    ['ins-pension','ins-health','ins-ltc','ins-employ'].forEach(id => {
+      document.getElementById(id).textContent = '—';
     });
+    document.getElementById('ins-total').textContent = '총급여 입력 후 자동계산';
+    document.getElementById('ins-limit-note').textContent = '';
+    return;
+  }
+  const tw  = Math.max(0, wage - nontax);
+  const ins = calcInsurance(tw);
+
+  document.getElementById('ins-pension').textContent = Fmt.won(ins.nps);
+  document.getElementById('ins-health').textContent  = Fmt.won(ins.hi);
+  document.getElementById('ins-ltc').textContent     = Fmt.won(ins.ltc);
+  document.getElementById('ins-employ').textContent  = Fmt.won(ins.ei);
+  document.getElementById('ins-total').textContent   = Fmt.won(ins.total);
+
+  // 상한/하한 안내
+  let notes = [];
+  if (ins.npsCapHit) notes.push(`국민연금 상한 적용 (월 ${Fmt.won(INS.NPS_CAP_MON)} 기준 → 월 ${Fmt.won(ins.npsMonthly)})`);
+  if (ins.npsFlrHit) notes.push(`국민연금 하한 적용 (월 ${Fmt.won(INS.NPS_FLOOR_MON)} 기준)`);
+  document.getElementById('ins-limit-note').textContent = notes.join(' · ');
+}
+
+/* ═══════════════════════════════════════════════
+   메인 계산
+   ═══════════════════════════════════════════════ */
+function calculate() {
+  const wage   = Fmt.parse(document.getElementById('wage').value);
+  const nontax = Fmt.parse(document.getElementById('nontax').value);
+  const deps   = Math.max(0, parseInt(document.getElementById('dependents').value)||0);
+  if (!wage) { alert('연간 총급여액을 입력해주세요.'); return; }
+
+  const tw = Math.max(0, wage - nontax); // 과세급여
+
+  // 4대보험 계산
+  let ins;
+  if (state.insMode === 'auto') {
+    ins = calcInsurance(tw);
+  } else {
+    const nps = Fmt.parse(document.getElementById('m-pension').value);
+    const hi  = Fmt.parse(document.getElementById('m-health').value);
+    const ltc = Fmt.parse(document.getElementById('m-ltc').value);
+    const ei  = Fmt.parse(document.getElementById('m-employ').value);
+    ins = {
+      nps, hi, ltc, ei,
+      total: nps + hi + ltc + ei,
+      deductPension: nps,
+      deductSpecial: hi + ltc + ei,
+    };
+  }
+  lastIns = ins;
+
+  // 근로소득공제
+  const ed = TaxEngine.earnedIncomeDeduction(tw);
+  const ei = tw - ed; // 근로소득금액
+
+  // 인적공제
+  let extraAmt = 0;
+  if (state.extras.has('경로우대')) extraAmt += 1_000_000;
+  if (state.extras.has('장애인'))   extraAmt += 2_000_000;
+  if (state.extras.has('한부모'))   extraAmt += 1_000_000;
+  const pd = 1_500_000 + state.spouse + deps * 1_500_000 + extraAmt;
+
+  // 과세표준
+  // 국민연금 → 연금보험료공제 (별도)
+  // 건강+장기요양+고용 → 특별소득공제
+  const tb = Math.max(0, ei - pd - ins.deductPension - ins.deductSpecial);
+
+  // 세액 계산
+  const ct  = TaxEngine.progressiveTax(tb);
+  const cr  = TaxEngine.earnedTaxCredit(ct, tw);
+  const ft  = Math.max(0, ct - cr);
+  const lt  = Math.floor(ft * 0.1);
+  const tot = ft + lt;
+
+  // 실수령액
+  const takeHome = wage - ft - lt - ins.total;
+
+  /* ── 소득세 결과 영수증 ── */
+  document.getElementById('rateBadge').textContent = TaxEngine.bracketLabel(tb);
+
+  document.getElementById('receiptBody').innerHTML = [
+    // 소득금액 계산
+    ['과세급여 (총급여 - 비과세)',           Fmt.won(tw),  ''],
+    ['근로소득공제',                         '-' + Fmt.won(ed), 'deduct'],
+    ['근로소득금액',                          Fmt.won(ei),  'subtotal'],
+    // 소득공제
+    ['인적공제',                             '-' + Fmt.won(pd),               'deduct'],
+    ['연금보험료공제 (국민연금)',             '-' + Fmt.won(ins.deductPension), 'deduct'],
+    ['특별소득공제 (건강+장기요양+고용)',     '-' + Fmt.won(ins.deductSpecial), 'deduct'],
+    // 세액 계산
+    ['과세표준',                              Fmt.won(tb),  'subtotal'],
+    [`산출세액 (${TaxEngine.bracketLabel(tb)})`, Fmt.won(ct), ''],
+    ['근로소득세액공제',                     '-' + Fmt.won(cr), 'deduct'],
+    ['결정세액 (소득세)',                     Fmt.won(ft),  'subtotal'],
+    ['지방소득세 (10%)',                      Fmt.won(lt),  ''],
+  ].map(([l,v,c]) =>
+    `<div class="r-row ${c}"><span class="r-lbl">${l}</span><span class="r-val">${v}</span></div>`
+  ).join('');
+
+  /* ── 4대보험 요약 영수증 ── */
+  document.getElementById('insReceiptBody').innerHTML = [
+    [`국민연금 (4.5%, 상한 월${(INS.NPS_CAP_MON/10000).toFixed(0)}만)`,
+       Fmt.won(ins.nps), ins.npsCapHit ? 'subtotal' : ''],
+    ['건강보험료 (3.545%)',       Fmt.won(ins.hi),  ''],
+    ['장기요양보험료 (×12.81%)', Fmt.won(ins.ltc), ''],
+    ['고용보험료 (0.9%)',         Fmt.won(ins.ei),  ''],
+    ['소득공제 반영분 (연금보험료공제)', Fmt.won(ins.deductPension), 'subtotal'],
+    ['소득공제 반영분 (특별소득공제)',   Fmt.won(ins.deductSpecial), 'subtotal'],
+    [`예상 실수령액 (세후)`,            Fmt.won(takeHome), ''],
+  ].map(([l,v,c]) =>
+    `<div class="r-row ${c}"><span class="r-lbl">${l}</span><span class="r-val">${v}</span></div>`
+  ).join('');
+
+  /* ── 애니메이션 표시 ── */
+  ['resultPanel','insPanel'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('visible');
+    void el.offsetWidth;
+    el.classList.add('visible');
   });
 
-  // ── 저장된 값 불러오기 ──
-  (function loadSaved() {
-    const saved = TaxStorage.get('earned');
-    if (!saved) return;
-    if (saved.details.wage)      document.getElementById('wage').value      = Number(saved.details.wage).toLocaleString('ko-KR');
-    if (saved.details.nontax)    document.getElementById('nontax').value    = Number(saved.details.nontax).toLocaleString('ko-KR');
-    if (saved.details.insurance) document.getElementById('insurance').value = Number(saved.details.insurance).toLocaleString('ko-KR');
-  })();
+  const fa = document.getElementById('footAmount');
+  fa.textContent = '—';
+  setTimeout(() => animateCount(fa, Fmt.won(tot)), 400);
 
-  // ── 계산 ──
-  function calculate() {
-    const wage      = Fmt.parse(document.getElementById('wage').value);
-    const nontax    = Fmt.parse(document.getElementById('nontax').value);
-    const insurance = Fmt.parse(document.getElementById('insurance').value);
-    const deps      = Math.max(0, parseInt(document.getElementById('dependents').value) || 0);
+  const ia = document.getElementById('insTotalAmount');
+  ia.textContent = '—';
+  setTimeout(() => animateCount(ia, Fmt.won(ins.total)), 500);
 
-    if (!wage) { alert('연간 총급여액을 입력해주세요.'); return; }
+  document.getElementById('actionBar').classList.add('visible');
+  document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    // 1. 과세급여 = 총급여 - 비과세
-    const taxableWage = Math.max(0, wage - nontax);
+  /* ── JSON 결과 저장 ── */
+  lastResult = createTaxResult('earned', wage, ei, ft, true, {
+    wage, nontax, taxableWage: tw,
+    earnedDed: ed, earnedIncome: ei,
+    personalDed: pd,
+    insurance: {
+      mode: state.insMode,
+      nps: ins.nps, hi: ins.hi, ltc: ins.ltc, ei: ins.ei,
+      total: ins.total,
+      deductPension: ins.deductPension,
+      deductSpecial:  ins.deductSpecial,
+    },
+    taxBase: tb, calculatedTax: ct, taxCredit: cr,
+    finalTax: ft, localTax: lt,
+    takeHome,
+  });
+  document.getElementById('jsonViewer').innerHTML = syntaxHighlight(lastResult);
+}
 
-    // 2. 근로소득공제
-    const earnedDed = TaxEngine.earnedIncomeDeduction(taxableWage);
+function doSave()    { if (!lastResult) return; saveAndToast('earned', lastResult); }
+function toggleJson(){ document.getElementById('jsonViewer').classList.toggle('visible'); }
 
-    // 3. 근로소득금액
-    const earnedIncome = taxableWage - earnedDed;
-
-    // 4. 인적공제
-    const spouseAmt = state.spouseVal * PERSONAL_PER_PERSON;
-    let extraAmt = 0;
-    if (state.extras.has('경로우대')) extraAmt += 1_000_000;
-    if (state.extras.has('장애인'))   extraAmt += 2_000_000;
-    if (state.extras.has('한부모'))   extraAmt += 1_000_000;
-
-    const personalDed = PERSONAL_PER_PERSON + spouseAmt + deps * PERSONAL_PER_PERSON + extraAmt;
-
-    // 5. 근로소득 특별소득공제 (4대보험)
-    const specialDed = insurance;
-
-    // 6. 과세표준
-    const taxBase = Math.max(0, earnedIncome - personalDed - specialDed);
-
-    // 7. 산출세액
-    const calculatedTax = TaxEngine.progressiveTax(taxBase);
-
-    // 8. 근로소득세액공제
-    const taxCredit = TaxEngine.earnedTaxCredit(calculatedTax, taxableWage);
-
-    // 9. 결정세액
-    const finalTax = Math.max(0, calculatedTax - taxCredit);
-
-    // 10. 지방소득세 (10%)
-    const localTax = Math.floor(finalTax * 0.1);
-    const totalTax = finalTax + localTax;
-
-    // 결과 렌더
-    const rows = [
-      ['연간 총급여액',     Fmt.won(wage)],
-      ['비과세소득',        `-${Fmt.won(nontax)}`],
-      ['과세급여',          Fmt.won(taxableWage)],
-      ['근로소득공제',      `-${Fmt.won(earnedDed)}`],
-      ['근로소득금액',      Fmt.won(earnedIncome), true],
-      ['인적공제',          `-${Fmt.won(personalDed)}`],
-      ['4대보험 특별공제',  `-${Fmt.won(specialDed)}`],
-      ['과세표준',          Fmt.won(taxBase), true],
-      [`산출세액 (${TaxEngine.bracketLabel(taxBase)})`, Fmt.won(calculatedTax)],
-      ['근로소득세액공제',  `-${Fmt.won(taxCredit)}`],
-      ['결정세액 (소득세)', Fmt.won(finalTax)],
-      ['지방소득세 (10%)',  Fmt.won(localTax)],
-    ];
-
-    document.getElementById('resultRows').innerHTML =
-      rows.map(([l, v, bold]) =>
-        `<div class="result-row${bold?' total':''}">
-          <span class="lbl">${l}</span>
-          <span class="val">${v}</span>
-        </div>`
-      ).join('') +
-      `<div class="result-row grand-total total">
-        <span class="lbl">총 납부세액 (소득세+지방세)</span>
-        <span class="val">${Fmt.won(totalTax)}</span>
-      </div>`;
-
-    document.getElementById('resultNote').textContent =
-      '※ 표준세액공제, 특별세액공제(교육비·의료비·보험료 등)는 포함되지 않아 실제 결정세액과 차이가 있을 수 있습니다.';
-
-    lastResult = createTaxResult(
-      'earned',
-      wage,
-      earnedIncome,   // 종합소득에 합산될 근로소득금액
-      finalTax,
-      true,           // 종합과세 대상
-      { wage, nontax, taxableWage, earnedDed, earnedIncome, personalDed,
-        specialDed, taxBase, calculatedTax, taxCredit, finalTax, localTax }
-    );
-
-    document.getElementById('jsonBlock').innerHTML = syntaxHighlight(lastResult);
-    document.getElementById('resultCard').classList.add('visible');
-    document.getElementById('actionRow').style.display = 'flex';
-    document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  function saveResult() {
-    if (!lastResult) return;
-    TaxStorage.save('earned', lastResult);
-    showToast('✓ 근로소득 저장 완료!');
-  }
-
-  function toggleJson() {
-    const el = document.getElementById('jsonBlock');
-    el.classList.toggle('visible');
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
-  }
-
-  function syntaxHighlight(obj) {
-    return JSON.stringify(obj, null, 2)
-      .replace(/("[\w_]+")\s*:/g, '<span class="json-key">$1</span>:')
-      .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
-      .replace(/:\s*(\d+)/g, ': <span class="json-num">$1</span>')
-      .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>');
-  }
+// 페이지 로드 시 저장값 복원
+(function restoreSaved() {
+  const saved = TaxStorage.get('earned');
+  if (!saved?.details) return;
+  const d = saved.details;
+  if (d.wage)   document.getElementById('wage').value   = Number(d.wage).toLocaleString('ko-KR');
+  if (d.nontax) document.getElementById('nontax').value = Number(d.nontax).toLocaleString('ko-KR');
+})();
 </script>
 </body>
 </html>
-
