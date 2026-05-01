@@ -1,0 +1,276 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>증권거래세 계산기 | caboojoy</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    />
+    </head>
+    <body>
+    <!-- ────────────────── HEADER ────────────────── -->
+    <header class="site-header">
+        <div class="header-inner">
+        <!-- <span class="header-logo">caboojoy</span> -->
+        <h1 class="header-title">
+            <span class="icon-badge">📊</span> 증권거래세 계산기
+        </h1>
+        <p class="header-sub">상장·비상장 법인 주식 매도 시 납부세액을 계산합니다</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- ────────────────── 알림 배너 ────────────────── -->
+        <div class="notice-banner">
+        <span class="notice-icon">ℹ️</span>
+        <span>증권거래세는 <strong>주식 매도(양도) 시에만</strong> 부과됩니다. 매수 시에는 부과되지 않습니다.</span>
+        </div>
+
+        <!-- ────────────────── 입력 영역 ────────────────── -->
+        <section class="card input-card">
+        <h2 class="card-title">거래 정보 입력</h2>
+
+        <div class="form-grid">
+            <!-- 거래일 -->
+            <div class="form-group">
+            <label class="form-label" for="tradeDate">거래일 <span class="required">*</span></label>
+            <input type="date" id="tradeDate" class="form-control" />
+            <span class="form-hint">세율 연도 자동 반영</span>
+            </div>
+
+            <!-- 시장구분 -->
+            <div class="form-group">
+            <label class="form-label">시장 구분 <span class="required">*</span></label>
+            <div class="market-tabs" id="marketTabs">
+                <button class="market-tab active" data-market="KOSPI">KOSPI</button>
+                <button class="market-tab" data-market="KOSDAQ">KOSDAQ</button>
+                <button class="market-tab" data-market="KONEX">KONEX</button>
+                <button class="market-tab" data-market="KOTC">K-OTC</button>
+                <button class="market-tab" data-market="OTC">비상장<br>장외</button>
+            </div>
+            </div>
+
+            <!-- 종목명 -->
+            <div class="form-group">
+            <label class="form-label" for="stockName">종목명</label>
+            <input
+                type="text"
+                id="stockName"
+                class="form-control"
+                placeholder="예) 삼성전자"
+                maxlength="30"
+            />
+            <span class="form-hint">선택 입력 (내역 구분용)</span>
+            </div>
+
+            <!-- 수량 -->
+            <div class="form-group">
+            <label class="form-label" for="qty">매도 수량 <span class="required">*</span></label>
+            <div class="input-unit-wrap">
+                <input
+                type="text"
+                id="qty"
+                class="form-control"
+                placeholder="0"
+                inputmode="numeric"
+                />
+                <span class="input-unit">주</span>
+            </div>
+            </div>
+
+            <!-- 단가 -->
+            <div class="form-group">
+            <label class="form-label" for="price">매도 단가 <span class="required">*</span></label>
+            <div class="input-unit-wrap">
+                <input
+                type="text"
+                id="price"
+                class="form-control"
+                placeholder="0"
+                inputmode="numeric"
+                />
+                <span class="input-unit">원</span>
+            </div>
+            </div>
+        </div>
+
+        <!-- 적용 세율 미리보기 -->
+        <div class="rate-preview" id="ratePreview">
+            <div class="rate-chip">
+            <span class="rate-label">증권거래세</span>
+            <span class="rate-value" id="previewSTT">—</span>
+            </div>
+            <span class="rate-plus">+</span>
+            <div class="rate-chip">
+            <span class="rate-label">농어촌특별세</span>
+            <span class="rate-value" id="previewAgri">—</span>
+            </div>
+            <span class="rate-plus">=</span>
+            <div class="rate-chip rate-total">
+            <span class="rate-label">합계 세율</span>
+            <span class="rate-value" id="previewTotal">—</span>
+            </div>
+        </div>
+
+        <!-- 버튼 -->
+        <div class="btn-row">
+            <button class="btn btn-primary" id="calcBtn">🔢 계산하기</button>
+            <button class="btn btn-secondary" id="addBtn">➕ 내역에 추가</button>
+            <button class="btn btn-ghost" id="resetBtn">↺ 초기화</button>
+        </div>
+        </section>
+
+        <!-- ────────────────── 결과 패널 ────────────────── -->
+        <section class="card result-card" id="resultCard" style="display:none">
+        <h2 class="card-title">계산 결과</h2>
+        <div class="result-grid">
+            <div class="result-row">
+            <span class="result-label">거래 대금</span>
+            <span class="result-value" id="rTradeAmt">—</span>
+            </div>
+            <div class="result-row">
+            <span class="result-label">증권거래세</span>
+            <span class="result-value tax" id="rSTT">—</span>
+            </div>
+            <div class="result-row">
+            <span class="result-label">농어촌특별세</span>
+            <span class="result-value tax" id="rAgri">—</span>
+            </div>
+            <div class="result-row total-row">
+            <span class="result-label">총 납부세액</span>
+            <span class="result-value highlight" id="rTotal">—</span>
+            </div>
+            <div class="result-row">
+            <span class="result-label">실 수취 금액</span>
+            <span class="result-value net" id="rNet">—</span>
+            </div>
+        </div>
+        <p class="result-note" id="resultNote"></p>
+        </section>
+
+        <!-- ────────────────── 거래 내역 ────────────────── -->
+        <section class="card history-card" id="historyCard" style="display:none">
+        <div class="history-header">
+            <h2 class="card-title">거래 내역</h2>
+            <div class="history-actions">
+            <button class="btn btn-sm btn-ghost" id="csvBtn">⬇ CSV 내보내기</button>
+            <button class="btn btn-sm btn-danger" id="clearAllBtn">🗑 전체 삭제</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="history-table" id="historyTable">
+            <thead>
+                <tr>
+                <th>거래일</th>
+                <th>시장</th>
+                <th>종목명</th>
+                <th>수량(주)</th>
+                <th>단가(원)</th>
+                <th>거래대금(원)</th>
+                <th>증권거래세(원)</th>
+                <th>농특세(원)</th>
+                <th>합계세액(원)</th>
+                <th>실수취(원)</th>
+                <th></th>
+                </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+            <tfoot id="historyFoot"></tfoot>
+            </table>
+        </div>
+        </section>
+
+        <!-- ────────────────── 세율 안내 ────────────────── -->
+        <section class="card rate-card">
+        <button class="rate-toggle" id="rateToggle">
+            📋 연도별 세율 안내 <span class="toggle-arrow" id="toggleArrow">▼</span>
+        </button>
+        <div class="rate-body" id="rateBody" style="display:none">
+            <p class="rate-desc">
+            증권거래세는 정부 정책에 따라 단계적으로 인하되고 있습니다.
+            거래일을 기준으로 해당 연도 세율이 자동 적용됩니다.
+            </p>
+
+            <div class="table-wrap">
+            <table class="rate-table">
+                <thead>
+                <tr>
+                    <th>연도</th>
+                    <th>KOSPI<br><small>증권거래세+농특세</small></th>
+                    <th>KOSDAQ</th>
+                    <th>KONEX</th>
+                    <th>K-OTC<br><small>금융투자협회 통해 양도</small></th>
+                    <th>비상장 장외</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>2022년</td>
+                    <td>0.05% + 0.15% = <strong>0.20%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.10%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.35%</strong></td>
+                </tr>
+                <tr>
+                    <td>2023년</td>
+                    <td>0.05% + 0.15% = <strong>0.20%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.10%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.35%</strong></td>
+                </tr>
+                <tr>
+                    <td>2024년</td>
+                    <td>0.03% + 0.15% = <strong>0.18%</strong></td>
+                    <td><strong>0.18%</strong></td>
+                    <td><strong>0.10%</strong></td>
+                    <td><strong>0.18%</strong></td>
+                    <td><strong>0.35%</strong></td>
+                </tr>
+                <tr>
+                    <td>2025년</td>
+                    <td>0.00% + 0.15% = <strong>0.15%</strong></td>
+                    <td><strong>0.15%</strong></td>
+                    <td><strong>0.10%</strong></td>
+                    <td><strong>0.15%</strong></td>
+                    <td><strong>0.35%</strong></td>
+                </tr>
+                <tr class="rate-current">
+                    <td>2026년 <span class="badge-current">현재</span></td>
+                    <td>0.05% + 0.15% = <strong>0.20%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.10%</strong></td>
+                    <td><strong>0.20%</strong></td>
+                    <td><strong>0.35%</strong></td>
+                </tr>
+                </tbody>
+            </table>
+            </div>
+
+            <ul class="rate-notes">
+            <li>KOSPI는 증권거래세 + 농어촌특별세(0.15%)가 별도 부과됩니다.</li>
+            <li>KOSDAQ·KONEX는 증권거래세만 부과되며 농특세는 면제됩니다.</li>
+            <li><strong>K-OTC</strong>는 시행령 제5조 제3호 나목(금융투자협회를 통하여 양도)에 해당하여 KOSDAQ과 동일 세율이 적용됩니다.</li>
+            <li><strong>비상장 장외</strong>는 탄력세율 대상이 아니므로 기본세율 0.35%가 고정 적용됩니다.</li>
+            <li>본 계산기는 원단위 절사(내림) 방식을 적용합니다.</li>
+            <li>법인 대주주, 특수관계인 거래 등 특수 케이스는 세무 전문가와 상담하세요.</li>
+            </ul>
+        </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>본 계산기는 참고용으로, 정확한 세금 신고는 세무사 또는 국세청 홈택스를 이용하시기 바랍니다.</p>
+        <!-- <p>© caboojoy calculators</p> -->
+    </footer>
+
+    <script src="script.js"></script>
+    </body>
+    </html>
+    
