@@ -11,9 +11,18 @@
     body {
       min-height: 100vh;
       background: linear-gradient(170deg, #d6eeff 0%, #e8f4ff 40%, #f0f8ff 100%);
-      color: #17324d;
+      color: #2a4a6b;
       font-family: 'Noto Sans KR', sans-serif;
       padding-bottom: 48px;
+    }
+
+    /* ── 공통 레이아웃 래퍼 ── */
+    .layout {
+      max-width: 480px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px;
+      box-sizing: border-box;
     }
 
     /* ── 헤더 ── */
@@ -24,6 +33,14 @@
       padding: 22px 20px 18px;
       background: linear-gradient(180deg, #b8dcf8 0%, #d6eeff 100%);
       border-bottom: 1px solid #c4e0f7;
+    }
+    .header-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: 480px;
+      width: 100%;
+      margin: 0 auto;
     }
     .header-badge {
       background: #3a8fd8;
@@ -36,14 +53,14 @@
       flex-shrink: 0;
     }
     .header-title {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 900;
       letter-spacing: -0.5px;
-      color: #13324f;
+      color: #1a3a5c;
     }
     .header-sub {
-      font-size: 14px;
-      color: #2f6f9b;
+      font-size: 11px;
+      color: #6a9fc0;
       margin-top: 2px;
       letter-spacing: 0.3px;
     }
@@ -53,7 +70,7 @@
     .mode-rail {
       display: flex;
       gap: 8px;
-      padding: 18px 16px 0;
+      margin-top: 18px;
     }
     .mode-btn {
       flex: 1;
@@ -65,10 +82,11 @@
       background: #fff;
       border: 1.5px solid #c4e0f7;
       border-radius: 14px;
-      color: #2f6f9b;
+      color: #7ab4d8;
       cursor: pointer;
       transition: all 0.18s ease;
       font-family: inherit;
+      min-width: 0;
     }
     .mode-btn:hover {
       border-color: #7ab4d8;
@@ -82,50 +100,43 @@
       color: #fff;
       box-shadow: 0 4px 16px rgba(58,143,216,0.3);
     }
-    .mode-icon { font-size: 24px; font-weight: 900; font-family: 'Black Han Sans', sans-serif; }
-    .mode-ko   { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .mode-icon { font-size: 22px; font-weight: 900; font-family: 'Black Han Sans', sans-serif; }
+    .mode-ko   { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
 
     .mode-desc {
-      padding: 10px 16px 0;
-      font-size: 18px;
+      margin-top: 10px;
+      font-size: 14px;
       font-weight: 600;
-      color: #2f6f9b;
+      color: #3a8fd8;
       letter-spacing: -0.2px;
-    }
-
-    @media (max-width: 390px) {
-      .mode-icon { font-size: 22px; }
-      .mode-ko   { font-size: 16px; }
-      .mode-desc { font-size: 16px; }
     }
 
     /* ── 입력 카드 ── */
     .card {
-      margin: 18px 16px 10px;
+      margin-top: 14px;
       background: #fff;
       border: 1.5px solid #c4e0f7;
       border-radius: 18px;
-      padding: 14px 16px 16px;
+      padding: 6px 0;
       overflow: hidden;
       box-shadow: 0 4px 20px rgba(58,143,216,0.08);
     }
-    .field { padding: 22px 22px; }
+    .field { padding: 14px 18px; }
     .field-label {
       display: block;
-      font-size: 15px;
-      font-weight: 700;
-      color: #2f6f9b;
-      letter-spacing: 0.2px;
-      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      color: #2a6a9a;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
     }
     .field-row {
       display: flex;
       align-items: center;
-      border: 2px solid #b8d7ee;
-      border-radius: 12px;
-      background: #eaf4fb;
+      border: 1.5px solid #d6eeff;
+      border-radius: 10px;
+      background: #f0f8ff;
       transition: border-color 0.15s;
-      padding: 6px 0;
     }
     .field-row:focus-within {
       border-color: #3a8fd8;
@@ -134,31 +145,39 @@
     }
     .field-input {
       flex: 1;
+      min-width: 0;
       background: transparent;
       border: none;
       outline: none;
-      padding: 18px 18px;
-      font-size: 32px;
+      padding: 14px 10px;
+      font-size: clamp(20px, 6vw, 28px);
       font-weight: 800;
       color: #1a3a5c;
       font-family: 'Noto Sans KR', sans-serif;
       letter-spacing: -0.5px;
+      text-align: center;
     }
-    .field-input::placeholder { color: #7ea8c6; }
-    .field-unit {
-      padding: 0 16px 0 8px;
-      font-size: 18px;
+    .field-input::placeholder {
+      color: #5a9ec8;
       font-weight: 700;
-      color: #2f6f9b;
+    }
+    .field-unit {
+      padding: 0 16px 0 4px;
+      font-size: clamp(13px, 4vw, 16px);
+      font-weight: 800;
+      color: #3a8fd8;
+      flex-shrink: 0;
     }
     .field-divider {
       height: 1px;
       background: #e8f4ff;
-      margin: 0 22px;
+      margin: 0 18px;
     }
 
     /* ── 결과 ── */
-    .result-wrap { padding: 0 16px; }
+    .result-wrap {
+      margin-top: 0;
+    }
     .result-in {
       animation: slideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
     }
@@ -179,14 +198,14 @@
     .result-hero-label {
       font-size: 11px;
       font-weight: 700;
-      color: #2f6f9b;
+      color: #7ab4d8;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       margin-bottom: 6px;
     }
     .result-hero-val {
       font-family: 'Black Han Sans', sans-serif;
-      font-size: 52px;
+      font-size: clamp(36px, 11vw, 52px);
       color: #1a3a5c;
       letter-spacing: -2px;
       line-height: 1;
@@ -194,13 +213,16 @@
       align-items: flex-end;
       justify-content: center;
       gap: 4px;
+      flex-wrap: nowrap;
+      overflow: hidden;
     }
     .unit-sm {
-      font-size: 20px;
+      font-size: clamp(16px, 5vw, 20px);
       letter-spacing: 0;
       margin-bottom: 4px;
-      color: #2f6f9b;
+      color: #7ab4d8;
       font-family: 'Noto Sans KR', sans-serif;
+      flex-shrink: 0;
     }
     .result-badge {
       display: inline-block;
@@ -226,19 +248,22 @@
       border-radius: 12px;
       padding: 14px 16px;
       box-shadow: 0 2px 8px rgba(58,143,216,0.06);
+      min-width: 0;
     }
     .detail-label {
-      font-size: 13px;
-      color: #2f6f9b;
+      font-size: 11px;
+      color: #7ab4d8;
       font-weight: 600;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       margin-bottom: 5px;
     }
     .detail-val {
-      font-size: 20px;
+      font-size: clamp(14px, 4vw, 18px);
       color: #1a3a5c;
       font-weight: 600;
+      word-break: keep-all;
+      overflow-wrap: break-word;
     }
 
     /* ── 절약 배너 ── */
@@ -252,9 +277,9 @@
       align-items: center;
       gap: 8px;
     }
-    .save-icon { font-size: 20px; }
-    .save-text { font-size: 17px; font-weight: 800; color: #1a3a5c; flex: 1; }
-    .save-pct  { font-size: 14px; font-weight: 700; color: #2f6f9b; }
+    .save-icon { font-size: 20px; flex-shrink: 0; }
+    .save-text { font-size: clamp(14px, 4vw, 17px); font-weight: 800; color: #1a3a5c; flex: 1; min-width: 0; }
+    .save-pct  { font-size: 13px; font-weight: 600; color: #7ab4d8; flex-shrink: 0; }
 
     /* ── 빈 상태 ── */
     .empty {
@@ -262,7 +287,7 @@
       padding: 52px 20px;
     }
     .empty-icon { font-size: 48px; margin-bottom: 12px; filter: opacity(0.35); }
-    .empty-msg  { font-size: 16px; line-height: 1.8; color: #2f6f9b; font-weight: 600; }
+    .empty-msg  { font-size: 14px; line-height: 1.8; color: #7ab4d8; }
 
     .hidden { display: none; }
   </style>
@@ -271,36 +296,43 @@
 
   <!-- ── 헤더 ── -->
   <header class="header">
-    <div class="header-badge">MART</div>
-    <div class="header-text">
-      <div class="header-title">할인 계산기</div>
-      <div class="header-sub">스마트하게 장보세요</div>
+    <div class="header-inner">
+      <div class="header-badge">MART</div>
+      <div class="header-text">
+        <div class="header-title">할인 계산기</div>
+        <div class="header-sub">스마트하게 장보세요</div>
+      </div>
+      <div class="header-cart">🛒</div>
     </div>
-    <div class="header-cart">🛒</div>
   </header>
 
-  <!-- ── 모드 탭 ── -->
-  <div class="mode-rail">
-    <button class="mode-btn active" data-mode="final">
-      <span class="mode-icon">₩</span>
-      <span class="mode-ko">할인가</span>
-    </button>
-    <button class="mode-btn" data-mode="rate">
-      <span class="mode-icon">%</span>
-      <span class="mode-ko">할인율</span>
-    </button>
-    <button class="mode-btn" data-mode="original">
-      <span class="mode-icon">?</span>
-      <span class="mode-ko">정가역산</span>
-    </button>
+  <!-- ── 본문 ── -->
+  <div class="layout">
+
+    <!-- ── 모드 탭 ── -->
+    <div class="mode-rail">
+      <button class="mode-btn active" data-mode="final">
+        <span class="mode-icon">₩</span>
+        <span class="mode-ko">할인가</span>
+      </button>
+      <button class="mode-btn" data-mode="rate">
+        <span class="mode-icon">%</span>
+        <span class="mode-ko">할인율</span>
+      </button>
+      <button class="mode-btn" data-mode="original">
+        <span class="mode-icon">?</span>
+        <span class="mode-ko">정가역산</span>
+      </button>
+    </div>
+    <div class="mode-desc" id="mode-desc">정가 × 할인율 → 살 수 있는 가격</div>
+
+    <!-- ── 입력 카드 ── -->
+    <div class="card" id="input-card"></div>
+
+    <!-- ── 결과 영역 ── -->
+    <div id="result-area"></div>
+
   </div>
-  <div class="mode-desc" id="mode-desc">정가 × 할인율 → 살 수 있는 가격</div>
-
-  <!-- ── 입력 카드 ── -->
-  <div class="card" id="input-card"></div>
-
-  <!-- ── 결과 영역 ── -->
-  <div id="result-area"></div>
 
   <script>
     /* ══ 데이터 ══════════════════════════════════ */
