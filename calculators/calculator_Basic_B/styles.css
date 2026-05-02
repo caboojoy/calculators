@@ -187,17 +187,16 @@ button:not([data-value]):not([data-action="appendDoubleZero"]):not([data-action=
  
 /* = 버튼 색상 및 텍스트 크기 */
 button[data-action="calculate"] {
-    background-color: #1a4a8a;
-    color: #ffffff;
+    background-color: #ffffff;;
+    color: #000000;
     font-weight: bold;
     font-size: clamp(1.4rem, 4.8vw, 1.7rem);
 }
 
 /* = 버튼 hover 효과 */
 button[data-action="calculate"]:hover {
-    background-color: #153d75;
-}
-
+    background-color: #f0f0f0;
+} 
 
 
 
