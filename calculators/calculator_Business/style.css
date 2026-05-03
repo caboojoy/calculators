@@ -66,6 +66,7 @@
     
     /* ── Tab Nav ────────────────────────────────── */
     .tab-nav {
+    position: relative;
         background: var(--card-bg);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
@@ -78,11 +79,35 @@
         scrollbar-width: none;
     }
     .tab-nav::-webkit-scrollbar { display: none; }
+
+.tab-nav::before,
+.tab-nav::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    pointer-events: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    line-height: 1;
+}
+
+.tab-nav::before {
+    content: "\2039";
+    left: 8px;
+}
+
+.tab-nav::after {
+    content: "\203A";
+    right: 8px;
+}
     
     .tab-nav-inner {
         display: flex;
         gap: 3px;
         min-width: max-content;
+    padding: 0 18px;
     }
     
     .tab-btn {
