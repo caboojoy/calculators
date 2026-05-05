@@ -1,0 +1,153 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>환율 계산기 | Currency Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+
+    <div class="container">
+
+        <!-- ── Header ── -->
+        <header class="header">
+        <div class="header-left">
+            <span class="logo-icon">💱</span>
+            <div>
+            <h1 class="title">
+                <span data-ko="환율 계산기" data-en="Currency Calculator">환율 계산기</span>
+            </h1>
+            <p class="subtitle">
+                <span data-ko="실시간 환율 기준" data-en="Live Exchange Rates">실시간 환율 기준</span>
+            </p>
+            </div>
+        </div>
+        <button class="lang-toggle" id="langToggle" title="언어 변경 / Change Language">
+            <span class="lang-label lang-ko">KO</span>
+            <span class="lang-divider">|</span>
+            <span class="lang-label lang-en">EN</span>
+        </button>
+        </header>
+
+        <!-- ── Converter Card ── -->
+        <div class="card converter-card">
+
+        <!-- Status bar -->
+        <div class="rate-status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">환율 불러오는 중...</span>
+        </div>
+
+        <!-- FROM -->
+        <div class="input-section">
+            <label class="input-label" id="fromLabel" data-ko="보내는 금액" data-en="Amount">보내는 금액</label>
+            <div class="input-row" id="fromRow">
+            <button class="currency-btn" id="fromBtn" onclick="openDropdown('from')">
+                <span class="currency-flag" id="fromFlag">🇺🇸</span>
+                <span class="currency-code" id="fromCode">USD</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+            <input type="text" class="amount-input" id="fromInput" value="1" inputmode="decimal" placeholder="0" autocomplete="off">
+            </div>
+        </div>
+
+        <!-- Rate bar + Swap -->
+        <div class="rate-bar">
+            <div class="rate-info">
+            <span class="rate-text" id="rateText">—</span>
+            <span class="rate-inverse" id="inverseRate"></span>
+            </div>
+            <button class="swap-btn" id="swapBtn" onclick="swapCurrencies()" title="통화 교체 / Swap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 16V4m0 0L3 8m4-4l4 4"/>
+                <path d="M17 8v12m0 0l4-4m-4 4l-4-4"/>
+            </svg>
+            </button>
+        </div>
+
+        <!-- TO -->
+        <div class="input-section">
+            <label class="input-label" id="toLabel" data-ko="받는 금액" data-en="Converted Amount">받는 금액</label>
+            <div class="input-row" id="toRow">
+            <button class="currency-btn" id="toBtn" onclick="openDropdown('to')">
+                <span class="currency-flag" id="toFlag">🇰🇷</span>
+                <span class="currency-code" id="toCode">KRW</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+                </svg>
+            </button>
+            <input type="text" class="amount-input result-input" id="toInput" value="" inputmode="decimal" placeholder="0" autocomplete="off">
+            </div>
+        </div>
+
+        </div><!-- /converter-card -->
+
+        <!-- ── Quick Currencies ── -->
+        <div class="card quick-card">
+        <h3 class="section-title" id="quickTitle" data-ko="인기 통화" data-en="Popular Currencies">인기 통화</h3>
+        <div class="quick-grid" id="quickGrid">
+            <!-- JS로 생성 -->
+        </div>
+        </div>
+
+        <!-- ── Rate Overview Table ── -->
+        <div class="card table-card">
+        <div class="table-header">
+            <h3 class="section-title" id="tableTitle" data-ko="주요 환율 한눈에" data-en="Exchange Rate Overview">주요 환율 한눈에</h3>
+            <span class="table-base" id="tableBase"></span>
+        </div>
+        <div class="rate-table" id="rateTable">
+            <!-- JS로 생성 -->
+        </div>
+        </div>
+
+        <!-- ── Footer ── -->
+        <footer class="footer">
+        <p id="footer1" data-ko="환율 데이터: Open ExchangeRate API • 매일 업데이트" data-en="Rate data: Open ExchangeRate API • Updated daily">
+            환율 데이터: Open ExchangeRate API • 매일 업데이트
+        </p>
+        <p id="footer2" data-ko="실제 거래 환율과 차이가 있을 수 있습니다" data-en="Rates may differ from actual transaction rates">
+            실제 거래 환율과 차이가 있을 수 있습니다
+        </p>
+        </footer>
+
+    </div><!-- /container -->
+
+    <!-- ── Currency Dropdown Modal ── -->
+    <div class="dropdown-overlay" id="dropdownOverlay" onclick="closeDropdown()"></div>
+    <div class="dropdown-modal" id="dropdownModal">
+        <div class="dropdown-handle"></div>
+        <div class="dropdown-header">
+        <h3 id="dropdownTitle" data-ko="통화 선택" data-en="Select Currency">통화 선택</h3>
+        <button class="close-btn" onclick="closeDropdown()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+        </button>
+        </div>
+        <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput"
+                placeholder="통화 검색... / Search currency..."
+                oninput="filterCurrencies(this.value)"
+                autocomplete="off">
+        </div>
+        <div class="dropdown-list" id="currencyList">
+        <!-- JS로 생성 -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    </body>
+    </html>
+    
