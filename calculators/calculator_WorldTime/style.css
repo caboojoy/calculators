@@ -1,0 +1,380 @@
+    /* ============================================
+    세계 시간 차이 계산기 - style.css
+    pastel sky blue theme (caboojoy-calculators)
+    ============================================ */
+
+    *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+        background: linear-gradient(135deg, #c9e8ff 0%, #f0faff 100%);
+        min-height: 100vh;
+        padding: 2rem 1rem;
+        color: #1a2f3e;
+    }
+    
+    /* ── 레이아웃 ── */
+    .wt-wrap {
+        max-width: 680px;
+        margin: 0 auto;
+    }
+    
+    /* ── 헤더 ── */
+    .wt-header {
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .wt-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2f3e;
+        margin-bottom: 4px;
+    }
+    
+    .wt-sub {
+        font-size: 14px;
+        color: #5a7a8a;
+    }
+    
+    /* ── 기준 도시 카드 ── */
+    .wt-base-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(145, 200, 230, 0.5);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 20px rgba(100, 160, 200, 0.15);
+    }
+    
+    .wt-base-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #5a7a8a;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.75rem;
+    }
+    
+    .wt-base-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 0.75rem;
+    }
+    
+    .wt-base-city {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a2f3e;
+    }
+    
+    .wt-base-date {
+        font-size: 13px;
+        color: #5a7a8a;
+        margin-top: 2px;
+    }
+    
+    .wt-base-time {
+        font-size: 40px;
+        font-weight: 700;
+        color: #1a6fa8;
+        letter-spacing: -2px;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    /* ── 공통 Select ── */
+    .wt-select {
+        flex: 1;
+        height: 40px;
+        border: 1px solid rgba(145, 200, 230, 0.6);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.7);
+        color: #1a2f3e;
+        font-size: 14px;
+        padding: 0 12px;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    
+    .wt-select:hover,
+    .wt-select:focus {
+        border-color: #5aade0;
+    }
+    
+    .wt-base-select {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    /* ── 비교 도시 카드 ── */
+    .wt-cities {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+    
+    .wt-city-card {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(145, 200, 230, 0.4);
+        border-radius: 14px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    
+    .wt-city-card:hover {
+        box-shadow: 0 4px 16px rgba(100, 160, 200, 0.2);
+        border-color: rgba(90, 173, 224, 0.5);
+    }
+    
+    .wt-city-main {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .wt-city-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 4px;
+    }
+    
+    .wt-city-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a2f3e;
+    }
+    
+    .wt-city-tz {
+        font-size: 12px;
+        color: #7a9aaa;
+    }
+    
+    .wt-city-time {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a6fa8;
+        letter-spacing: -0.5px;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    .wt-city-date {
+        font-size: 12px;
+        color: #5a7a8a;
+        margin-top: 2px;
+    }
+    
+    /* ── 시차 배지 ── */
+    .wt-diff-badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+    }
+    
+    .diff-pos {
+        background: #d4f0e8;
+        color: #0f6e56;
+    }
+    
+    .diff-neg {
+        background: #fde8e8;
+        color: #b03030;
+    }
+    
+    .diff-zero {
+        background: #e8f4fb;
+        color: #3a7a9a;
+    }
+    
+    /* ── 삭제 버튼 ── */
+    .wt-remove {
+        width: 30px;
+        height: 30px;
+        border: 1px solid rgba(145, 200, 230, 0.5);
+        border-radius: 8px;
+        background: transparent;
+        color: #7a9aaa;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+        transition: all 0.15s;
+    }
+    
+    .wt-remove:hover {
+        background: #fde8e8;
+        color: #b03030;
+        border-color: #f0b0b0;
+    }
+    
+    /* ── 도시 추가 행 ── */
+    .wt-add-row {
+        display: flex;
+        gap: 8px;
+        margin-top: 1rem;
+        margin-bottom: 0;
+    }
+    
+    .wt-add-btn {
+        height: 40px;
+        padding: 0 18px;
+        border: 1px solid rgba(90, 173, 224, 0.6);
+        border-radius: 10px;
+        background: rgba(201, 232, 255, 0.5);
+        color: #1a6fa8;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s;
+    }
+    
+    .wt-add-btn:hover {
+        background: rgba(90, 173, 224, 0.25);
+        border-color: #5aade0;
+    }
+    
+    .wt-add-btn:active {
+        transform: scale(0.98);
+    }
+    
+    /* ── 시차 요약 테이블 ── */
+    .wt-diff-table {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(145, 200, 230, 0.4);
+        border-radius: 14px;
+        margin-top: 1.25rem;
+        overflow: hidden;
+    }
+    
+    .wt-diff-table-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5a7a8a;
+        padding: 0.875rem 1.25rem;
+        border-bottom: 1px solid rgba(145, 200, 230, 0.3);
+        background: rgba(201, 232, 255, 0.2);
+    }
+    
+    .wt-diff-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .wt-diff-cell {
+        padding: 10px 1.25rem;
+        font-size: 13px;
+        color: #1a2f3e;
+        border-bottom: 1px solid rgba(145, 200, 230, 0.2);
+    }
+    
+    .wt-diff-cell:last-child,
+    tr:last-child .wt-diff-cell {
+        border-bottom: none;
+    }
+    
+    .wt-diff-header {
+        font-size: 12px;
+        font-weight: 600;
+        color: #5a7a8a;
+        background: rgba(201, 232, 255, 0.15);
+    }
+    
+    /* ── 업무 시간 타임라인 ── */
+    .wt-overlap {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(145, 200, 230, 0.4);
+        border-radius: 14px;
+        margin-top: 1.25rem;
+        padding: 1rem 1.25rem 1.25rem;
+    }
+    
+    .wt-overlap-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5a7a8a;
+        margin-bottom: 1rem;
+    }
+    
+    .wt-city-tl {
+        margin-bottom: 10px;
+    }
+    
+    .wt-city-tl-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #3a6a8a;
+        margin-bottom: 4px;
+    }
+    
+    .wt-timeline {
+        display: flex;
+        gap: 2px;
+    }
+    
+    .wt-hour-cell {
+        flex: 1;
+        height: 18px;
+        border-radius: 3px;
+        min-width: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .wt-hour-cell:hover {
+        opacity: 0.7 !important;
+    }
+    
+    .wt-timeline-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #7a9aaa;
+        margin-top: 6px;
+    }
+    
+    /* ── 반응형 ── */
+    @media (max-width: 480px) {
+        body {
+        padding: 1rem 0.75rem;
+        }
+    
+        .wt-base-time {
+        font-size: 30px;
+        }
+    
+        .wt-city-time {
+        font-size: 20px;
+        }
+    
+        .wt-add-row {
+        flex-direction: column;
+        }
+    
+        .wt-add-btn {
+        width: 100%;
+        }
+    }
+    

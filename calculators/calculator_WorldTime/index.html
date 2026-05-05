@@ -1,0 +1,50 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>세계 시간 차이 계산기</title>
+    <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+    <div class="wt-wrap">
+        <div class="wt-header">
+        <h1 class="wt-title">🌍 세계 시간 계산기</h1>
+        <p class="wt-sub">기준 도시를 선택하고 비교할 도시를 추가하세요</p>
+        </div>
+
+        <!-- 기준 도시 카드 -->
+        <div class="wt-base-card">
+        <div class="wt-base-label">기준 도시</div>
+        <div class="wt-base-top">
+            <div>
+            <div class="wt-base-city" id="base-city-name">서울</div>
+            <div class="wt-base-date" id="base-date"></div>
+            </div>
+            <div class="wt-base-time" id="base-time">--:--:--</div>
+        </div>
+        <div class="wt-base-select">
+            <select class="wt-select" id="base-select"></select>
+        </div>
+        </div>
+
+        <!-- 비교 도시 목록 -->
+        <div class="wt-cities" id="cities-list"></div>
+
+        <!-- 도시 추가 -->
+        <div class="wt-add-row">
+        <select class="wt-select" id="add-select"></select>
+        <button class="wt-add-btn" id="add-btn">+ 도시 추가</button>
+        </div>
+
+        <!-- 시차 요약 테이블 -->
+        <div id="diff-section"></div>
+
+        <!-- 업무 시간 타임라인 -->
+        <div id="overlap-section"></div>
+    </div>
+
+    <script src="script.js"></script>
+    </body>
+    </html>
+

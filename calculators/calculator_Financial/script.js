@@ -15,15 +15,6 @@
     const KRW = n => new Intl.NumberFormat("ko-KR").format(Math.round(n ?? 0));
     const PCT  = n => ((n ?? 0) * 100).toFixed(4) + "%";
     const PCT2 = n => ((n ?? 0) * 100).toFixed(2) + "%";
-const onlyDigits = v => String(v ?? "").replace(/[^\d]/g, "");
-const formatAmountInput = v => {
-const digits = onlyDigits(v);
-return digits ? new Intl.NumberFormat("ko-KR").format(Number(digits)) : "";
-};
-const parseAmount = v => {
-const digits = onlyDigits(v);
-return digits ? Number(digits) : 0;
-};
     const freqMap = { yearly: 1, quarterly: 4, monthly: 12 };
     function addMonths(d, mo) {
     const x = new Date(d);
@@ -126,18 +117,38 @@ return digits ? Number(digits) : 0;
         : f.issuePrice;                   // 총액법: 입력값 = 총액
     const net = gross - f.issuanceCost;
 
-    const couponPP = f.faceValue * f.couponRate / n;
-    const guarPP   = f.hasGuaranteeYield ? f.faceValue * f.guaranteeRate / n : 0;
-    const cashPP   = couponPP + guarPP;
-    const flows    = Array.from({ length: periods }, (_, i) =>
-        i === periods - 1 ? cashPP + f.faceValue : cashPP
+    const couponPP  = f.faceValue * f.couponRate / n;
+    const years     = periods / n;
+
+    /* ── 상환할증금 계산 (IAS 32, 한국 CB 실무)
+        보장수익률(g) 조건: 만기까지 보유 시 총수익 = fv × (1+g)^years
+        만기상환금 = fv × (1+g)^years − 쿠폰의 미래가치합
+        상환할증금 = 만기상환금 − fv
+
+        핵심: 쿠폰의 단순합이 아닌 각 쿠폰을 만기까지 보장수익률로 복리한
+            미래가치합(couponFVSum)을 차감해야 IRR = 보장수익률이 정확히 성립.
+
+        couponFVSum = Σ[couponPP × (1+g_p)^(periods−t)]  for t = 1..periods
+        여기서 g_p = (1+g)^(1/n) − 1  (기간별 복리 보장수익률) ── */
+    const guarLumpSum = (() => {
+        if (!f.hasGuaranteeYield) return 0;
+        const g_p = toPeriodic(f.guaranteeRate, f.frequency);
+        let couponFVSum = 0;
+        for (let t = 1; t <= periods; t++) {
+        couponFVSum += couponPP * Math.pow(1 + g_p, periods - t);
+        }
+        return Math.max(0, f.faceValue * Math.pow(1 + f.guaranteeRate, years) - couponFVSum - f.faceValue);
+    })();
+    const cashPP  = couponPP;  // 매기 현금흐름: 쿠폰만
+    const flows   = Array.from({ length: periods }, (_, i) =>
+        i === periods - 1 ? couponPP + f.faceValue + guarLumpSum : couponPP
     );
 
     /* 자본 (EQUITY) */
     if (cls.type === "EQUITY") {
         return {
         cls, n, mpp, periods, gross, net, fv: f.faceValue,
-        couponPP, guarPP, cashPP, flows,
+        couponPP, guarLumpSum, cashPP, flows,
         liab: 0, eq: net, liabGross: 0, eqGross: gross,
         liabCost: 0, eqCost: f.issuanceCost,
         eir: 0, annEIR: 0, sched: []
@@ -150,7 +161,7 @@ return digits ? Number(digits) : 0;
         const annEIR = toAnnual(eirP, f.frequency);
         return {
         cls, n, mpp, periods, gross, net, fv: f.faceValue,
-        couponPP, guarPP, cashPP, flows,
+        couponPP, guarLumpSum, cashPP, flows,
         liab: net, eq: 0, liabGross: net, eqGross: 0,
         liabCost: f.issuanceCost, eqCost: 0,
         eir: eirP, annEIR,
@@ -159,20 +170,23 @@ return digits ? Number(digits) : 0;
     }
 
     /* 복합 (HYBRID) — 잔여접근법 IAS 32.31 + 비용 안분 IAS 32.38
-        FIXED: gross(총발행) 기준으로 자본요소 산출 및 비용 안분 ── */
-    const pmkt     = toPeriodic(f.marketRate, f.frequency);
+        FIXED: gross(총발행) 기준으로 자본요소 산출 및 비용 안분
+        FIXED: pmkt = 명목연이자율 / 지급횟수 (단순분할)
+                한국 채권시장 관행: 시장이자율은 명목연이자율(APR)로 고시되며
+                기간이자율은 단순분할(r/n) 적용 — 복리환산((1+r)^(1/n)-1)과 구분 ── */
+    const pmkt      = f.marketRate / n;  // FIXED: 단순분할 (한국 시장 관행)
     const liabGross = flows.reduce((s, c, i) => s + c / Math.pow(1 + pmkt, i + 1), 0);
-    const eqGross  = Math.max(0, gross - liabGross);  // FIXED: gross(총발행) 기준
-    const liabCost = gross > 0 ? f.issuanceCost * liabGross / gross : 0;  // FIXED
-    const eqCost   = f.issuanceCost - liabCost;
-    const liabNet  = liabGross - liabCost;
-    const eqNet    = eqGross  - eqCost;
-    const eirP     = calcIRR([-liabNet, ...flows]);
-    const annEIR   = toAnnual(eirP, f.frequency);
+    const eqGross   = Math.max(0, gross - liabGross);
+    const liabCost  = gross > 0 ? f.issuanceCost * liabGross / gross : 0;
+    const eqCost    = f.issuanceCost - liabCost;
+    const liabNet   = liabGross - liabCost;
+    const eqNet     = eqGross  - eqCost;
+    const eirP      = calcIRR([-liabNet, ...flows]);
+    const annEIR    = toAnnual(eirP, f.frequency);
 
     return {
         cls, n, mpp, periods, gross, net, fv: f.faceValue,
-        couponPP, guarPP, cashPP, flows,
+        couponPP, guarLumpSum, cashPP, flows,
         liab: liabNet, eq: eqNet, liabGross, eqGross, liabCost, eqCost,
         pmkt, annMkt: f.marketRate, eir: eirP, annEIR,
         sched: buildSched(liabNet, flows, eirP, f.issueDate, mpp)
@@ -282,14 +296,20 @@ return digits ? Number(digits) : 0;
         });
     });
 
-    /* 만기 상환 */
+    /* 만기 상환 — 상환할증금 포함 */
     if (sched?.length && cls.type !== "EQUITY") {
         const last = sched[sched.length - 1];
+        const guarLumpSum = res.guarLumpSum ?? 0;
+        // 상각후원가 모델: EIR 상각을 통해 장부금액이 만기상환금액(액면+상환할증금)까지 증가
+        // 만기 시 장부금액(last.open) = 총상환금액 → Dr/Cr 모두 totalRedemption
+        const totalRedemption = fv + guarLumpSum;
         jnl.push({
         date: last.date, title: "만기 상환",
-        dr: [{ a: "사채 (부채요소)", v: fv }],
-        cr: [{ a: "현금및현금성자산", v: fv }],
-        note: `만기 장부금액(${KRW(last.close)}) ≈ 액면금액(${KRW(fv)}) — 완전 상각 완료`
+        dr: [{ a: "사채 (부채요소)", v: totalRedemption }],
+        cr: [{ a: "현금및현금성자산", v: totalRedemption }],
+        note: guarLumpSum > 0
+            ? `액면 ${KRW(fv)}원 + 상환할증금 ${KRW(guarLumpSum)}원 = 총상환 ${KRW(totalRedemption)}원 | 장부금액이 EIR 상각을 통해 만기상환금액까지 증가함`
+            : `만기 장부금액(${KRW(last.open)}) ≈ 액면금액(${KRW(fv)}) — 완전 상각 완료`
         });
     }
     return jnl;
@@ -299,13 +319,52 @@ return digits ? Number(digits) : 0;
     function prepForm(form) {
     return {
         ...form,
-    faceValue:     parseAmount(form.faceValue),
-    issuePrice:    parseAmount(form.issuePrice),
+        faceValue:     +form.faceValue,
+        issuePrice:    +form.issuePrice,
         couponRate:    +form.couponRate    / 100,
         marketRate:    +form.marketRate    / 100,
-    issuanceCost:  parseAmount(form.issuanceCost),
+        issuanceCost:  +form.issuanceCost,
         guaranteeRate: +form.guaranteeRate / 100,
     };
+    }
+
+    /* ── 공통 입력 스타일 (모듈 레벨 상수 — App 내부 정의 금지) ── */
+    const INP_STYLE = { width: "100%", boxSizing: "border-box", fontSize: 13 };
+
+    /* ── FI: 입력 필드 래퍼 ──
+    IMPORTANT: 반드시 App 외부(모듈 레벨)에 정의해야 함.
+    App 내부에서 정의하면 매 렌더마다 새 컴포넌트 참조가 생성되어
+    React가 자식 input을 언마운트/재마운트 → 포커스 소실 버그 발생. ── */
+    function FI({ label, note, children }) {
+    return (
+        <div style={{ marginBottom: 8 }}>
+        <label style={{ fontSize: 10, color: "var(--color-text-secondary)", display: "block", marginBottom: 2 }}>{label}</label>
+        {children}
+        {note && <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", marginTop: 1 }}>{note}</div>}
+        </div>
+    );
+    }
+
+    /* ── NumInput: 천단위 구분 숫자 입력 ──
+    - 포커스 중: 순수 숫자만 표시 (입력 편의)
+    - 포커스 아웃: 천단위 콤마 포맷 표시 (가독성)
+    - type="text" + inputMode="numeric": 콤마 입력 허용하면서 모바일 숫자 키패드 ── */
+    function NumInput({ value, onChange, style }) {
+    const [focused, setFocused] = useState(false);
+    const display = focused
+        ? value  // 입력 중: 순수 숫자 문자열 (커서 위치 유지)
+        : (value ? parseInt(value || "0", 10).toLocaleString("ko-KR") : "");  // 포커스 아웃: 콤마 포맷
+    return (
+        <input
+        type="text"
+        inputMode="numeric"
+        style={style || INP_STYLE}
+        value={display}
+        onChange={e => onChange(e.target.value.replace(/[^\d]/g, ""))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        />
+    );
     }
 
     /* ── 색상 팔레트 ── */
@@ -336,35 +395,6 @@ return digits ? Number(digits) : 0;
     );
     }
 
-/* ── 금액 입력 컴포넌트 ── */
-function AmountInput({ value, onChange, style }) {
-const [focused, setFocused] = useState(false);
-const shown = focused ? String(value ?? "") : formatAmountInput(value);
-
-return (
-    <input
-    type="text"
-    inputMode="numeric"
-    style={style}
-    value={shown}
-    onFocus={() => setFocused(true)}
-    onBlur={() => setFocused(false)}
-    onChange={e => onChange(onlyDigits(e.target.value))}
-    />
-);
-}
-
-/* ── 폼 아이템 ── */
-function FI({ label, note, children }) {
-return (
-    <div style={{ marginBottom: 8 }}>
-    <label style={{ fontSize: 10, color: "var(--color-text-secondary)", display: "block", marginBottom: 2 }}>{label}</label>
-    {children}
-    {note && <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", marginTop: 1 }}>{note}</div>}
-    </div>
-);
-}
-
     /* ── TAB: 분류 결과 ── */
     function ClassTab({ res }) {
     const cs = CLS[res.cls.type], H = res.cls.type === "HYBRID";
@@ -388,6 +418,7 @@ return (
             {res.cls.type !== "EQUITY"    && <StatCard label="부채요소 장부금액" value={KRW(res.liab) + "원"} sub={H ? `총액 ${KRW(res.liabGross)}원 − 비용 ${KRW(res.liabCost)}원` : null} />}
             {res.cls.type !== "LIABILITY" && <StatCard label="자본요소 장부금액" value={KRW(res.eq)   + "원"} sub={H ? `총액 ${KRW(res.eqGross)}원 − 비용 ${KRW(res.eqCost)}원`   : null} />}
             {res.annEIR > 0 && <StatCard label="유효이자율 EIR (연)" value={PCT(res.annEIR)} sub={`기간이자율: ${PCT(res.eir)}`} />}
+            {res.guarLumpSum > 0 && <StatCard label="만기 상환할증금" value={KRW(res.guarLumpSum) + "원"} sub="보장수익률 만기 일시 지급" />}
             <StatCard label="이자지급 기수" value={`${res.periods}회`} sub={`총 ${res.periods / res.n}년`} />
         </div>
         <div style={card}>
@@ -636,14 +667,15 @@ return (
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <THead h1="보장수익률 없음" h2={`+${(guarPct * 100).toFixed(1)}% 추가`} />
             <tbody>
-                <SRow label="기간 현금지급"         v1={KRW(noGuarR.cashPP)         + "원"} v2={KRW(withGuarR.cashPP) + "원"} />
-                <SRow label="유효이자율 EIR (연)"   v1={PCT(noGuarR.annEIR)}                v2={PCT(withGuarR.annEIR)}          bold />
+                <SRow label="매기 현금지급 (쿠폰)"     v1={KRW(noGuarR.cashPP)           + "원"} v2={KRW(withGuarR.cashPP) + "원"} />
+                <SRow label="만기 상환할증금"           v1="없음"                                  v2={KRW(withGuarR.guarLumpSum) + "원"} />
+                <SRow label="유효이자율 EIR (연)"       v1={PCT(noGuarR.annEIR)}                   v2={PCT(withGuarR.annEIR)}          bold />
                 {noGuarR.sched[0] && <SRow label="제1기 이자비용" v1={KRW(noGuarR.sched[0].intr) + "원"} v2={KRW(withGuarR.sched[0].intr) + "원"} />}
                 <SRow label="부채요소 CA" v1={KRW(noGuarR.liab) + "원"} v2={KRW(withGuarR.liab) + "원"} bold />
             </tbody>
             </table>
             <div style={{ marginTop: 8, fontSize: 11, background: "var(--color-background-info)", color: "var(--color-text-info)", padding: "6px 10px", borderRadius: "var(--border-radius-md)" }}>
-            보장수익률 추가 시 현금흐름 증가 → EIR 상승 → 이자비용·부채요소 장부금액 증가
+            보장수익률은 매기 지급이 아닌 만기 상환할증금(일시불)으로 처리됩니다. 만기 현금흐름 증가 → EIR 상승 → 이자비용·부채요소 장부금액 증가
             </div>
         </div>
         </div>
@@ -668,7 +700,6 @@ return (
     const [asOfDate, setAsOfDate] = useState("");
     const [collapsed, setCollapsed] = useState(false);
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-const setAmount = (k, v) => set(k, onlyDigits(v));
 
     function run() {
         try {
@@ -685,7 +716,6 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
     const preview = classify({ hasMandatoryRedemption: form.hasMandatoryRedemption, dividendType: form.dividendType, hasConversionOption: form.hasConversionOption, conversionFixed: form.conversionFixed });
     const pcs     = CLS[preview.type];
     const TABS    = [["classify","① 분류"],["schedule","② 상각표"],["journal","③ 분개"],["asof","④ 기준일"],["scenario","⑤ 시나리오"]];
-    const inp     = { width: "100%", boxSizing: "border-box", fontSize: 13 };
 
     return (
         <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--color-text-primary)", paddingBottom: 40 }}>
@@ -703,7 +733,7 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
             <div style={card}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setCollapsed(!collapsed)}>
                 <span style={{ fontWeight: 500, fontSize: 13 }}>입력 조건</span>
-                <button type="button" style={{ fontSize: 10, color: "var(--color-text-secondary)", background: "none", border: "none", cursor: "pointer" }}>{collapsed ? "펼치기 ▼" : "접기 ▲"}</button>
+                <button style={{ fontSize: 10, color: "var(--color-text-secondary)", background: "none", border: "none", cursor: "pointer" }}>{collapsed ? "펼치기 ▼" : "접기 ▲"}</button>
             </div>
 
             {!collapsed && (
@@ -713,25 +743,25 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
                     <div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>기본 정보</div>
                     <FI label="상품 유형">
-                        <select style={inp} value={form.instrumentType} onChange={e => set("instrumentType", e.target.value)}>
+                        <select style={INP_STYLE} value={form.instrumentType} onChange={e => set("instrumentType", e.target.value)}>
                         <option value="BOND">일반사채 (Straight Bond)</option>
                         <option value="CB">전환사채 (CB)</option>
                         <option value="RCPS">상환전환우선주 (RCPS)</option>
                         </select>
                     </FI>
                     <FI label="액면금액 (원)">
-                        <AmountInput style={inp} value={form.faceValue} onChange={v => setAmount("faceValue", v)} />
+                        <NumInput value={form.faceValue} onChange={v => set("faceValue", v)} />
                     </FI>
                     <FI label="발행금액 (원)" note={form.issuanceCostMethod === "net" ? "순액: 회사 수취액 (비용 차감 후)" : "총액: 투자자 지급액 (비용 차감 전)"}>
-                        <AmountInput style={inp} value={form.issuePrice} onChange={v => setAmount("issuePrice", v)} />
+                        <NumInput value={form.issuePrice} onChange={v => set("issuePrice", v)} />
                     </FI>
                     <FI label="발행비용 (원)">
-                        <AmountInput style={inp} value={form.issuanceCost} onChange={v => setAmount("issuanceCost", v)} />
+                        <NumInput value={form.issuanceCost} onChange={v => set("issuanceCost", v)} />
                     </FI>
                     <FI label="발행비용 처리방식">
                         <div style={{ display: "flex", border: "1px solid var(--color-border-primary)", borderRadius: "var(--border-radius-sm)", overflow: "hidden" }}>
                         {[["net", "순액법"], ["gross", "총액법"]].map(([v, l]) => (
-                            <button type="button" key={v} onClick={() => set("issuanceCostMethod", v)} style={{ flex: 1, padding: "6px", fontSize: 12, border: "none", cursor: "pointer", background: form.issuanceCostMethod === v ? "#185FA5" : "var(--color-background-primary)", color: form.issuanceCostMethod === v ? "#fff" : "var(--color-text-primary)", fontFamily: "var(--font-sans)", transition: "all 0.15s" }}>{l}</button>
+                            <button key={v} onClick={() => set("issuanceCostMethod", v)} style={{ flex: 1, padding: "6px", fontSize: 12, border: "none", cursor: "pointer", background: form.issuanceCostMethod === v ? "#185FA5" : "var(--color-background-primary)", color: form.issuanceCostMethod === v ? "#fff" : "var(--color-text-primary)", fontFamily: "var(--font-sans)", transition: "all 0.15s" }}>{l}</button>
                         ))}
                         </div>
                     </FI>
@@ -741,19 +771,19 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
                     <div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>금융 조건</div>
                     <FI label="표면이자율 (%)">
-                        <input type="number" step="0.1" style={inp} value={form.couponRate} onChange={e => set("couponRate", e.target.value)} />
+                        <input type="number" step="0.1" style={INP_STYLE} value={form.couponRate} onChange={e => set("couponRate", e.target.value)} />
                     </FI>
                     <FI label="시장이자율 (%) — 부채 PV 할인율" note="복합금융상품 부채요소 현재가치 산정용">
-                        <input type="number" step="0.1" style={inp} value={form.marketRate} onChange={e => set("marketRate", e.target.value)} />
+                        <input type="number" step="0.1" style={INP_STYLE} value={form.marketRate} onChange={e => set("marketRate", e.target.value)} />
                     </FI>
                     <FI label="발행일">
-                        <input type="date" style={inp} value={form.issueDate} onChange={e => set("issueDate", e.target.value)} />
+                        <input type="date" style={INP_STYLE} value={form.issueDate} onChange={e => set("issueDate", e.target.value)} />
                     </FI>
                     <FI label="만기일">
-                        <input type="date" style={inp} value={form.maturityDate} onChange={e => set("maturityDate", e.target.value)} />
+                        <input type="date" style={INP_STYLE} value={form.maturityDate} onChange={e => set("maturityDate", e.target.value)} />
                     </FI>
                     <FI label="이자지급주기">
-                        <select style={inp} value={form.frequency} onChange={e => set("frequency", e.target.value)}>
+                        <select style={INP_STYLE} value={form.frequency} onChange={e => set("frequency", e.target.value)}>
                         <option value="yearly">연 1회</option>
                         <option value="quarterly">분기 1회 (연 4회)</option>
                         <option value="monthly">월 1회 (연 12회)</option>
@@ -765,8 +795,8 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
                         <span style={{ fontWeight: 500 }}>보장수익률 추가</span>
                         </label>
                         {form.hasGuaranteeYield && (
-                        <FI label="보장수익률 (%)" note="현금흐름 추가 → EIR 상승">
-                            <input type="number" step="0.1" style={inp} value={form.guaranteeRate} onChange={e => set("guaranteeRate", e.target.value)} />
+                        <FI label="보장수익률 (%)" note="만기 상환할증금으로 반영 → EIR 상승">
+                            <input type="number" step="0.1" style={INP_STYLE} value={form.guaranteeRate} onChange={e => set("guaranteeRate", e.target.value)} />
                         </FI>
                         )}
                     </div>
@@ -797,7 +827,7 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
                         </label>
                     )}
                     <FI label="배당 유형">
-                        <select style={inp} value={form.dividendType} onChange={e => set("dividendType", e.target.value)}>
+                        <select style={INP_STYLE} value={form.dividendType} onChange={e => set("dividendType", e.target.value)}>
                         <option value="fixed">고정 배당 (비재량)</option>
                         <option value="variable">변동 배당 (비재량)</option>
                         <option value="discretionary">재량적 배당</option>
@@ -811,7 +841,7 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
                     </div>
                 </div>
                 <div style={{ marginTop: 16, display: "flex", justifyContent: "center" }}>
-                    <button type="button" onClick={run} style={{ padding: "9px 44px", background: "linear-gradient(135deg,#185FA5,#2a7ed4)", color: "#fff", border: "none", borderRadius: "var(--border-radius-md)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-sans)", boxShadow: "0 2px 8px rgba(24,95,165,0.3)" }}>
+                    <button onClick={run} style={{ padding: "9px 44px", background: "linear-gradient(135deg,#185FA5,#2a7ed4)", color: "#fff", border: "none", borderRadius: "var(--border-radius-md)", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "var(--font-sans)", boxShadow: "0 2px 8px rgba(24,95,165,0.3)" }}>
                     계산 실행
                     </button>
                 </div>
@@ -852,5 +882,3 @@ const setAmount = (k, v) => set(k, onlyDigits(v));
     }
 
     ReactDOM.render(<App />, document.getElementById("root"));
-
-    

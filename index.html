@@ -377,13 +377,13 @@ function renderTopPanels() {
             <div class="store-grid">
                 ${smartStores.map(store => store.url
                     ? `<a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
-                           <div class="store-label">${store.label}</div>
-                           <div class="store-name">${store.name}</div>
-                       </a>`
+                            <class="store-label">${store.label}</  div>
+                            <div class="store-name">${store.name}</div>
+                        </a>`
                     : `<div class="store-link disabled">
-                           <div class="store-label">${store.label}</div>
-                           <div class="store-name">${store.name}</div>
-                       </div>`
+                            <div class="store-label">${store.label}</div>
+                            <div class="store-name">${store.name}</div>
+                        </div>`
                 ).join('')}
             </div>
         </div>`;
