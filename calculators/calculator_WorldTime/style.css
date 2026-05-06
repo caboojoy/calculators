@@ -376,7 +376,9 @@
     .wt-base-select .wt-select,
     .wt-add-row .wt-select,
     .wt-add-btn {
-    height: 48px;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
     }
     
         .wt-add-btn {
