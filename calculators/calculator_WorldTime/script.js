@@ -39,10 +39,68 @@
         { name: '아제르바이잔(바쿠)', tz: 'Asia/Baku',             label: 'UTC+4'     },
     ];
     
-    /* ── 상태 ── */
-    let baseIdx = 0;                    // 기준 도시 인덱스
-    let compCities = [3, 10, 13, 18];   // 비교 도시 인덱스 배열 (초기값)
+/* ── 상태 ── */
+const STORAGE_KEY = 'wt-worldtime-state';
+let baseIdx = 0;                    // 기준 도시 인덱스
+let compCities = [];                // 비교 도시 인덱스 배열
     let tickTimer = null;
+
+/* ── 기본값/저장 유틸 ── */
+
+function cityIndexByName(name) {
+    return CITIES.findIndex(city => city.name === name);
+}
+
+function getDefaultState() {
+    const defaultBase = cityIndexByName('서울');
+    const defaultCompareNames = ['마드리드', '베를린', '파리', '베이징', '도쿄', '뉴욕'];
+    const defaultCompare = defaultCompareNames
+        .map(cityIndexByName)
+        .filter(idx => idx !== -1 && idx !== defaultBase);
+
+    return {
+        baseIdx: defaultBase !== -1 ? defaultBase : 0,
+        compCities: [...new Set(defaultCompare)],
+    };
+}
+
+function normalizeState(state) {
+    const defaults = getDefaultState();
+    const parsedBase = Number.parseInt(state?.baseIdx, 10);
+    const safeBase = Number.isInteger(parsedBase) && parsedBase >= 0 && parsedBase < CITIES.length
+        ? parsedBase
+        : defaults.baseIdx;
+
+    const safeComp = Array.isArray(state?.compCities)
+        ? [...new Set(state.compCities
+            .map(v => Number.parseInt(v, 10))
+            .filter(idx => Number.isInteger(idx) && idx >= 0 && idx < CITIES.length && idx !== safeBase))]
+        : defaults.compCities.filter(idx => idx !== safeBase);
+
+    return {
+        baseIdx: safeBase,
+        compCities: safeComp,
+    };
+}
+
+function saveState() {
+    const state = {
+        baseIdx,
+        compCities,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return normalizeState(null);
+
+    try {
+        return normalizeState(JSON.parse(raw));
+    } catch {
+        return normalizeState(null);
+    }
+}
     
     /* ── 시간 유틸 ── */
     
@@ -133,6 +191,7 @@
         sel.onchange = () => {
         baseIdx = parseInt(sel.value, 10);
         compCities = compCities.filter(x => x !== baseIdx);
+        saveState();
         renderAll();
         };
     }
@@ -159,6 +218,7 @@
             return;
         }
         compCities.push(idx);
+        saveState();
         renderAll();
         };
     }
@@ -194,6 +254,7 @@
         card.querySelector('.wt-remove').addEventListener('click', e => {
             const removeIdx = parseInt(e.currentTarget.dataset.idx, 10);
             compCities = compCities.filter(x => x !== removeIdx);
+            saveState();
             renderAll();
         });
     
@@ -316,6 +377,9 @@
     
     /* ── 초기화 ── */
     document.addEventListener('DOMContentLoaded', () => {
+    const initialState = loadState();
+    baseIdx = initialState.baseIdx;
+    compCities = initialState.compCities;
         renderAll();
     });
 

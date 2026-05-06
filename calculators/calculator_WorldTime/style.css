@@ -235,9 +235,13 @@
         margin-top: 1rem;
         margin-bottom: 0;
     }
+
+.wt-add-row .wt-select {
+    height: 48px;
+}
     
     .wt-add-btn {
-        height: 40px;
+    height: 48px;
         padding: 0 18px;
         border: 1px solid rgba(90, 173, 224, 0.6);
         border-radius: 10px;
