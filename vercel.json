@@ -1,0 +1,16 @@
+    {
+        "redirects": [
+        {
+            "source": "http://allcalcu.com/:path*",
+            "destination": "https://www.allcalcu.com/:path*",
+            "permanent": true
+        },
+        {
+            "source": "https://allcalcu.com/:path*",
+            "destination": "https://www.allcalcu.com/:path*",
+            "permanent": true
+        }
+        ]
+    }
+
+    
