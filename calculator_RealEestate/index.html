@@ -1,0 +1,1003 @@
+    <!DOCTYPE html>
+    <html lang="ko">
+    <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>부동산 계산기</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    </head>
+    <body>
+
+    <div id="app">
+
+        <!-- ── 헤더 ──────────────────────────────────────── -->
+        <header class="app-header">
+        <div class="header-inner">
+            <span class="header-icon">🏠</span>
+            <div>
+            <h1 class="header-title">부동산 계산기</h1>
+            <p class="header-sub">취득·세금·대출·임대 종합 계산</p>
+            </div>
+        </div>
+        </header>
+
+        <!-- ── 카테고리 탭 ────────────────────────────────── -->
+        <nav class="cat-nav" id="catNav"></nav>
+
+        <!-- ── 계산기 서브 탭 ────────────────────────────── -->
+        <nav class="sub-nav" id="subNav"></nav>
+
+        <!-- ── 메인 패널 영역 ────────────────────────────── -->
+        <main class="main-area">
+
+        <!-- ════════════════════════════════════════════
+            중개보수 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-agentFee" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">중개보수 계산기</h2>
+            <span class="tax-date" id="agentFee-updated"></span>
+            </div>
+            <p class="panel-desc">공인중개사 중개보수(수수료)의 법정 최고 금액을 계산합니다.</p>
+
+            <div class="card">
+            <!-- 거래유형 -->
+            <div class="form-group">
+                <label class="form-label">거래유형</label>
+                <div class="toggle-group" id="agentFee-transType">
+                <button class="toggle-btn active" data-value="buy">매매·교환</button>
+                <button class="toggle-btn" data-value="rent">임대차 (전·월세)</button>
+                </div>
+            </div>
+
+            <!-- 물건유형 -->
+            <div class="form-group">
+                <label class="form-label">물건유형</label>
+                <div class="toggle-group" id="agentFee-propType">
+                <button class="toggle-btn active" data-value="residential">주거용</button>
+                <button class="toggle-btn" data-value="officetel">오피스텔</button>
+                <button class="toggle-btn" data-value="commercial">상가·토지</button>
+                </div>
+            </div>
+
+            <!-- 거래금액 (전세·매매) -->
+            <div class="form-group" id="agentFee-priceGroup">
+                <label class="form-label" id="agentFee-priceLabel">거래금액 (매매가)</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="agentFee-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="agentFee-priceHint"></p>
+            </div>
+
+            <!-- 월세 (임대차 선택 시 표시) -->
+            <div class="form-group" id="agentFee-monthlyGroup" style="display:none">
+                <label class="form-label">월세 <span class="label-opt">(없으면 0)</span></label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="agentFee-monthly" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원/월</span>
+                </div>
+                <p class="input-hint small">보증금 + (월세 × 100) = 환산 거래금액으로 계산</p>
+            </div>
+
+            <button class="calc-btn" onclick="calcAgentFee()">계산하기</button>
+            </div>
+
+            <!-- 결과 -->
+            <div class="result-card" id="agentFee-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">환산 거래금액</span>
+                <span class="result-val" id="agentFee-converted">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">적용 요율</span>
+                <span class="result-val accent" id="agentFee-rate">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">법정 최고 수수료</span>
+                <span class="result-val primary" id="agentFee-fee">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">부가세 포함 (VAT 10%)</span>
+                <span class="result-val" id="agentFee-feeVat">-</span>
+            </div>
+            <p class="result-note" id="agentFee-note"></p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            전월세 전환율 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-rentConversion" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">전월세 전환율 계산기</h2>
+            <span class="tax-date" id="rentConv-updated"></span>
+            </div>
+            <p class="panel-desc">전세·월세 전환 시 금액과 법정 상한율을 확인합니다.</p>
+
+            <!-- 법정 상한율 배너 -->
+            <div class="info-banner" id="rentConv-legalBanner"></div>
+
+            <div class="card">
+            <!-- 계산 모드 -->
+            <div class="form-group">
+                <label class="form-label">계산 모드</label>
+                <div class="toggle-group" id="rentConv-mode">
+                <button class="toggle-btn active" data-value="jeonToWol">전세 → 월세</button>
+                <button class="toggle-btn" data-value="wolToJeon">월세 → 전세</button>
+                <button class="toggle-btn" data-value="calcRate">전환율 계산</button>
+                </div>
+            </div>
+
+            <!-- 전세 → 월세 모드 -->
+            <div id="rentConv-jeonToWol">
+                <div class="form-group">
+                <label class="form-label">현재 전세 보증금</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-jeon-deposit" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="rc-jeon-deposit-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">전환 후 새 보증금</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-jeon-newDeposit" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="rc-jeon-newDeposit-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">적용 전환율 <span class="label-opt">(비워두면 법정 상한율)</span></label>
+                <div class="input-wrap">
+                    <input type="text" id="rc-jeon-rate" placeholder="자동" inputmode="decimal" />
+                    <span class="input-unit">%</span>
+                </div>
+                </div>
+            </div>
+
+            <!-- 월세 → 전세 모드 -->
+            <div id="rentConv-wolToJeon" style="display:none">
+                <div class="form-group">
+                <label class="form-label">현재 보증금</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-wol-deposit" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="rc-wol-deposit-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">현재 월세</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-wol-monthly" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/월</span>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">적용 전환율 <span class="label-opt">(비워두면 법정 상한율)</span></label>
+                <div class="input-wrap">
+                    <input type="text" id="rc-wol-rate" placeholder="자동" inputmode="decimal" />
+                    <span class="input-unit">%</span>
+                </div>
+                </div>
+            </div>
+
+            <!-- 전환율 계산 모드 -->
+            <div id="rentConv-calcRate" style="display:none">
+                <div class="form-group">
+                <label class="form-label">전세 보증금 (또는 기준 보증금)</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-calc-jeon" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="rc-calc-jeon-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">월세 전환 후 보증금</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-calc-deposit" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="rc-calc-deposit-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">월세</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="rc-calc-monthly" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/월</span>
+                </div>
+                </div>
+            </div>
+
+            <button class="calc-btn" onclick="calcRentConversion()">계산하기</button>
+            </div>
+
+            <!-- 결과 -->
+            <div class="result-card" id="rentConv-result" style="display:none">
+            <div class="result-row big">
+                <span class="result-label" id="rentConv-resLabel">계산 결과</span>
+                <span class="result-val primary" id="rentConv-resVal">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row">
+                <span class="result-label">법정 상한 전환율</span>
+                <span class="result-val accent" id="rentConv-legal">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">적용 전환율</span>
+                <span class="result-val" id="rentConv-applied">-</span>
+            </div>
+            <p class="result-note" id="rentConv-note"></p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            LTV · DTI · DSR 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-ltvDtiDsr" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">LTV · DTI · DSR 계산기</h2>
+            <span class="tax-date" id="loanRatio-updated"></span>
+            </div>
+            <p class="panel-desc">주택담보대출 한도와 부채 비율을 계산합니다.</p>
+
+            <!-- 내부 탭 -->
+            <div class="inner-tabs">
+            <button class="inner-tab active" data-tab="ltv" onclick="switchLoanTab('ltv')">LTV</button>
+            <button class="inner-tab" data-tab="dti" onclick="switchLoanTab('dti')">DTI</button>
+            <button class="inner-tab" data-tab="dsr" onclick="switchLoanTab('dsr')">DSR</button>
+            </div>
+
+            <!-- LTV 패널 -->
+            <div class="inner-panel" id="ltv-panel">
+            <p class="inner-desc">담보인정비율(LTV) — 부동산 가치 대비 최대 대출 가능 금액</p>
+            <div class="card">
+                <div class="form-group">
+                <label class="form-label">지역 구분</label>
+                <div class="toggle-group" id="ltv-region">
+                    <button class="toggle-btn active" data-value="regulated">조정·투기과열지구</button>
+                    <button class="toggle-btn" data-value="normal">비규제지역</button>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">주택 보유 수</label>
+                <div class="toggle-group" id="ltv-houseCount">
+                    <button class="toggle-btn active" data-value="noHouse">무주택</button>
+                    <button class="toggle-btn" data-value="oneHouse">1주택</button>
+                    <button class="toggle-btn" data-value="multiHouse">다주택</button>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">부동산 감정가 (KB시세 등)</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="ltv-value" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="ltv-value-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">기존 선순위 채권 (전세보증금 등)</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="ltv-prior" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">희망 대출금액</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="ltv-desired" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="ltv-desired-hint"></p>
+                </div>
+                <button class="calc-btn" onclick="calcLTV()">계산하기</button>
+            </div>
+            <div class="result-card" id="ltv-result" style="display:none">
+                <div class="result-row">
+                <span class="result-label">LTV 한도율</span>
+                <span class="result-val accent" id="ltv-limitRate">-</span>
+                </div>
+                <div class="result-row big">
+                <span class="result-label">최대 대출 가능액 (LTV 기준)</span>
+                <span class="result-val primary" id="ltv-maxLoan">-</span>
+                </div>
+                <div class="result-divider"></div>
+                <div class="result-row">
+                <span class="result-label">희망 대출금액</span>
+                <span class="result-val" id="ltv-desiredVal">-</span>
+                </div>
+                <div class="result-row">
+                <span class="result-label">희망 대출 LTV</span>
+                <span class="result-val" id="ltv-desiredRate">-</span>
+                </div>
+                <div class="status-badge" id="ltv-status"></div>
+            </div>
+            </div>
+
+            <!-- DTI 패널 -->
+            <div class="inner-panel" id="dti-panel" style="display:none">
+            <p class="inner-desc">총부채상환비율(DTI) — 연소득 대비 연간 원리금 상환 비율</p>
+            <div class="card">
+                <div class="form-group">
+                <label class="form-label">지역 구분</label>
+                <div class="toggle-group" id="dti-region">
+                    <button class="toggle-btn active" data-value="regulated">규제지역 (한도 40%)</button>
+                    <button class="toggle-btn" data-value="normal">비규제지역 (한도 60%)</button>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">연간 소득</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="dti-income" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/년</span>
+                </div>
+                <p class="input-hint" id="dti-income-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">해당 대출 연간 원리금 상환액</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="dti-principal" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/년</span>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">기타 대출 연간 이자 상환액</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="dti-otherInterest" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/년</span>
+                </div>
+                </div>
+                <button class="calc-btn" onclick="calcDTI()">계산하기</button>
+            </div>
+            <div class="result-card" id="dti-result" style="display:none">
+                <div class="result-row">
+                <span class="result-label">DTI 한도</span>
+                <span class="result-val accent" id="dti-limit">-</span>
+                </div>
+                <div class="result-row big">
+                <span class="result-label">계산된 DTI</span>
+                <span class="result-val primary" id="dti-ratio">-</span>
+                </div>
+                <div class="result-divider"></div>
+                <div class="result-row">
+                <span class="result-label">연간 소득</span>
+                <span class="result-val" id="dti-incomeVal">-</span>
+                </div>
+                <div class="result-row">
+                <span class="result-label">연간 총 상환액</span>
+                <span class="result-val" id="dti-totalPayment">-</span>
+                </div>
+                <div class="status-badge" id="dti-status"></div>
+            </div>
+            </div>
+
+            <!-- DSR 패널 -->
+            <div class="inner-panel" id="dsr-panel" style="display:none">
+            <p class="inner-desc">총부채원리금상환비율(DSR) — 연소득 대비 모든 대출의 연간 원리금 상환 비율</p>
+            <div class="card">
+                <div class="form-group">
+                <label class="form-label">금융기관 구분</label>
+                <div class="toggle-group" id="dsr-institution">
+                    <button class="toggle-btn active" data-value="bank">은행권 (한도 40%)</button>
+                    <button class="toggle-btn" data-value="nonBank">비은행권 (한도 50%)</button>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">연간 소득</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="dsr-income" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/년</span>
+                </div>
+                <p class="input-hint" id="dsr-income-hint"></p>
+                </div>
+                <div class="form-group">
+                <label class="form-label">모든 대출 연간 원리금 합계</label>
+                <div class="input-wrap">
+                    <input type="text" class="num-input" id="dsr-totalPayment" placeholder="0" inputmode="numeric" />
+                    <span class="input-unit">원/년</span>
+                </div>
+                <p class="input-hint small">주택담보대출 + 신용대출 + 카드론 + 학자금 등 모든 원리금 포함</p>
+                </div>
+                <button class="calc-btn" onclick="calcDSR()">계산하기</button>
+            </div>
+            <div class="result-card" id="dsr-result" style="display:none">
+                <div class="result-row">
+                <span class="result-label">DSR 한도</span>
+                <span class="result-val accent" id="dsr-limit">-</span>
+                </div>
+                <div class="result-row big">
+                <span class="result-label">계산된 DSR</span>
+                <span class="result-val primary" id="dsr-ratio">-</span>
+                </div>
+                <div class="result-divider"></div>
+                <div class="result-row">
+                <span class="result-label">연간 소득</span>
+                <span class="result-val" id="dsr-incomeVal">-</span>
+                </div>
+                <div class="result-row">
+                <span class="result-label">한도 내 최대 연간 상환 가능액</span>
+                <span class="result-val" id="dsr-maxPayment">-</span>
+                </div>
+                <div class="status-badge" id="dsr-status"></div>
+            </div>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            임대수익률 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-rentalYield" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">임대수익률 계산기</h2>
+            </div>
+            <p class="panel-desc">매입 부동산의 임대 수익률과 자기자본 수익률을 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">임대 방식</label>
+                <div class="toggle-group" id="ry-type">
+                <button class="toggle-btn active" data-value="monthly">월세</button>
+                <button class="toggle-btn" data-value="jeonse">전세</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">매입 가격</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="ry-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="ry-price-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">보증금 (전세금)</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="ry-deposit" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="ry-deposit-hint"></p>
+            </div>
+            <div class="form-group" id="ry-monthlyGroup">
+                <label class="form-label">월세</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="ry-monthly" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원/월</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">연간 비용 <span class="label-opt">(관리비·수선비 등, 없으면 0)</span></label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="ry-cost" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원/년</span>
+                </div>
+            </div>
+
+            <!-- 대출 옵션 -->
+            <div class="form-group">
+                <label class="form-label">대출금액 <span class="label-opt">(없으면 0)</span></label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="ry-loan" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="ry-loan-hint"></p>
+            </div>
+            <div class="form-group" id="ry-loanRateGroup">
+                <label class="form-label">대출 이자율 <span class="label-opt">(연 %)</span></label>
+                <div class="input-wrap">
+                <input type="text" id="ry-loanRate" placeholder="0.0" inputmode="decimal" />
+                <span class="input-unit">%</span>
+                </div>
+            </div>
+
+            <button class="calc-btn" onclick="calcRentalYield()">계산하기</button>
+            </div>
+
+            <!-- 결과 -->
+            <div class="result-card" id="ry-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">연간 임대 수입</span>
+                <span class="result-val" id="ry-annualIncome">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">연간 순수입 (비용 제외)</span>
+                <span class="result-val" id="ry-netIncome">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">총 수익률 (투자금 기준)</span>
+                <span class="result-val primary" id="ry-totalYield">-</span>
+            </div>
+            <div class="result-row big" id="ry-roeRow">
+                <span class="result-label">자기자본 수익률 (ROE)</span>
+                <span class="result-val accent" id="ry-roe">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row">
+                <span class="result-label">실투자금 (매입가 - 보증금 - 대출)</span>
+                <span class="result-val" id="ry-selfCapital">-</span>
+            </div>
+            <div class="result-row" id="ry-annualInterestRow">
+                <span class="result-label">연간 대출 이자</span>
+                <span class="result-val" id="ry-annualInterest">-</span>
+            </div>
+            <p class="result-note">전세는 월세 수입이 없어 총수익률은 0%이나, 레버리지 효과로 시세차익 기대 시 활용됩니다.</p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            등기비용 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-registration" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">등기비용 계산기</h2>
+            <span class="tax-date" id="reg-updated"></span>
+            </div>
+            <p class="panel-desc">소유권 이전 등기 시 발생하는 인지세·법무사 보수·수수료를 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">거래유형</label>
+                <div class="toggle-group" id="reg-type">
+                <button class="toggle-btn active" data-value="buy">매매</button>
+                <button class="toggle-btn" data-value="jeonse">전세 (임차권)</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" id="reg-priceLabel">매매가</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="reg-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="reg-price-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">대출금액 <span class="label-opt">(근저당 설정 시, 없으면 0)</span></label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="reg-loan" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="reg-loan-hint"></p>
+            </div>
+            <button class="calc-btn" onclick="calcRegistration()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="reg-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">인지세</span>
+                <span class="result-val" id="reg-stamp">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">법무사 보수 (소유권이전)</span>
+                <span class="result-val" id="reg-notary">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">등기신청 수수료</span>
+                <span class="result-val">15,000원</span>
+            </div>
+            <div class="result-row" id="reg-mortgageRow" style="display:none">
+                <span class="result-label">근저당 등록면허세 <span class="result-sub" id="reg-maxCredit"></span></span>
+                <span class="result-val" id="reg-mortgage">-</span>
+            </div>
+            <div class="result-row" id="reg-mortgageNotaryRow" style="display:none">
+                <span class="result-label">법무사 보수 (근저당)</span>
+                <span class="result-val" id="reg-mortgageNotary">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">등기비용 합계</span>
+                <span class="result-val primary" id="reg-total">-</span>
+            </div>
+            <p class="result-note">⚠️ 국민주택채권 매입비용은 별도입니다. 실제 법무사 견적과 차이가 날 수 있습니다.</p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            대출이자 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-loanInterest" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">대출이자 계산기</h2>
+            </div>
+            <p class="panel-desc">상환방식별 월 납입금, 총 이자, 월별 상환 내역을 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">대출금액</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="li-amount" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="li-amount-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">연 이자율</label>
+                <div class="input-wrap">
+                <input type="text" id="li-rate" placeholder="3.5" inputmode="decimal" />
+                <span class="input-unit">%</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">대출기간</label>
+                <div class="input-wrap">
+                <input type="text" id="li-period" placeholder="30" inputmode="numeric" />
+                <span class="input-unit">년</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">상환방식</label>
+                <div class="toggle-group" id="li-method">
+                <button class="toggle-btn active" data-value="annuity">원리금균등</button>
+                <button class="toggle-btn" data-value="principal">원금균등</button>
+                <button class="toggle-btn" data-value="bullet">만기일시</button>
+                </div>
+            </div>
+            <button class="calc-btn" onclick="calcLoanInterest()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="li-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">월 납입금 <span id="li-methodNote" class="result-sub"></span></span>
+                <span class="result-val primary" id="li-monthly">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">총 납입 이자</span>
+                <span class="result-val accent" id="li-totalInterest">-</span>
+            </div>
+            <div class="result-row big">
+                <span class="result-label">총 납입금</span>
+                <span class="result-val" id="li-totalPayment">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <p class="table-label">📋 월별 상환 내역 (처음 12개월)</p>
+            <div class="table-wrap">
+                <table class="amort-table" id="li-table"></table>
+            </div>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            취득세 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-acquisitionTax" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">취득세 계산기</h2>
+            <span class="tax-date" id="acq-updated"></span>
+            </div>
+            <p class="panel-desc">주택수·조정지역 여부에 따른 취득세 + 지방교육세를 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">물건 유형</label>
+                <div class="toggle-group" id="acq-propType">
+                <button class="toggle-btn active" data-value="residential">주택</button>
+                <button class="toggle-btn" data-value="nonResidential">비주거용 (토지·상가)</button>
+                </div>
+            </div>
+
+            <div id="acq-residentialOptions">
+                <div class="form-group">
+                <label class="form-label">취득 후 보유 주택 수</label>
+                <div class="toggle-group" id="acq-houseCount">
+                    <button class="toggle-btn active" data-value="one">1주택</button>
+                    <button class="toggle-btn" data-value="two">2주택</button>
+                    <button class="toggle-btn" data-value="three">3주택 이상</button>
+                </div>
+                </div>
+                <div class="form-group" id="acq-regionGroup">
+                <label class="form-label">지역 구분</label>
+                <div class="toggle-group" id="acq-region">
+                    <button class="toggle-btn active" data-value="normal">비조정대상지역</button>
+                    <button class="toggle-btn" data-value="regulated">조정대상지역</button>
+                </div>
+                </div>
+                <div class="form-group">
+                <label class="form-label">전용면적 <span class="label-opt">(농어촌특별세 기준, 모르면 85㎡ 이하 선택)</span></label>
+                <div class="toggle-group" id="acq-area">
+                    <button class="toggle-btn active" data-value="under85">85㎡ 이하</button>
+                    <button class="toggle-btn" data-value="over85">85㎡ 초과</button>
+                </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">취득가액</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="acq-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="acq-price-hint"></p>
+            </div>
+            <button class="calc-btn" onclick="calcAcquisitionTax()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="acq-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">적용 세율</span>
+                <span class="result-val accent" id="acq-rate">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">취득세</span>
+                <span class="result-val" id="acq-tax">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">지방교육세 (취득세의 20%)</span>
+                <span class="result-val" id="acq-eduTax">-</span>
+            </div>
+            <div class="result-row" id="acq-ruralRow">
+                <span class="result-label">농어촌특별세 <span class="result-sub">(85㎡ 초과·비주거용)</span></span>
+                <span class="result-val" id="acq-ruralTax">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">취득 시 세금 합계</span>
+                <span class="result-val primary" id="acq-total">-</span>
+            </div>
+            <p class="result-note" id="acq-note"></p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            재산세 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-propertyTax" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">재산세 계산기</h2>
+            <span class="tax-date" id="pt-updated"></span>
+            </div>
+            <p class="panel-desc">주택 공시가격 기준 재산세·지방교육세·도시지역분을 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">과세 대상</label>
+                <div class="toggle-group" id="pt-type">
+                <button class="toggle-btn active" data-value="residential">주택</button>
+                <button class="toggle-btn" data-value="land-aggregate">토지 (종합합산)</button>
+                <button class="toggle-btn" data-value="land-separate">토지 (별도합산)</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">공시가격</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="pt-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="pt-price-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">도시지역 여부 <span class="label-opt">(도시지역분 추가 과세)</span></label>
+                <div class="toggle-group" id="pt-urban">
+                <button class="toggle-btn active" data-value="yes">도시지역</button>
+                <button class="toggle-btn" data-value="no">비도시지역</button>
+                </div>
+            </div>
+            <button class="calc-btn" onclick="calcPropertyTax()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="pt-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">공정시장가액비율</span>
+                <span class="result-val" id="pt-ratio">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">과세표준</span>
+                <span class="result-val" id="pt-base">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">재산세</span>
+                <span class="result-val" id="pt-tax">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">지방교육세 (재산세의 20%)</span>
+                <span class="result-val" id="pt-eduTax">-</span>
+            </div>
+            <div class="result-row" id="pt-urbanRow">
+                <span class="result-label">도시지역분 (과세표준 × 0.14%)</span>
+                <span class="result-val" id="pt-urbanTax">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">연간 재산세 합계</span>
+                <span class="result-val primary" id="pt-total">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">7월 납부액 (1기)</span>
+                <span class="result-val" id="pt-jul">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">9월 납부액 (2기)</span>
+                <span class="result-val" id="pt-sep">-</span>
+            </div>
+            <p class="result-note">재산세는 6월 1일 기준 소유자에게 부과됩니다. 20만원 이하는 7월에 일시 납부합니다.</p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            종합부동산세 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-comprehensiveTax" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">종합부동산세 계산기</h2>
+            <span class="tax-date" id="crt-updated"></span>
+            </div>
+            <p class="panel-desc">주택 공시가격 합산 기준 종합부동산세(종부세)를 계산합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">과세 유형</label>
+                <div class="toggle-group" id="crt-type">
+                <button class="toggle-btn active" data-value="oneHouse">1세대 1주택 (12억 공제)</button>
+                <button class="toggle-btn" data-value="multiHouse">다주택 (9억 공제)</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">중과 대상 여부 <span class="label-opt">(조정 2주택 또는 3주택 이상)</span></label>
+                <div class="toggle-group" id="crt-heavy">
+                <button class="toggle-btn active" data-value="normal">일반 세율</button>
+                <button class="toggle-btn" data-value="heavy">중과 세율</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">주택 공시가격 합산</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="crt-price" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="crt-price-hint"></p>
+            </div>
+            <button class="calc-btn" onclick="calcComprehensiveTax()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="crt-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">공제액</span>
+                <span class="result-val" id="crt-deduction">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">공정시장가액비율 (60%)</span>
+                <span class="result-val" id="crt-fairRate">60%</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">과세표준</span>
+                <span class="result-val" id="crt-base">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">적용 세율</span>
+                <span class="result-val accent" id="crt-rate">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">종합부동산세</span>
+                <span class="result-val" id="crt-tax">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">농어촌특별세 (종부세의 20%)</span>
+                <span class="result-val" id="crt-ruralTax">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">종부세 합계</span>
+                <span class="result-val primary" id="crt-total">-</span>
+            </div>
+            <p class="result-note">⚠️ 재산세 공제분은 반영되지 않았습니다. 실제 납부액은 이 금액에서 재산세 납부분을 추가 공제한 금액입니다.</p>
+            </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════
+            양도소득세 계산기
+        ════════════════════════════════════════════ -->
+        <section id="panel-capitalGainsTax" class="panel" style="display:none">
+            <div class="panel-head">
+            <h2 class="panel-title">양도소득세 계산기</h2>
+            <span class="tax-date" id="cgt-updated"></span>
+            </div>
+            <p class="panel-desc">보유기간·장특공을 반영한 양도소득세를 <strong>추산</strong>합니다. 복잡한 케이스는 세무사 상담을 권장합니다.</p>
+
+            <div class="card">
+            <div class="form-group">
+                <label class="form-label">주택 유형</label>
+                <div class="toggle-group" id="cgt-houseType">
+                <button class="toggle-btn active" data-value="oneHouse">1세대 1주택</button>
+                <button class="toggle-btn" data-value="twoHouse">일시적 2주택</button>
+                <button class="toggle-btn" data-value="multi">다주택 (중과)</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">취득가액</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="cgt-buyPrice" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="cgt-buyPrice-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">양도가액</label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="cgt-sellPrice" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+                <p class="input-hint" id="cgt-sellPrice-hint"></p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">필요경비 <span class="label-opt">(취득세·중개보수·수리비 등)</span></label>
+                <div class="input-wrap">
+                <input type="text" class="num-input" id="cgt-expense" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">원</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">보유기간</label>
+                <div class="input-wrap">
+                <input type="text" id="cgt-holdYear" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">년</span>
+                </div>
+            </div>
+            <div class="form-group" id="cgt-liveGroup">
+                <label class="form-label">거주기간 <span class="label-opt">(1세대 1주택 장특공 적용)</span></label>
+                <div class="input-wrap">
+                <input type="text" id="cgt-liveYear" placeholder="0" inputmode="numeric" />
+                <span class="input-unit">년</span>
+                </div>
+            </div>
+            <button class="calc-btn" onclick="calcCapitalGainsTax()">계산하기</button>
+            </div>
+
+            <div class="result-card" id="cgt-result" style="display:none">
+            <div class="result-row">
+                <span class="result-label">양도차익</span>
+                <span class="result-val" id="cgt-gain">-</span>
+            </div>
+            <div class="result-row" id="cgt-exemptRow" style="display:none">
+                <span class="result-label">🎉 1세대 1주택 비과세</span>
+                <span class="result-val accent">해당 없음 (비과세)</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">장기보유특별공제</span>
+                <span class="result-val" id="cgt-ltdAmount">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">양도소득금액</span>
+                <span class="result-val" id="cgt-income">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">기본공제 (250만원)</span>
+                <span class="result-val">-2,500,000원</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">과세표준</span>
+                <span class="result-val" id="cgt-taxBase">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">적용 세율</span>
+                <span class="result-val accent" id="cgt-rate">-</span>
+            </div>
+            <div class="result-divider"></div>
+            <div class="result-row big">
+                <span class="result-label">양도소득세 (추산)</span>
+                <span class="result-val primary" id="cgt-tax">-</span>
+            </div>
+            <div class="result-row">
+                <span class="result-label">지방소득세 (양도소득세의 10%)</span>
+                <span class="result-val" id="cgt-localTax">-</span>
+            </div>
+            <div class="result-row big">
+                <span class="result-label">총 납부 예상세액</span>
+                <span class="result-val primary" id="cgt-totalTax">-</span>
+            </div>
+            <p class="result-note" id="cgt-note">⚠️ 본 계산은 단순 추산입니다. 입주권·분양권·임대사업자 감면·이월과세 등 특수한 경우는 반영되지 않습니다. 실제 신고 전 반드시 세무사 상담을 받으세요.</p>
+            </div>
+        </section>
+
+        </main>
+
+        <!-- ── 면책 고지 ──────────────────────────────────── -->
+        <footer class="disclaimer">
+        <p>⚠️ 본 계산기는 <strong>참고용 추산 도구</strong>입니다. 세법은 수시로 개정되며, 실제 세액은 개인 상황에 따라 달라질 수 있습니다. 중요한 거래 전 반드시 세무사·법무사 등 전문가의 확인을 받으시기 바랍니다.</p>
+        </footer>
+
+    </div><!-- /#app -->
+
+    <script src="taxdata.js"></script>
+    <script src="script.js"></script>
+    </body>
+    </html>
+    

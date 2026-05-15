@@ -1,18 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     const calculator = {
         mainDisplay: document.getElementById('main-display'),
+        mainDisplayVisual: document.getElementById('main-display-visual'),
+        exprDisplay: document.getElementById('expr-display'),
         subDisplay: document.getElementById('sub-display'),
         decimalPlaces: document.getElementById('decimal-places'),
         roundingMethod: document.getElementById('rounding-method'),
         memory: 0,
         isNewInput: true,
         calculationComplete: false,
+        lastExpressionForResult: '',
+        maxInputLength: 50,
 
         init() {
             this.bindEvents();
             this.mainDisplay.value = '0';
             this.taxRate = 10; // 기본 세율 10%
             this.loadColorPreference();
+            this.renderWindowsStyleDisplay(this.mainDisplay.value, false);
+        },
+
+        showError() {
+            this.mainDisplay.value = 'Error';
+            this.mainDisplayVisual.textContent = 'Error';
+            this.exprDisplay.textContent = '';
         },
 
         bindEvents() {
@@ -56,30 +67,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }, // 쉼표 추가
         
-        updateDisplay(value = this.mainDisplay.value) {
-            if (!value || value.length <= 1) {
-                this.mainDisplay.value = value;
+        updateDisplay(value = this.mainDisplay.value, isResult = false, resultExpression = '') {
+            if (value === undefined || value === null || value === '') {
+                this.mainDisplay.value = '0';
+                this.renderWindowsStyleDisplay('0', isResult, resultExpression);
                 return;
             }
-        
+
             try {
                 // 소수점으로 끝나는 경우 처리
                 const endsWithDecimal = value.endsWith('.');
                 // 콤마와 공백 제거
                 const cleanValue = value.replace(/[,\s]/g, '');
-        
+
                 // 숫자와 연산자만 포함된 경우 (계산식인 경우)
-                if (/^[0-9\.\+\-\×\÷]*$/.test(cleanValue)) {
-                    // 계산식을 분해하여 각 숫자만 포맷팅
+                if (/^[0-9\.\+\-\×\÷\(\)%]*$/.test(cleanValue)) {
                     const formattedExpr = this.formatExpression(cleanValue);
                     this.mainDisplay.value = formattedExpr + (endsWithDecimal ? '.' : '');
                 } else {
-                    // 단순히 그대로 표시
-                    this.mainDisplay.value = this.formatNumber(parseFloat(value));
+                    this.mainDisplay.value = this.formatNumber(parseFloat(value), isResult);
                 }
+
+                this.renderWindowsStyleDisplay(this.mainDisplay.value, isResult, resultExpression);
             } catch (error) {
                 console.error("표시 오류:", error);
                 this.mainDisplay.value = value; // 오류 시 원래 입력 유지
+                this.renderWindowsStyleDisplay(this.mainDisplay.value, isResult, resultExpression);
             }
         },
 
@@ -102,6 +115,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 return part;
             }).join('');
         }, // 쉼표 추가
+
+        isExpression(value) {
+            const stripped = value.replace(/^-/, '');
+            return /[\+\-\×\÷\(\)%]/.test(stripped);
+        },
+
+        extractCurrentToken(value) {
+            if (!value) return '0';
+            const cleaned = value.replace(/,/g, '');
+
+            if (/[\+\-\×\÷\(\)%]$/.test(cleaned)) {
+                const withoutTrailingOp = cleaned.slice(0, -1);
+                const prevMatch = withoutTrailingOp.match(/(-?\d*\.?\d+)$/);
+                return prevMatch ? prevMatch[1] : '0';
+            }
+
+            const match = cleaned.match(/(-?\d*\.?\d+)$/);
+            if (!match) return cleaned;
+            return match[1];
+        },
+
+        renderWindowsStyleDisplay(value, isResult = false, resultExpression = '') {
+            const cleaned = (value || '0').replace(/[,\s]/g, '');
+            const mainToken = isResult ? cleaned : this.extractCurrentToken(cleaned);
+            const mainText = this.formatNumber(mainToken || '0', isResult);
+            this.mainDisplayVisual.textContent = mainText || '0';
+
+            if (isResult && resultExpression) {
+                this.exprDisplay.textContent = `${this.formatExpression(resultExpression)} =`;
+                return;
+            }
+
+            if (this.isExpression(cleaned)) {
+                this.exprDisplay.textContent = this.formatExpression(cleaned);
+                return;
+            }
+
+            this.exprDisplay.textContent = '';
+        },
 
         // isResult=true일 때만 소수점 자릿수 설정 적용 (입력 중에는 적용 안 함)
         formatNumber(num, isResult = false) {
@@ -182,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentValue = value;
             } 
             // 괄호 입력이 제한되지 않도록 수정
-            else if (value === '(' || value === ')' || currentValue.length < 20) {
+            else if (value === '(' || value === ')' || currentValue.length < this.maxInputLength) {
                 currentValue += value;
             }
         
@@ -203,8 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             this.isNewInput = false;
             let currentValue = this.mainDisplay.value.replace(/[,]/g, '');
-            // 조건 제거하여 언제나 '00' 추가
-            currentValue += '00';
+            const remaining = this.maxInputLength - currentValue.length;
+            if (remaining <= 0) {
+                return;
+            }
+            currentValue += remaining === 1 ? '0' : '00';
             this.updateDisplay(currentValue);
         },
 
@@ -220,6 +275,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 연산자로 끝나는 경우 "0."을 추가
             if (/[\+\-\×\÷]$/.test(currentValue)) {
+                if (currentValue.length + 2 > this.maxInputLength) {
+                    return;
+                }
                 currentValue += '0.';
             } else {
                 // 마지막 피연산자에만 소수점 중복 여부 확인 (수식 전체 검사 금지)
@@ -227,8 +285,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const lastPart = parts[parts.length - 1];
                 if (!lastPart.includes('.')) {
                     if (currentValue === '' || this.isNewInput) {
+                        if (this.maxInputLength < 2) {
+                            return;
+                        }
                         currentValue = '0.';
                     } else {
+                        if (currentValue.length + 1 > this.maxInputLength) {
+                            return;
+                        }
                         currentValue += '.';
                     }
                 }
@@ -247,6 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.isNewInput = true;
             this.isAreaConversionMode = false;
             this.calculationComplete = false;
+            this.exprDisplay.textContent = '';
+            this.updateDisplay('0');
         },
 
         
@@ -270,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.updateDisplay(number.toString()); // updateDisplay 메서드를 사용하여 천 단위 구분자 적용
                 }
             } catch (error) {
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -299,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const safeLeftExpr = leftExpr.replace(/×/g, '*').replace(/÷/g, '/');
                             const leftValue = new Function(`return (${safeLeftExpr})`)();
                             if (!isFinite(leftValue)) {
-                                this.mainDisplay.value = 'Error';
+                                this.showError();
                                 return;
                             }
                             percentValue = (leftValue * rightValue) / 100;
@@ -327,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.calculationComplete = true;
                 }
             } catch (error) {
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -353,10 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (/[\+\-\×\÷]$/.test(currentValue)) {
                 currentValue = currentValue.slice(0, -1) + operator;
             } else {
+                if (currentValue.length >= this.maxInputLength) {
+                    return;
+                }
                 currentValue += operator;
             }
 
             this.mainDisplay.value = currentValue;
+            this.updateDisplay(currentValue);
             this.isNewInput = true;
             this.calculationComplete = false;
         },
@@ -364,6 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
         calculate() {
             try {
                 let expression = this.mainDisplay.value;
+                let displayExpression = expression.replace(/,/g, '');
         
                 if (expression === '') {
                     return;
@@ -372,11 +443,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 연사자로 끝나는 경우 제거
                 if (/[\+\-\×\÷]$/.test(expression)) {
                     expression = expression.slice(0, -1);
+                    displayExpression = displayExpression.slice(0, -1);
                 }
                 
                 // 수식이 연산자로 시작하면 " Error" 표시
                 if (/^[\+\×\÷]/.test(expression)) {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                     return;
                 }
                 
@@ -385,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const closeCount = (expression.match(/\)/g) || []).length;
                 
                 if (openCount !== closeCount) {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                     return;
                 }
 
@@ -397,7 +469,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 
                 if (isNaN(result) || !isFinite(result)) {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                     return;
                 }
         
@@ -414,13 +486,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // 천 단위 구분자 적용 후 표시 (isResult=true: 소수점 자릿수 설정 적용)
-                this.updateDisplay(this.formatNumber(result, true));
+                this.updateDisplay(this.formatNumber(result, true), true, displayExpression);
                 this.isNewInput = true;
                 this.calculationComplete = true;
         
             } catch (error) {
                 console.error("계산 오류:", error);
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -439,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         this.isNewInput = true;
                         this.calculationComplete = true;
                     } else {
-                        this.mainDisplay.value = 'Error';
+                        this.showError();
                     }
                 } else {
                     let value = parseFloat(this.mainDisplay.value.replace(/,/g, ''));
@@ -452,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error("메모리 추가 오류:", error);
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -473,7 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         this.isNewInput = true; // 새로운 입력 준비
                         this.calculationComplete = true;
                     } else {
-                        this.mainDisplay.value = 'Error';
+                        this.showError();
                     }
                 } else {
                     // 이미 계산된 값이 있는 경우 바로 메모리에서 빼기
@@ -484,12 +556,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         this.isNewInput = true;
                         this.calculationComplete = false;
                     } else {
-                        this.mainDisplay.value = 'Error'; // 숫자가 아닌 경우 표시
+                        this.showError(); // 숫자가 아닌 경우 표시
                     }
                 }
             } catch (error) {
                 console.error("메모리 빼기 오류:", error);
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -502,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.calculationComplete = false;
                 }
             } catch (error) {
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -513,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.isNewInput = true;
                 this.calculationComplete = false;
             } catch (error) {
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
 
@@ -524,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 빈 값 또는 잘못된 값이면 오류 방지
                 if (!displayValue || isNaN(displayValue.replace(/,/g, ''))) {
                     this.mainDisplay.value = '0';
+                    this.updateDisplay('0');
                     return;
                 }
 
@@ -538,11 +611,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.isNewInput = true;
                     this.calculationComplete = true;
                 } else {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                 }
             } catch (error) {
                 console.error("세금 계산 오류:", error);
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
         
@@ -553,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 빈 값 또는 잘못된 값이면 오류 방지
                 if (!displayValue || isNaN(displayValue.replace(/,/g, ''))) {
                     this.mainDisplay.value = '0';
+                    this.updateDisplay('0');
                     return;
                 }
 
@@ -568,11 +642,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.isNewInput = true;
                     this.calculationComplete = true;
                 } else {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                 }
             } catch (error) {
                 console.error("세금 계산 오류:", error);
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
         
@@ -593,10 +667,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     this.isNewInput = true;
                     this.calculationComplete = false;
                 } else {
-                    this.mainDisplay.value = 'Error';
+                    this.showError();
                 }
             } catch (error) {
-                this.mainDisplay.value = 'Error';
+                this.showError();
             }
         },
         
@@ -648,6 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // NaN 방지를 위해 수식 검사 (잘못된 괄호 처리 방지)
             if (this.mainDisplay.value.includes('()')) {
                 this.mainDisplay.value = this.mainDisplay.value.replace(/\(\)/g, ''); // 빈 괄호 제거
+                this.updateDisplay(this.mainDisplay.value);
             }
         },
 
