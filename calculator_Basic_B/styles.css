@@ -53,10 +53,21 @@ body {
 }
 
 #expr-display {
-    min-height: 24px;
+    min-height: 0;
     font-size: 1.05rem;
     text-align: right;
     color: #666;
+    padding-bottom: 0;
+    line-height: 1.2;
+}
+
+#expr-display:empty {
+    min-height: 0;
+    padding-bottom: 0;
+}
+
+#expr-display:not(:empty) {
+    min-height: 18px;
     padding-bottom: 4px;
 }
 
@@ -71,7 +82,7 @@ body {
 }
 
 #sub-display {
-    min-height: 24px;
+    min-height: 30px;
     font-size: 1rem;
     text-align: right;
     color: #666;
@@ -161,8 +172,12 @@ button:hover {
     }
 
     #expr-display {
-        min-height: 20px;
+        min-height: 0;
         font-size: 0.92rem;
+    }
+
+    #expr-display:not(:empty) {
+        min-height: 14px;
     }
 
     #main-display-visual {
@@ -171,7 +186,7 @@ button:hover {
     }
 
     #sub-display {
-        min-height: 20px;
+        min-height: 22px;
         font-size: 0.88rem;
     }
 }
