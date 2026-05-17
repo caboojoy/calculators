@@ -305,6 +305,14 @@
     const { cls, liab, eq, liabGross, eqGross, liabCost, eqCost, sched, net, gross, fv } = res;
     const { issueDate, issuanceCost, issuanceCostMethod } = f;
     const guarLumpSum = res.guarLumpSum ?? 0;
+    const isRCPS = f.instrumentType === "RCPS";
+    const liabilityFaceAccount = isRCPS ? "상환전환우선주 (액면)" : "전환사채 (액면)";
+    const conversionAdjBaseLabel = isRCPS ? "우선주할인발행차금" : "전환권조정";
+    const conversionAdjAccount = conversionAdjBaseLabel;
+    const conversionPremiumAccount = isRCPS ? "우선주할증발행차금" : "전환권할증발행차금";
+    const conversionAdjAmortAccount = isRCPS ? "우선주할인발행차금 상각" : "전환권조정 상각";
+    const conversionPremiumAmortAccount = isRCPS ? "우선주할증발행차금 상각" : "전환권할증발행차금 상각";
+    const equityOptionAccount = isRCPS ? "전환권대가 (자본, 우선주발행초과금 성격)" : "전환권대가 (자본)";
     const jnl = [];
     const costNote = issuanceCostMethod === "net"
         ? `순액법: 수취액 ${KRW(net)}원 (총발행 ${KRW(gross)}원 − 비용 ${KRW(issuanceCost)}원)`
@@ -322,14 +330,23 @@
         });
 
     } else if (cls.type === "EQUITY") {
+        const equityDiscount = Math.max(0, fv - net);
+        const equityPremium = Math.max(0, net - fv);
         jnl.push({
         date: issueDate, title: "우선주 발행",
-        dr: [{ a: "현금및현금성자산", v: net }],
-        cr: [
-            { a: "우선주자본금", v: Math.min(fv, net) },
-            ...(net > fv ? [{ a: "주식발행초과금", v: net - fv }] : [])
+        dr: [
+            { a: "현금및현금성자산", v: net },
+            ...(equityDiscount > 0 ? [{ a: "주식할인발행차금", v: equityDiscount }] : [])
         ],
-        note: costNote + " (자본: 발행비용 주발초 직접 차감)"
+        cr: [
+            { a: "우선주자본금", v: fv },
+            ...(equityPremium > 0 ? [{ a: "주식발행초과금 (주식할증발행차금)", v: equityPremium }] : [])
+        ],
+        note: costNote + (equityDiscount > 0
+            ? ` | 할인발행: 주식할인발행차금 ${KRW(equityDiscount)}원`
+            : equityPremium > 0
+                ? ` | 할증발행: 주식발행초과금 ${KRW(equityPremium)}원`
+                : " | 액면발행")
         });
 
     } else {
@@ -351,20 +368,25 @@
             발행비용은 이미 차감되어 수취되었으므로 별도 현금 분개 없음.
             전환권조정이 liabCost만큼 증가하여 발행비용 효과를 흡수. ── */
         jnl.push({
-            date: issueDate, title: "전환사채 발행 (잔여접근법, 순액법)",
+            date: issueDate, title: `${isRCPS ? "상환전환우선주" : "전환사채"} 발행 (잔여접근법, 순액법)`,
             dr: [
             { a: "현금및현금성자산", v: net },          // 순수취액 (수수료 차감 후 실제 입금)
-            { a: "전환권조정",       v: convAdjNet },    // 비용 흡수된 전환권조정
+            ...(convAdjNet >= 0
+                ? [{ a: conversionAdjAccount, v: convAdjNet }]
+                : []),
             ],
             cr: [
-            { a: "전환사채 (액면)",   v: fv },
+            { a: liabilityFaceAccount, v: fv },
             { a: "상환할증금",        v: guarLumpSum },
-            { a: "전환권대가 (자본)", v: eqNet_ },       // 비용 차감 후 자본 순액
+            { a: equityOptionAccount, v: eqNet_ },       // 비용 차감 후 자본 순액
+            ...(convAdjNet < 0
+                ? [{ a: conversionPremiumAccount, v: -convAdjNet }]
+                : []),
             ],
             note: [
             `순액법: 순수취액 ${KRW(net)}원 (= 총발행 ${KRW(gross)}원 − 발행비용 ${KRW(issuanceCost)}원)`,
-            `전환권조정 ${KRW(convAdjNet)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가순액(${KRW(eqNet_)}) + 발행비용부채배부(${KRW(liabCost)}) | 별도 수수료 분개 없음`,
-            `BS: 전환사채(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) − 전환권조정(${KRW(convAdjNet)}) = ${KRW(fv + guarLumpSum - convAdjNet)} (≈ 부채순액 ${KRW(res.liab)})`,
+            `조정계정 ${KRW(convAdjNet)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가순액(${KRW(eqNet_)}) + 발행비용부채배부(${KRW(liabCost)}) | 별도 수수료 분개 없음`,
+            `BS: ${KRW(fv)}원(액면) + 상환할증금(${KRW(guarLumpSum)}) − 조정계정(${KRW(convAdjNet)}) = ${KRW(fv + guarLumpSum - convAdjNet)} (≈ 부채순액 ${KRW(res.liab)})`,
             ].join(" | ")
         });
         // 순액법: 발행비용 별도 분개 없음
@@ -374,28 +396,33 @@
             1차 분개: 총발행금액 기준 전환권조정
             2차 분개: 발행비용 안분 (부채/자본 비율) ── */
         jnl.push({
-            date: issueDate, title: "전환사채 발행 (잔여접근법, 총액법)",
+            date: issueDate, title: `${isRCPS ? "상환전환우선주" : "전환사채"} 발행 (잔여접근법, 총액법)`,
             dr: [
             { a: "현금및현금성자산", v: gross },         // 총발행금액 전액 수취
-            { a: "전환권조정",       v: convAdjGross },  // 발행비용 안분 전 전환권조정
+            ...(convAdjGross >= 0
+                ? [{ a: conversionAdjAccount, v: convAdjGross }]
+                : []),
             ],
             cr: [
-            { a: "전환사채 (액면)",   v: fv },
+            { a: liabilityFaceAccount, v: fv },
             { a: "상환할증금",        v: guarLumpSum },
-            { a: "전환권대가 (자본)", v: eqGross },      // 발행비용 안분 전 총액
+            { a: equityOptionAccount, v: eqGross },      // 발행비용 안분 전 총액
+            ...(convAdjGross < 0
+                ? [{ a: conversionPremiumAccount, v: -convAdjGross }]
+                : []),
             ],
             note: [
             `총액법: 총발행금액 ${KRW(gross)}원 수취 후 발행비용 ${KRW(issuanceCost)}원 별도 지급`,
-            `전환권조정 ${KRW(convAdjGross)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가(${KRW(eqGross)})`,
-            `BS 잠정: 전환사채(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) − 전환권조정(${KRW(convAdjGross)}) = ${KRW(liabGross)} (발행비용 안분 전)`,
+            `조정계정 ${KRW(convAdjGross)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가(${KRW(eqGross)})`,
+            `BS 잠정: ${KRW(fv)}원(액면) + 상환할증금(${KRW(guarLumpSum)}) − 조정계정(${KRW(convAdjGross)}) = ${KRW(liabGross)} (발행비용 안분 전)`,
             ].join(" | ")
         });
 
         if (issuanceCost > 0) jnl.push({
             date: issueDate, title: "발행비용 안분 배부 (IAS 32.38)",
             dr: [
-            { a: "전환권조정 (부채요소 배부)",      v: liabCost },
-            { a: "전환권대가 차감 (자본요소 배부)", v: eqCost },
+            { a: `${conversionAdjAccount} (부채요소 배부)`, v: liabCost },
+            { a: `${equityOptionAccount} 차감 (자본요소 배부)`, v: eqCost },
             ],
             cr: [{ a: "현금및현금성자산", v: issuanceCost }],
             note: `부채 ${KRW(liabCost)}원 (${((liabCost/issuanceCost)*100).toFixed(1)}%) + 자본 ${KRW(eqCost)}원 (${((eqCost/issuanceCost)*100).toFixed(1)}%) | 발행비용 안분 후 전환권조정 최종: ${KRW(convAdjGross + liabCost)}원 | BS 최종 부채순액: ${KRW(res.liab)}원`
@@ -413,15 +440,19 @@
             Cr) 현금           = 액면쿠폰 (couponOnly — 원금·상환할증금 제외)
                 전환권조정 상각 = 이자비용 − 쿠폰 (= row.amort)
             → 매기 상각 후 만기 시 전환권조정 잔액 ≈ 0 ── */
+        const isAdjDiscount = row.amort >= 0;
         jnl.push({
-            date: row.date, title: `이자비용 인식 — 전환권조정 상각 (제${row.period}기)`,
-            dr: [{ a: "이자비용", v: row.intr }],
+            date: row.date, title: `이자비용 인식 — ${conversionAdjBaseLabel} 상각 (제${row.period}기)`,
+            dr: [
+            { a: "이자비용", v: row.intr },
+            ...(!isAdjDiscount ? [{ a: conversionPremiumAmortAccount, v: Math.abs(row.amort) }] : [])
+            ],
             cr: [
             // FIXED: row.couponOnly (쿠폰만) — row.cash 는 만기기에 원금+상환할증금 포함으로 불균형 발생
             { a: "현금및현금성자산", v: row.couponOnly },
-            { a: "전환권조정 상각",  v: row.amort },
+            ...(isAdjDiscount ? [{ a: conversionAdjAmortAccount, v: row.amort }] : []),
             ],
-            note: `기초CA(${KRW(row.open)}) × EIR(${PCT(res.eir)}) = ${KRW(row.intr)} | 쿠폰 ${KRW(row.couponOnly)} | 전환권조정 상각 ${KRW(row.amort)}`
+            note: `기초CA(${KRW(row.open)}) × EIR(${PCT(res.eir)}) = ${KRW(row.intr)} | 쿠폰 ${KRW(row.couponOnly)} | ${conversionAdjBaseLabel} 상각 ${KRW(row.amort)}`
         });
         } else {
         /* LIABILITY: 사채할인(할증)발행차금 상각 */
@@ -459,13 +490,13 @@
         jnl.push({
             date: last.date, title: "만기 상환",
             dr: [
-            { a: "전환사채 (액면)",  v: fv },
+            { a: liabilityFaceAccount, v: fv },
             ...(guarLumpSum > 0 ? [{ a: "상환할증금", v: guarLumpSum }] : []),
             ],
             cr: [{ a: "현금및현금성자산", v: totalRedemption }],
             note: guarLumpSum > 0
-            ? `전환사채 액면(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) = 총상환 ${KRW(totalRedemption)}원 | 전환권조정 잔액 ≈ 0 (EIR 상각 완료)`
-            : `전환사채 액면 ${KRW(fv)}원 상환 | 전환권조정 잔액 ≈ 0`
+            ? `${isRCPS ? "상환전환우선주" : "전환사채"} 액면(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) = 총상환 ${KRW(totalRedemption)}원 | ${conversionAdjBaseLabel} 잔액 ≈ 0 (EIR 상각 완료)`
+            : `${isRCPS ? "상환전환우선주" : "전환사채"} 액면 ${KRW(fv)}원 상환 | ${conversionAdjBaseLabel} 잔액 ≈ 0`
         });
         } else {
         jnl.push({
@@ -481,16 +512,33 @@
     return applyJournalRounding(jnl);
     }
 
+    /* ── 상품유형별 입력 정규화 ── */
+    function normalizeFormByInstrumentType(form) {
+    if (!form) return form;
+    if (form.instrumentType === "BOND") {
+        // 일반사채는 전환권이 없고 부채로 분류되어야 함.
+        return {
+        ...form,
+        hasMandatoryRedemption: true,
+        hasConversionOption: false,
+        conversionFixed: true,
+        dividendType: "fixed",
+        };
+    }
+    return form;
+    }
+
     /* ── 폼 준비 (% → 소수 변환) ── */
     function prepForm(form) {
+    const normalized = normalizeFormByInstrumentType(form);
     return {
-        ...form,
-        faceValue:     +form.faceValue,
-        issuePrice:    +form.issuePrice,
-        couponRate:    +form.couponRate    / 100,
-        marketRate:    +form.marketRate    / 100,
-        issuanceCost:  +form.issuanceCost,
-        guaranteeRate: +form.guaranteeRate / 100,
+        ...normalized,
+        faceValue:     +normalized.faceValue,
+        issuePrice:    +normalized.issuePrice,
+        couponRate:    +normalized.couponRate    / 100,
+        marketRate:    +normalized.marketRate    / 100,
+        issuanceCost:  +normalized.issuanceCost,
+        guaranteeRate: +normalized.guaranteeRate / 100,
     };
     }
 
@@ -564,6 +612,9 @@
     /* ── TAB: 분류 결과 ── */
     function ClassTab({ res }) {
     const cs = CLS[res.cls.type], H = res.cls.type === "HYBRID";
+    const isRCPS = res?.form?.instrumentType === "RCPS";
+    const hybridFaceLabel = isRCPS ? "상환전환우선주" : "전환사채";
+    const hybridAdjLabel = isRCPS ? "우선주할인발행차금" : "전환권조정";
     return (
         <div>
         <div style={{ ...card, background: cs.bg, border: `1.5px solid ${cs.border}`, marginBottom: 12 }}>
@@ -644,15 +695,15 @@
             const convAdj = res.fv + gLS + res.eqGross - res.gross;
             return (
             <div style={{ ...card, background: "#E3F2FD", border: "0.5px solid #90CAF9" }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 구조 — 전환권조정 계정</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 구조 — {hybridAdjLabel} 계정</div>
                 <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 10, lineHeight: 1.6 }}>
-                전환권조정 = 상환할증금 + 전환권대가(총액) = 부채 차감 계정<br />
-                BS 장부금액 = 전환사채(액면) + 상환할증금 − 전환권조정 = 부채요소 PV
+                {hybridAdjLabel} = 상환할증금 + 전환권대가(총액) = 부채 차감 계정<br />
+                BS 장부금액 = {hybridFaceLabel}(액면) + 상환할증금 − {hybridAdjLabel} = 부채요소 PV
                 </div>
                 {[
-                ["전환사채 (액면)", KRW(res.fv) + "원", false],
+                [`${hybridFaceLabel} (액면)`, KRW(res.fv) + "원", false],
                 ["+ 상환할증금",    KRW(gLS) + "원", false],
-                ["− 전환권조정",   `(${KRW(convAdj)})원`, true],
+                [`− ${hybridAdjLabel}`,   `(${KRW(convAdj)})원`, true],
                 ["= 부채요소 장부금액", KRW(res.fv + gLS - convAdj) + "원", false],
                 ].map(([l, v, red], i, arr) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderTop: i === arr.length - 1 ? "1px solid #90CAF9" : "none", fontSize: 13 }}>
@@ -661,7 +712,7 @@
                 </div>
                 ))}
                 <div style={{ marginTop: 8, fontSize: 11, color: "#1565C0", background: "#BBDEFB", padding: "4px 8px", borderRadius: "var(--border-radius-sm)" }}>
-                전환권조정 ({KRW(convAdj)}원)은 매기 EIR 상각 → 만기 시 잔액 ≈ 0
+                {hybridAdjLabel} ({KRW(convAdj)}원)은 매기 EIR 상각 → 만기 시 잔액 ≈ 0
                 </div>
             </div>
             );
@@ -680,6 +731,9 @@
     );
     const { sched, cls } = res;
     const isHybrid = cls.type === "HYBRID";
+    const isRCPS = res?.form?.instrumentType === "RCPS";
+    const hybridFaceLabel = isRCPS ? "상환전환우선주" : "전환사채";
+    const hybridAdjLabel = isRCPS ? "우선주할인발행차금" : "전환권조정";
     const guarLumpSum = res.guarLumpSum ?? 0;
 
     // HYBRID: 상각액 = 이자비용 − 쿠폰 (전환권조정 상각), 현금 = 쿠폰만
@@ -695,7 +749,7 @@
 
     // 상각표 컬럼 헤더 분기
     const headers = isHybrid
-        ? ["기", "지급일", "기초 장부금액", "이자비용 (EIR×CA)", "현금지급 (쿠폰)", "전환권조정 상각", "기말 장부금액"]
+        ? ["기", "지급일", "기초 장부금액", "이자비용 (EIR×CA)", "현금지급 (쿠폰)", `${hybridAdjLabel} 상각`, "기말 장부금액"]
         : ["기", "지급일", "기초 장부금액", "이자비용 (EIR×CA)", "현금지급",          "상각액",           "기말 장부금액"];
 
     return (
@@ -713,16 +767,16 @@
             const convAdj = res.fv + gLS + res.eqGross - res.gross;
             return (
             <div style={{ ...card, background: "#E3F2FD", border: "0.5px solid #90CAF9", marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 — 전환권조정 계정 구조</div>
+                <div style={{ fontSize: 11, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 — {hybridAdjLabel} 계정 구조</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 11, color: "#1565C0", lineHeight: 1.8 }}>
                 <div>
-                    전환사채(액면) {KRW(res.fv)}원<br />
+                    {hybridFaceLabel}(액면) {KRW(res.fv)}원<br />
                     + 상환할증금 {KRW(gLS)}원<br />
-                    − <strong>전환권조정 {KRW(convAdj)}원</strong><br />
+                    − <strong>{hybridAdjLabel} {KRW(convAdj)}원</strong><br />
                     = 부채요소 PV ≈ {KRW(res.fv + gLS - convAdj)}원
                 </div>
                 <div>
-                    전환권조정 = 상환할증금({KRW(gLS)}) + 전환권대가({KRW(res.eqGross)})<br />
+                    {hybridAdjLabel} = 상환할증금({KRW(gLS)}) + 전환권대가({KRW(res.eqGross)})<br />
                     = <strong>{KRW(convAdj)}원</strong><br />
                     → 매기 EIR 상각 → 만기 시 잔액 ≈ 0
                 </div>
@@ -898,7 +952,7 @@
     return (
         <div style={{ display: "grid", gap: 14 }}>
         <div style={card}>
-            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>시나리오 1: 발행비용 처리방식 비교 (수정됨)</div>
+            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 3 }}>시나리오 1: 발행비용 처리방식 비교 </div>
             <div style={{ fontSize: 11, color: "var(--color-text-secondary)", marginBottom: 8 }}>
             동일 경제적 실질 — 총발행 {KRW(grossProceeds)}원, 비용 {KRW(pf.issuanceCost)}원 | 금액정책: 원 단위 절사 + 분개 잔차조정
             </div>
@@ -961,11 +1015,14 @@
     const [asOfDate, setAsOfDate] = useState("");
     const [collapsed, setCollapsed] = useState(false);
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+    const applyInstrumentPreset = (instrumentType) => {
+        setForm((prev) => normalizeFormByInstrumentType({ ...prev, instrumentType }));
+    };
 
     function run() {
         try {
         const res = runCalc(prepForm(form));
-        res.form = form;
+        res.form = normalizeFormByInstrumentType(form);
         setResult(res);
         setTab("classify");
         setCollapsed(true);
@@ -973,8 +1030,14 @@
     }
 
     const asOfRes = useMemo(() => result ? getAsOf(result.sched, form.issueDate, asOfDate) : null, [result, asOfDate, form.issueDate]);
-    const jnl     = useMemo(() => result ? makeJournals(result, prepForm(form)) : [],          [result, form]);
-    const preview = classify({ hasMandatoryRedemption: form.hasMandatoryRedemption, dividendType: form.dividendType, hasConversionOption: form.hasConversionOption, conversionFixed: form.conversionFixed });
+    const jnl     = useMemo(() => result ? makeJournals(result, prepForm(result.form || form)) : [], [result, form]);
+    const normalizedPreviewForm = normalizeFormByInstrumentType(form);
+    const preview = classify({
+        hasMandatoryRedemption: normalizedPreviewForm.hasMandatoryRedemption,
+        dividendType: normalizedPreviewForm.dividendType,
+        hasConversionOption: normalizedPreviewForm.hasConversionOption,
+        conversionFixed: normalizedPreviewForm.conversionFixed
+    });
     const pcs     = CLS[preview.type];
     const TABS    = [["classify","① 분류"],["schedule","② 상각표"],["journal","③ 분개"],["asof","④ 기준일"],["scenario","⑤ 시나리오"]];
 
@@ -1004,7 +1067,7 @@
                     <div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>기본 정보</div>
                     <FI label="상품 유형">
-                        <select style={INP_STYLE} value={form.instrumentType} onChange={e => set("instrumentType", e.target.value)}>
+                        <select style={INP_STYLE} value={form.instrumentType} onChange={e => applyInstrumentPreset(e.target.value)}>
                         <option value="BOND">일반사채 (Straight Bond)</option>
                         <option value="CB">전환사채 (CB)</option>
                         <option value="RCPS">상환전환우선주 (RCPS)</option>

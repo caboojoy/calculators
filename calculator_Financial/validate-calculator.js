@@ -52,6 +52,15 @@ function validateSingleCase(name, form, core) {
       : maturityTarget - res.net; // FV+gLS-NP
   const interestIdentityErr = Math.abs(totalInterest - (openingBase + totalCoupon));
 
+  // 사채/일반부채 케이스에서는 전환권조정 계정이 노출되면 안 됨
+  const hasConversionAdjLabelInLiability = res.cls.type === "LIABILITY"
+    ? jnl.some((entry) => {
+        const hasInLines = [...(entry.dr || []), ...(entry.cr || [])]
+          .some((line) => /전환권조정|우선주할인발행차금|우선주할증발행차금/.test(line.a || ""));
+        return hasInLines || /전환권조정|우선주할인발행차금|우선주할증발행차금/.test(entry.note || "");
+      })
+    : false;
+
   return {
     name,
     type: res.cls.type,
@@ -59,6 +68,7 @@ function validateSingleCase(name, form, core) {
     preRedemptionErr,
     postRedemptionErr,
     interestIdentityErr,
+    hasConversionAdjLabelInLiability,
     annEIR: res.annEIR,
     liab: res.liab,
     eq: res.eq,
@@ -260,6 +270,7 @@ function main() {
     if (r.preRedemptionErr > 1e-4) failReasons.push(`${r.name}: 상환 전 수렴 오차(${r.preRedemptionErr})`);
     if (r.postRedemptionErr > 1e-4) failReasons.push(`${r.name}: 상환 후 CA 오차(${r.postRedemptionErr})`);
     if (r.interestIdentityErr > 1e-4) failReasons.push(`${r.name}: 총 이자비용 식 오차(${r.interestIdentityErr})`);
+    if (r.hasConversionAdjLabelInLiability) failReasons.push(`${r.name}: 부채형 케이스에 전환권조정 계정 노출`);
   }
   if (!typeD.ok) failReasons.push(`Type D 차단 실패: ${typeD.message}`);
   if (!rateMode.ok) failReasons.push("복리/단리 모드 결과 차이 미발생");
