@@ -1,10 +1,4 @@
 
     {
-        "redirects": [
-            {
-                "source": "/:path*",
-                "destination": "https://www.allcalcu.com/:path*",
-                "permanent": true
-            }
-        ]
+        "outputDirectory": "."
     }
