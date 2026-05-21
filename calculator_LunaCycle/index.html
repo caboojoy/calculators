@@ -59,12 +59,13 @@
   .field label { font-size:14px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-soft); }
   .field input[type=date] { padding:13px 15px; border:1.5px solid var(--border); border-radius:12px; font-family:'Nunito',sans-serif; font-size:15px; color:var(--text); background:var(--cream); outline:none; transition:border-color .2s,box-shadow .2s; -webkit-appearance:none; }
   .field input[type=date]:focus { border-color:var(--rose); box-shadow:0 0 0 4px rgba(232,160,160,.15); }
+  .number-row { display:flex; align-items:center; gap:8px; }
+  .number-row input[type=number] { flex:1; min-width:0; padding:13px 15px; border:1.5px solid var(--border); border-radius:12px; font-family:'Nunito',sans-serif; font-size:15px; font-weight:600; color:var(--text); background:var(--cream); outline:none; transition:border-color .2s,box-shadow .2s; -moz-appearance:textfield; }
+  .number-row input[type=number]::-webkit-outer-spin-button,
+  .number-row input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .number-row input[type=number]:focus { border-color:var(--rose); box-shadow:0 0 0 4px rgba(232,160,160,.15); }
+  .number-unit { font-size:15px; font-weight:700; color:var(--rose-deep); flex-shrink:0; }
   .hint { font-size:12px; color:var(--text-soft); margin-top:1px; }
-  .range-row { display:flex; align-items:center; gap:12px; margin-top:4px; }
-  .range-row input[type=range] { flex:1; -webkit-appearance:none; appearance:none; height:4px; border-radius:4px; background:var(--border); outline:none; border:none; padding:0; box-shadow:none; }
-  .range-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--rose-deep); cursor:pointer; box-shadow:0 2px 8px rgba(201,125,125,.4); transition:transform .15s; }
-  .range-row input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.15); }
-  .range-val { font-size:15px; font-weight:700; color:var(--rose-deep); min-width:34px; text-align:center; }
 
   /* Warning */
   .warning { display:none; background:#FFF3CD; border:1px solid #F0C040; border-radius:10px; padding:12px 16px; font-size:13px; color:#7D5A00; margin-top:14px; align-items:center; gap:8px; }
@@ -249,19 +250,19 @@
         </div>
         <div class="field">
           <label>평균 생리 주기</label>
-          <div class="range-row">
-            <input type="range" id="cycleRange" min="15" max="45" value="28">
-            <span class="range-val" id="cycleVal">28일</span>
+          <div class="number-row">
+            <input type="number" id="cycleInput" min="15" max="45" step="1" value="28" inputmode="numeric" />
+            <span class="number-unit">일</span>
           </div>
-          <span class="hint">보통 21 ~ 35일 사이입니다</span>
+          <span class="hint">보통 21 ~ 35일 사이입니다 (15 ~ 45일)</span>
         </div>
         <div class="field">
           <label>생리 기간</label>
-          <div class="range-row">
-            <input type="range" id="durationRange" min="2" max="10" value="5">
-            <span class="range-val" id="durationVal">5일</span>
+          <div class="number-row">
+            <input type="number" id="durationInput" min="2" max="10" step="1" value="5" inputmode="numeric" />
+            <span class="number-unit">일</span>
           </div>
-          <span class="hint">보통 3 ~ 7일 사이입니다</span>
+          <span class="hint">보통 3 ~ 7일 사이입니다 (2 ~ 10일)</span>
         </div>
       </div>
       <div class="warning" id="warningBox"><span>⚠️</span><span id="warningText"></span></div>
@@ -612,11 +613,59 @@ function renderMultiMonth() {
 /* ═══════════════════════════════
    11. MAIN UPDATE
 ═══════════════════════════════ */
+function showInputWarning(msg) {
+  const box = document.getElementById('warningBox');
+  const txt = document.getElementById('warningText');
+  if (msg) { txt.textContent = msg; box.classList.add('show'); }
+  else { box.classList.remove('show'); }
+}
+
+function readNumberInput(el) {
+  const raw = el.value.trim();
+  if (raw === '') return null;
+  const n = parseInt(raw, 10);
+  return Number.isNaN(n) ? null : n;
+}
+
+function finalizeNumberInput(el, min, max) {
+  const raw = el.value.trim();
+  if (raw === '') return null;
+  const n = parseInt(raw, 10);
+  if (Number.isNaN(n)) return null;
+  const clamped = Math.min(max, Math.max(min, n));
+  el.value = clamped;
+  return clamped;
+}
+
+function getCycleDuration({ finalize = false } = {}) {
+  const cycleEl    = document.getElementById('cycleInput');
+  const durationEl = document.getElementById('durationInput');
+  if (finalize) {
+    return {
+      cycle:    finalizeNumberInput(cycleEl, 15, 45),
+      duration: finalizeNumberInput(durationEl, 2, 10)
+    };
+  }
+  return {
+    cycle:    readNumberInput(cycleEl),
+    duration: readNumberInput(durationEl)
+  };
+}
+
 function update() {
   const lastPeriod = document.getElementById('lastPeriod').value;
-  const cycle      = parseInt(document.getElementById('cycleRange').value);
-  const duration   = parseInt(document.getElementById('durationRange').value);
-  const valid      = checkWarnings(lastPeriod, cycle);
+  const { cycle, duration } = getCycleDuration();
+
+  if (cycle === null) {
+    showInputWarning('평균 생리 주기를 입력해 주세요.');
+    return;
+  }
+  if (duration === null) {
+    showInputWarning('생리 기간을 입력해 주세요.');
+    return;
+  }
+
+  const valid = checkWarnings(lastPeriod, cycle);
   if (!lastPeriod || !valid) return;
 
   const r = calculate(lastPeriod, cycle, duration);
@@ -805,11 +854,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load latest record or default date
   const latest = Records.getLatest();
   if (latest) {
-    document.getElementById('lastPeriod').value    = latest.startDate;
-    document.getElementById('cycleRange').value    = latest.cycle;
-    document.getElementById('cycleVal').textContent = latest.cycle + '일';
-    document.getElementById('durationRange').value    = latest.duration;
-    document.getElementById('durationVal').textContent = latest.duration + '일';
+    document.getElementById('lastPeriod').value   = latest.startDate;
+    document.getElementById('cycleInput').value   = latest.cycle;
+    document.getElementById('durationInput').value = latest.duration;
     state.cycle = latest.cycle; state.duration = latest.duration;
   } else {
     const def = new Date(); def.setDate(def.getDate()-10);
@@ -821,11 +868,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Input events
   document.getElementById('lastPeriod').addEventListener('input', update);
-  document.getElementById('cycleRange').addEventListener('input', function() {
-    document.getElementById('cycleVal').textContent = this.value+'일'; update();
-  });
-  document.getElementById('durationRange').addEventListener('input', function() {
-    document.getElementById('durationVal').textContent = this.value+'일'; update();
+  ['cycleInput', 'durationInput'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', update);
+    el.addEventListener('blur', () => {
+      if (el.value.trim() !== '') finalizeNumberInput(el, id === 'cycleInput' ? 15 : 2, id === 'cycleInput' ? 45 : 10);
+      update();
+    });
   });
 
   // Calendar navigation
@@ -852,9 +901,10 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Save record
   document.getElementById('saveRecordBtn').addEventListener('click', () => {
-    const lp  = document.getElementById('lastPeriod').value;
-    const cy  = parseInt(document.getElementById('cycleRange').value);
-    const dur = parseInt(document.getElementById('durationRange').value);
+    const lp = document.getElementById('lastPeriod').value;
+    const { cycle: cy, duration: dur } = getCycleDuration({ finalize: true });
+    if (cy === null) { showToast('평균 생리 주기를 입력해 주세요.', 'error'); return; }
+    if (dur === null) { showToast('생리 기간을 입력해 주세요.', 'error'); return; }
     if (!lp) { showToast('날짜를 먼저 입력해 주세요.', 'error'); return; }
     const res = Records.save(lp, cy, dur);
     showToast(res.ok ? '기록이 저장되었습니다! 💾' : res.msg, res.ok ? 'success' : 'error');
