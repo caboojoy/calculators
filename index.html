@@ -101,25 +101,6 @@
         .panel-title { font-size: 1.02rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
         .panel-desc { color: var(--text-secondary); font-size: .82rem; line-height: 1.55; margin-bottom: 12px; }
 
-        /* ── STORE ── */
-        .store-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        .store-link {
-            display: block; text-decoration: none; color: inherit;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
-            border: 1.5px solid var(--border); border-radius: 12px; padding: 12px;
-            transition: transform .18s, box-shadow .18s, border-color .18s;
-        }
-        .store-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: rgba(37,99,235,.25); }
-        .store-link.disabled { cursor: default; opacity: .78; }
-        .store-label { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 999px; background: var(--accent-light); color: var(--accent); margin-bottom: 8px; }
-        .store-name { font-size: .9rem; font-weight: 800; }
-
-        #store-promo-panel .panel-body { padding: 12px 12px 11px; }
-        #store-promo-panel .panel-kicker { margin-bottom: 8px; }
-        #store-promo-panel .store-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
-        #store-promo-panel .store-link { border-radius: 10px; padding: 9px 10px; }
-        #store-promo-panel .store-label { margin-bottom: 6px; }
-        #store-promo-panel .store-name { font-size: .84rem; line-height: 1.35; }
 
         /* ── SUPPORT ── */
         .support-section { max-width: 1200px; margin: 0 auto; padding: 0 24px 24px; }
@@ -276,11 +257,6 @@
     <p>급여부터 건강까지, 자주 쓰는 계산기를 한 곳에서</p>
 </div>
 
-<!-- TOP PANELS -->
-<section class="top-panels">
-    <div class="panel" id="store-promo-panel"></div>
-</section>
-
 <!-- FILTER -->
 <div class="filter-bar">
     <button class="filter-btn active" data-category="all"><span>전체</span></button>
@@ -319,11 +295,6 @@
 
 <script>
 // ── 설정 ──────────────────────────────────────────────
-const smartStores = [
-    { name: "스마트스토어 1", label: "대표 스토어", url: "" },
-    { name: "스마트스토어 2", label: "추가 스토어", url: "" }
-];
-
 // ✅ 수정: 올바른 구글폼 URL (프리필 없이 바로 열기)
 const supportConfig = {
     googleFormUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd-F_LXK5esFltWrCGySJynlfXoi622M8vLrOxokcPUB8At1w/viewform"
@@ -379,26 +350,7 @@ function getCatMeta(catId) {
 }
 
 function renderTopPanels() {
-    const storePanel   = document.getElementById('store-promo-panel');
     const supportPanel = document.getElementById('support-panel');
-
-    // 스토어 패널
-    storePanel.innerHTML = `
-        <div class="panel-body">
-            <div class="panel-kicker">스토어 홍보</div>
-            <div class="store-grid">
-                ${smartStores.map(store => store.url
-                    ? `<a class="store-link" href="${store.url}" target="_blank" rel="noopener noreferrer">
-                            <class="store-label">${store.label}</  div>
-                            <div class="store-name">${store.name}</div>
-                        </a>`
-                    : `<div class="store-link disabled">
-                            <div class="store-label">${store.label}</div>
-                            <div class="store-name">${store.name}</div>
-                        </div>`
-                ).join('')}
-            </div>
-        </div>`;
 
     // 문의 패널
     supportPanel.innerHTML = `
