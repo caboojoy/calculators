@@ -88,24 +88,6 @@
         .hero h1 { font-size: 2rem; font-weight: 900; letter-spacing: -.04em; color: var(--text-primary); margin-bottom: 6px; }
         .hero p { font-size: .95rem; color: var(--text-secondary); }
 
-        /* ── TOP PANELS ── */
-        .top-panels { max-width: 1200px; margin: 0 auto; padding: 0 24px 16px; display: grid; gap: 12px; }
-        .panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-sm); overflow: hidden; }
-        .panel-body { padding: 16px 16px 14px; }
-        .panel-kicker {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 5px 9px; border-radius: 999px;
-            font-size: 11px; font-weight: 700;
-            color: var(--accent); background: var(--accent-light); margin-bottom: 10px;
-        }
-        .panel-title { font-size: 1.02rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
-        .panel-desc { color: var(--text-secondary); font-size: .82rem; line-height: 1.55; margin-bottom: 12px; }
-
-
-        /* ── SUPPORT ── */
-        .support-section { max-width: 1200px; margin: 0 auto; padding: 0 24px 24px; }
-        .support-note { font-size: .74rem; color: var(--text-muted); line-height: 1.5; margin-top: 10px; }
-
         /* ── FILTER TABS ── */
         .filter-bar { max-width: 1200px; margin: 0 auto; padding: 0 24px 28px; display: flex; gap: 8px; flex-wrap: wrap; }
         .filter-btn {
@@ -231,7 +213,7 @@
             .header-inner { gap: 12px; }
             .hero { padding: 32px 16px 24px; }
             .hero h1 { font-size: 1.5rem; }
-            .top-panels, .filter-bar, .main, .support-section { padding-left: 16px; padding-right: 16px; }
+            .filter-bar, .main { padding-left: 16px; padding-right: 16px; }
             .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         }
     </style>
@@ -269,11 +251,6 @@
 <!-- MAIN -->
 <main class="main" id="main-container"></main>
 
-<!-- SUPPORT -->
-<section class="support-section">
-    <div class="panel" id="support-panel"></div>
-</section>
-
 <!-- FOOTER -->
 <footer>© 2025 계산기 모음 | 모든 계산은 참고용이며 공식 확인을 권장합니다</footer>
 
@@ -294,12 +271,6 @@
 </div>
 
 <script>
-// ── 설정 ──────────────────────────────────────────────
-// ✅ 수정: 올바른 구글폼 URL (프리필 없이 바로 열기)
-const supportConfig = {
-    googleFormUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd-F_LXK5esFltWrCGySJynlfXoi622M8vLrOxokcPUB8At1w/viewform"
-};
-
 // ── 카테고리 ──────────────────────────────────────────
 const categories = [
     { id: "basic",    name: "기본 계산기",  color: "#2563eb" },
@@ -347,31 +318,6 @@ const calculators = [
 // ── 렌더링 ──────────────────────────────────────────────
 function getCatMeta(catId) {
     return categories.find(c => c.id === catId);
-}
-
-function renderTopPanels() {
-    const supportPanel = document.getElementById('support-panel');
-
-    // 문의 패널
-    supportPanel.innerHTML = `
-        <div class="panel-body">
-            <div class="panel-kicker">문의 접수</div>
-            <div class="panel-title">불편한 점이나 개선 아이디어를 알려주세요</div>
-            <div class="panel-desc">버그 신고, 기능 제안, 사용 문의 등 소중한 의견을 남겨 주시면 더 나은 계산기를 만드는 데 반영하겠습니다.</div>
-            <button class="btn btn-primary" id="open-form-btn" style="width:100%; justify-content:center;">
-                문의하기 →
-            </button>
-            <p class="support-note">버튼을 누르면 구글폼이 새 탭에서 열립니다.</p>
-        </div>`;
-
-    document.getElementById('open-form-btn').addEventListener('click', () => {
-        const { googleFormUrl } = supportConfig;
-        if (!googleFormUrl) {
-            alert('구글폼 URL이 설정되지 않았습니다.');
-            return;
-        }
-        window.open(googleFormUrl, '_blank', 'noopener,noreferrer');
-    });
 }
 
 function renderCard(calc) {
@@ -438,7 +384,6 @@ function getFiltered() {
     });
 }
 
-renderTopPanels();
 function refresh() { renderAll(getFiltered(), currentFilter); }
 refresh();
 
