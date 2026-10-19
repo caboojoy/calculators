@@ -53,6 +53,11 @@
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
+  <url>
+    <loc>https://www.allcalcu.com/calculator_CameraExchangeRate/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 
   <!-- 고급 계산기 -->
   <url>

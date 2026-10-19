@@ -1,0 +1,16 @@
+{
+    "name": "카메라 환율 | Camera FX",
+    "short_name": "카메라 환율",
+    "description": "가격표·지폐를 카메라로 비추면 내 기준 통화로 바로 환산합니다.",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#eef6fd",
+    "theme_color": "#1a8fe8",
+    "lang": "ko",
+    "icons": [
+        { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+        { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    ]
+}

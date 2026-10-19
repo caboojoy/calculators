@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="가격표·지폐를 카메라로 비추면 내 기준 통화로 바로 환산합니다.">
+<meta name="theme-color" content="#1a8fe8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1722" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="카메라 환율">
+<title>카메라 환율 | Camera FX</title>
+<link rel="canonical" href="https://www.allcalcu.com/calculator_CameraExchangeRate/">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ── Header ── -->
+    <header class="header">
+        <div class="brand">
+            <img class="brand-icon" src="icon.svg" alt="" width="30" height="30">
+            <h1 class="title" data-i18n="appTitle">카메라 환율</h1>
+        </div>
+        <button class="rate-badge" id="rateBadge" type="button" aria-live="polite">—</button>
+        <div class="header-actions">
+            <button class="icon-btn lang-btn" id="langToggle" type="button" aria-label="언어 / Language">EN</button>
+            <button class="icon-btn" id="openSettings" type="button" data-i18n-aria="settings" aria-label="설정">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 수동 환율 7일 경과 배너 -->
+    <div class="banner" id="staleBanner" hidden>
+        <p id="staleBannerText"></p>
+        <div class="banner-actions">
+            <button type="button" class="btn btn-sm" id="staleKeep" data-i18n="keep">유지</button>
+            <button type="button" class="btn btn-sm btn-primary" id="staleOpen" data-i18n="openSettings">설정 열기</button>
+        </div>
+    </div>
+
+    <!-- ── Tabs ── -->
+    <nav class="tabs" role="tablist">
+        <button class="tab active" role="tab" data-tab="price" aria-selected="true" data-i18n="tabPrice">가격표</button>
+        <button class="tab" role="tab" data-tab="cash" aria-selected="false" data-i18n="tabCash">지폐</button>
+        <button class="tab" role="tab" data-tab="cart" aria-selected="false">
+            <span data-i18n="tabCart">장바구니</span>
+            <span class="tab-count" id="cartCount" hidden>0</span>
+        </button>
+    </nav>
+
+    <main class="main">
+
+        <!-- ── 카메라 화면 (가격표/지폐 공용) ── -->
+        <section class="view view-camera" id="viewCamera">
+            <div class="camera" id="camera" data-mode="price">
+                <video id="video" playsinline muted autoplay></video>
+                <div class="guide" id="guide" aria-hidden="true"><span class="guide-hint" id="guideHint"></span></div>
+                <div class="camera-cover" id="cameraCover">
+                    <p class="camera-cover-text" id="cameraCoverText"></p>
+                    <button type="button" class="btn btn-primary" id="startCamera" data-i18n="startCamera">카메라 켜기</button>
+                </div>
+                <div class="busy" id="busy" hidden>
+                    <span class="spinner" aria-hidden="true"></span>
+                    <span data-i18n="recognizing">인식 중…</span>
+                </div>
+            </div>
+
+            <p class="notice" id="cameraNotice" role="status" hidden></p>
+
+            <div class="controls">
+                <label class="ctrl">
+                    <input type="file" id="fileInput" accept="image/*" capture="environment" hidden>
+                    <span class="ctrl-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    </span>
+                    <span class="ctrl-label" data-i18n="uploadPhoto">사진 올리기</span>
+                </label>
+                <button type="button" class="shutter" id="shutter" data-i18n-aria="capture" aria-label="촬영"><span></span></button>
+                <button type="button" class="ctrl" id="manualEntry">
+                    <span class="ctrl-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                    </span>
+                    <span class="ctrl-label" data-i18n="manualEntry">직접 입력</span>
+                </button>
+            </div>
+
+            <label class="switch-row">
+                <span>
+                    <span class="switch-title" data-i18n="autoCapture">자동 촬영</span>
+                    <span class="switch-desc" data-i18n="autoCaptureDesc">화면이 멈추면 1회 촬영</span>
+                </span>
+                <input type="checkbox" class="switch" id="autoCapture">
+            </label>
+            <p class="usage" id="usageText"></p>
+        </section>
+
+        <!-- ── 장바구니 ── -->
+        <section class="view view-cart" id="viewCart" hidden>
+            <div class="card totals-card" id="cartTotals"></div>
+            <div class="card">
+                <div class="card-head">
+                    <h2 class="card-title" data-i18n="cartItems">담은 항목</h2>
+                    <button type="button" class="btn btn-sm btn-ghost danger" id="clearCart" data-i18n="clearCart">비우기</button>
+                </div>
+                <ul class="cart-list" id="cartList"></ul>
+                <p class="empty" id="cartEmpty" data-i18n="cartEmpty">장바구니가 비어 있습니다. 가격표를 찍거나 직접 입력해 담아 보세요.</p>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p data-i18n="foot1">환율은 시장 기준 참고값이며 실제 결제·환전 환율과 다를 수 있습니다.</p>
+            <p data-i18n="foot2">인식 결과는 틀릴 수 있으니 금액·통화를 꼭 확인하세요. 사진은 저장하지 않습니다.</p>
+            <p data-i18n="foot3">매장 내 촬영 규정을 확인하고 지켜 주세요.</p>
+            <p class="foot-src" data-i18n="foot4">환율 데이터: Open ExchangeRate API</p>
+        </footer>
+    </main>
+</div>
+
+<!-- ── 결과 시트 ── -->
+<div class="overlay" id="sheetOverlay" hidden></div>
+<section class="sheet" id="resultSheet" role="dialog" aria-modal="true" aria-labelledby="resultTitle" hidden>
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+        <h2 id="resultTitle"></h2>
+        <button type="button" class="icon-btn" id="closeResult" data-i18n-aria="close" aria-label="닫기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="sheet-body">
+        <p class="notice notice-soft" id="resultNotes" hidden></p>
+        <ul class="rows" id="resultRows"></ul>
+        <p class="empty" id="resultEmpty" hidden data-i18n="noItems">인식된 항목이 없습니다. 항목을 직접 추가해 주세요.</p>
+        <button type="button" class="btn btn-ghost btn-block" id="addRow" data-i18n="addItem">+ 항목 추가</button>
+        <div class="totals" id="resultTotals"></div>
+    </div>
+    <div class="sheet-foot">
+        <button type="button" class="btn btn-primary btn-block" id="addToCart" data-i18n="addToCart">장바구니에 담기</button>
+    </div>
+</section>
+
+<!-- ── 설정 ── -->
+<section class="sheet sheet-full" id="settingsSheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" hidden>
+    <div class="sheet-head">
+        <h2 id="settingsTitle" data-i18n="settings">설정</h2>
+        <button type="button" class="icon-btn" id="closeSettings" data-i18n-aria="close" aria-label="닫기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+    <div class="sheet-body">
+
+        <div class="group">
+            <h3 class="group-title" data-i18n="sCurrency">통화</h3>
+            <label class="field">
+                <span class="field-label" data-i18n="baseCurrency">내 기준 통화</span>
+                <span class="field-desc" data-i18n="baseCurrencyDesc">결과를 이 통화로 보여 줍니다</span>
+                <select id="setBase" class="select"></select>
+            </label>
+            <label class="field">
+                <span class="field-label" data-i18n="travelCurrency">현재 여행 국가 통화</span>
+                <span class="field-desc" data-i18n="travelCurrencyDesc">가격표의 $, ¥ 처럼 모호한 기호를 이 통화로 판단합니다</span>
+                <select id="setTravel" class="select"></select>
+            </label>
+            <div class="field">
+                <span class="field-label" data-i18n="secondary">보조 표시 통화 (최대 3개)</span>
+                <div class="sec-grid">
+                    <select id="setSec0" class="select"></select>
+                    <select id="setSec1" class="select"></select>
+                    <select id="setSec2" class="select"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="group">
+            <h3 class="group-title" data-i18n="sRate">기본 환율 설정</h3>
+            <div class="seg" role="radiogroup" id="rateModeSeg">
+                <label class="seg-item"><input type="radio" name="rateMode" value="auto"><span data-i18n="modeAuto">자동(실시간)</span></label>
+                <label class="seg-item"><input type="radio" name="rateMode" value="fee"><span data-i18n="modeFee">시장+수수료</span></label>
+                <label class="seg-item"><input type="radio" name="rateMode" value="manual"><span data-i18n="modeManual">수동 환율</span></label>
+            </div>
+            <p class="field-desc" data-i18n="ratePriority">적용 순서: 수동 환율(설정한 통화쌍) › 시장 환율 + 수수료 › 시장 환율</p>
+
+            <div class="mode-panel" id="feePanel" hidden>
+                <div class="seg seg-sm" role="radiogroup">
+                    <label class="seg-item"><input type="radio" name="feeProfile" value="card"><span data-i18n="profileCard">카드</span></label>
+                    <label class="seg-item"><input type="radio" name="feeProfile" value="cash"><span data-i18n="profileCash">현금 환전</span></label>
+                </div>
+                <div class="fee-grid">
+                    <label class="field">
+                        <span class="field-label" data-i18n="feeCard">카드 수수료 %</span>
+                        <input type="text" inputmode="decimal" id="feeCard" class="input" autocomplete="off">
+                    </label>
+                    <label class="field">
+                        <span class="field-label" data-i18n="feeCash">현금 수수료 %</span>
+                        <input type="text" inputmode="decimal" id="feeCash" class="input" autocomplete="off">
+                    </label>
+                </div>
+                <p class="field-desc" data-i18n="feeExample">기본값 카드 1.5%, 현금 3%는 예시입니다. 내 카드·환전소 조건으로 바꾸세요. (0~20%)</p>
+            </div>
+
+            <div class="mode-panel" id="manualPanel" hidden>
+                <div class="manual-form">
+                    <div class="manual-line">
+                        <span class="manual-unit" id="manualUnit">100</span>
+                        <select id="manualFrom" class="select select-sm"></select>
+                        <span>=</span>
+                        <input type="text" inputmode="decimal" id="manualRate" class="input" autocomplete="off" placeholder="0">
+                        <span class="manual-to" id="manualTo">KRW</span>
+                    </div>
+                    <p class="deviation" id="manualDeviation"></p>
+                    <div class="manual-actions">
+                        <button type="button" class="btn btn-sm btn-ghost" id="manualFill" data-i18n="fillMarket">시장 환율 채우기</button>
+                        <button type="button" class="btn btn-sm btn-primary" id="manualSave" data-i18n="save">저장</button>
+                    </div>
+                </div>
+                <ul class="manual-list" id="manualList"></ul>
+                <p class="field-desc" id="manualEmpty" data-i18n="manualEmpty">저장된 수동 환율이 없습니다. 설정하지 않은 통화는 시장 환율을 씁니다.</p>
+            </div>
+        </div>
+
+        <div class="group">
+            <h3 class="group-title" data-i18n="sDisplay">표시</h3>
+            <label class="field">
+                <span class="field-label" data-i18n="rounding">반올림 단위 (소수점 없는 통화)</span>
+                <select id="setRounding" class="select">
+                    <option value="1">1</option>
+                    <option value="10">10</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
+            <label class="switch-row">
+                <span class="switch-title" data-i18n="showUnitPrice">단가 환산 표시</span>
+                <input type="checkbox" class="switch" id="setUnitPrice">
+            </label>
+        </div>
+
+        <div class="group">
+            <h3 class="group-title" data-i18n="sData">데이터</h3>
+            <div class="btn-row">
+                <button type="button" class="btn btn-sm" id="exportSettings" data-i18n="export">설정 내보내기</button>
+                <label class="btn btn-sm">
+                    <span data-i18n="import">설정 가져오기</span>
+                    <input type="file" id="importSettings" accept="application/json,.json" hidden>
+                </label>
+                <button type="button" class="btn btn-sm danger" id="resetSettings" data-i18n="reset">초기화</button>
+            </div>
+            <p class="field-desc" id="ratesInfo"></p>
+        </div>
+    </div>
+</section>
+
+<!-- ── 온보딩 ── -->
+<section class="sheet sheet-full onboarding" id="onboarding" role="dialog" aria-modal="true" aria-labelledby="obTitle" hidden>
+    <div class="sheet-body">
+        <p class="ob-step" id="obStep"></p>
+        <h2 class="ob-title" id="obTitle"></h2>
+        <p class="ob-desc" id="obDesc"></p>
+        <div class="ob-content" id="obContent"></div>
+    </div>
+    <div class="sheet-foot ob-foot">
+        <button type="button" class="btn" id="obBack" data-i18n="back">이전</button>
+        <button type="button" class="btn btn-primary" id="obNext" data-i18n="next">다음</button>
+    </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="config.js"></script>
+<script src="core.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
