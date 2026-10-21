@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>네트제 급여 계산기 | 세후 실수령액으로 세전 연봉 역산 (2026)</title>
+<meta name="description" content="네트제·세후보장 급여 계산기. 근로자가 받을 세후 실수령액을 입력하면 4대보험·근로소득 간이세액표를 반영해 회사가 지급할 세전 급여(Gross-up)와 회사 총 인건비를 원 단위로 역산합니다. 2026년 요율 기준.">
+<meta name="keywords" content="네트제, 세후보장, 실수령액 역산, gross-up, 세전 급여 계산, 네트 연봉, 네트제 계산기, 세후 연봉 역산">
+<link rel="canonical" href="https://www.allcalcu.com/calculator_NetPay/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="올계산 allcalcu">
+<meta property="og:title" content="네트제 급여 계산기 | 세후 실수령액으로 세전 연봉 역산 (2026)">
+<meta property="og:description" content="받기로 한 세후 월급을 입력하면 필요한 세전 급여와 회사 총 인건비를 원 단위로 역산합니다.">
+<meta property="og:url" content="https://www.allcalcu.com/calculator_NetPay/">
+<meta property="og:locale" content="ko_KR">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Noto+Serif+KR:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><circle cx="5" cy="5" r="5"/></svg>
+      2026년 기준
+    </div>
+    <h1>네트제 급여 계산기</h1>
+    <p class="header-sub">세후 실수령액을 보장하려면 세전 급여를 얼마로 줘야 할까? — 4대보험·간이세액표 역산(Gross-up)</p>
+  </header>
+
+  <div class="layout">
+
+    <!-- ───────── 좌측: 입력 ───────── -->
+    <div class="left-col">
+      <div class="card">
+        <div class="card-title">보장할 세후 급여</div>
+
+        <div class="input-group">
+          <label for="net-input">목표 세후 월급 (실수령액)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">₩</span>
+            <input type="text" id="net-input" inputmode="numeric" autocomplete="off" placeholder="3,000,000" value="3,000,000">
+            <span class="input-suffix">원</span>
+          </div>
+          <div class="preset-row">
+            <button type="button" class="chip" data-preset="2500000">250만</button>
+            <button type="button" class="chip" data-preset="3000000">300만</button>
+            <button type="button" class="chip" data-preset="4000000">400만</button>
+            <button type="button" class="chip" data-preset="5000000">500만</button>
+            <button type="button" class="chip" data-preset="7000000">700만</button>
+          </div>
+          <div class="input-error" data-for="targetNet"></div>
+        </div>
+
+        <div class="input-group">
+          <label for="nontax-input">비과세 (식대 등, 월)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">₩</span>
+            <input type="text" id="nontax-input" inputmode="numeric" autocomplete="off" placeholder="200,000">
+            <span class="input-suffix">원</span>
+          </div>
+          <div class="input-hint">식대 월 20만원까지 비과세 · 4대보험·소득세 계산에서 제외</div>
+          <div class="input-error" data-for="nonTaxable"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="input-group">
+            <label for="family-select">공제대상 가족 수</label>
+            <select id="family-select"></select>
+            <div class="input-hint">본인 포함</div>
+            <div class="input-error" data-for="family"></div>
+          </div>
+          <div class="input-group">
+            <label for="children-select">8~20세 자녀 수</label>
+            <select id="children-select"></select>
+            <div class="input-hint">가족 수에 포함된 인원</div>
+          </div>
+        </div>
+        <div class="input-error" data-for="children"></div>
+
+        <div class="input-group">
+          <div class="label" id="ratio-label">소득세 원천징수 비율</div>
+          <div class="tab-group three" role="group" aria-labelledby="ratio-label">
+            <button type="button" class="tab-btn" data-ratio="0.8">80%</button>
+            <button type="button" class="tab-btn active" data-ratio="1">100%</button>
+            <button type="button" class="tab-btn" data-ratio="1.2">120%</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="period-select">적용 시점</label>
+          <select id="period-select"></select>
+          <div class="input-hint">국민연금 기준소득월액 상·하한은 매년 7월 변경</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">회사 부담 · 지급 설정</div>
+
+        <div class="input-group">
+          <label for="company-select">회사 규모 (고용안정·직능 요율)</label>
+          <select id="company-select"></select>
+        </div>
+
+        <div class="input-group">
+          <label for="accident-input">산재보험 요율</label>
+          <div class="input-wrap">
+            <input type="text" id="accident-input" class="no-prefix" inputmode="decimal" autocomplete="off" placeholder="0.9">
+            <span class="input-suffix">%</span>
+          </div>
+          <div class="input-hint">업종별 고시 요율(출퇴근재해 포함)을 입력하세요</div>
+          <div class="input-error" data-for="accident"></div>
+        </div>
+
+        <div class="input-group">
+          <label for="round-select">지급 단위 (올림)</label>
+          <select id="round-select">
+            <option value="1">원 단위</option>
+            <option value="10" selected>10원 단위</option>
+            <option value="100">100원 단위</option>
+            <option value="1000">1,000원 단위</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───────── 우측: 결과 ───────── -->
+    <div class="right-col">
+      <div class="card empty-card" id="empty-state">받기로 한 세후 월급을 입력하면 필요한 세전 급여가 계산됩니다</div>
+
+      <div id="results" class="results" hidden>
+        <!-- 히어로 -->
+        <div class="card hero-card">
+          <div class="card-title">필요한 세전 급여 (월)</div>
+          <div class="hero-value"><span id="gross-value" class="num">0</span><span class="hero-unit">원</span></div>
+          <div class="hero-sub">연 환산 <span id="gross-annual" class="num">0</span>원</div>
+          <div class="verify-box">
+            <div class="verify-line">
+              <span>실수령 검증</span>
+              <span><b id="verify-net" class="num">0</b>원 <span class="muted">/ 목표 <span id="verify-target" class="num">0</span>원</span></span>
+            </div>
+            <div class="verify-diff" id="verify-diff"></div>
+            <div class="min-gross-note" id="min-gross-note"></div>
+          </div>
+          <div class="hero-cost">
+            <span>회사 월 총 인건비</span>
+            <span><b id="total-cost-value" class="num">0</b>원</span>
+          </div>
+        </div>
+
+        <!-- 공제 내역 -->
+        <div class="card">
+          <div class="card-title">근로자 공제 내역</div>
+          <table class="data-table" id="deduction-table"></table>
+        </div>
+
+        <!-- 회사 총 인건비 -->
+        <div class="card">
+          <div class="card-title">회사 총 인건비</div>
+          <div id="cost-breakdown" class="cost-breakdown"></div>
+        </div>
+
+        <!-- 비교 표 -->
+        <div class="card">
+          <div class="card-title">근로자 부담 vs 회사 부담 (월)</div>
+          <table class="data-table compare" id="compare-table"></table>
+        </div>
+
+        <!-- 도넛 차트 -->
+        <div class="card">
+          <div class="card-title">세전 급여 구성</div>
+          <div class="chart-wrap">
+            <canvas id="donut-chart" aria-label="세전 급여 구성 도넛 차트" role="img"></canvas>
+            <div class="donut-center">
+              <div class="donut-pct" id="donut-pct">0%</div>
+              <div class="donut-label">실수령 비율</div>
+            </div>
+          </div>
+          <div class="chart-legend" id="donut-legend"></div>
+        </div>
+
+        <!-- 연간 환산 -->
+        <div class="card">
+          <div class="card-title">연간 환산 (월 × 12)</div>
+          <div class="annual-grid" id="annual-grid"></div>
+          <div class="input-hint">상여·연말정산 정산분은 반영하지 않은 단순 12개월 환산입니다</div>
+        </div>
+      </div>
+
+      <!-- 실무 안내 -->
+      <div class="card notice-card">
+        <div class="card-title">네트제 계약 시 꼭 확인할 점</div>
+        <ul class="notice-list">
+          <li><b>연말정산 정산분은 누가 부담하나요?</b> 매월 원천징수는 간이세액표 기준이라 연말정산 때 추가 납부나 환급이 생깁니다. 이 차액을 회사·근로자 중 누가 부담하거나 가져가는지 <b>근로계약서에 명시</b>해 두세요.</li>
+          <li><b>회사가 대신 낸 세금도 소득입니다.</b> 회사가 근로자 몫의 세금·보험료를 대신 부담하면 그 금액이 다시 근로소득으로 보아 과세될 수 있습니다.</li>
+          <li><b>4대보험 정산.</b> 건강보험은 매년 4월 전년도 보수로 정산되고, 국민연금 기준소득월액은 7월에 바뀝니다. 실제 공제액은 공단 고지액에 따릅니다.</li>
+          <li>위 사항은 안내용이며 계산 결과에는 반영되지 않습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer class="page-footer">
+    <div class="basis" id="basis-text"></div>
+    <div>요율 최종 확인일 <span id="policy-updated"></span> · 근로소득 간이세액표(소득세법 시행령 별표2) 기준</div>
+    <div>본 계산 결과는 참고용이며, 실제 급여는 국민연금·건강보험·근로복지공단의 고지액과 회사의 원천징수 기준에 따릅니다.</div>
+    <div><a href="https://docs.google.com/forms/d/e/1FAIpQLSd-F_LXK5esFltWrCGySJynlfXoi622M8vLrOxokcPUB8At1w/viewform" target="_blank" rel="noopener">오류 제보 · 문의하기</a> · <a href="../index.html">다른 계산기 보기</a></div>
+  </footer>
+</div>
+
+<script src="taxTable2026.js"></script>
+<script src="script.js" defer></script>
+</body>
+</html>

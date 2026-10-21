@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>네트제 계산기 테스트</title>
+<style>
+  body { font-family: 'IBM Plex Mono', monospace; background: #eef7fd; color: #1b3f5e; padding: 16px; font-size: 13px; }
+  h1 { font-size: 18px; }
+  .pass { color: #2da44e; } .fail { color: #d9534f; font-weight: 700; }
+  li { margin: 2px 0; word-break: break-all; }
+  #summary { font-size: 15px; font-weight: 700; margin: 12px 0; }
+</style>
+</head>
+<body>
+<h1>네트제 계산기 — 계산 로직 테스트</h1>
+<div id="summary">실행 중…</div>
+<ul id="log"></ul>
+
+<script src="taxTable2026.js"></script>
+<script src="script.js"></script>
+<script id="test-cases">
+/* 계산 로직 변경 시마다 이 페이지를 열어 전부 PASS인지 확인 */
+(function runTests() {
+  const results = [];
+  const check = (name, cond, detail) => results.push({ name, ok: !!cond, detail: detail || '' });
+  const eq = (name, actual, expected) => check(name, actual === expected, `expected ${expected}, got ${actual}`);
+
+  const base = { ym: '2026-03', nonTaxable: 200000, family: 1, children: 0, taxRatio: 1, roundUnit: 1 };
+  const opt = (o) => Object.assign({}, base, o);
+
+  // ── 유틸 ──
+  eq('floorWon 부동소수점: 3,000,000 × 0.009', floorWon(3000000 * 0.009), 27000);
+  eq('floorWon 절사 정확성: 100,021 × 4.75% = 4,750.9975', floorWon(100021 * 0.0475), 4750);
+  eq('floorWon 절사 정확성: 100,139 × 3.595% = 3,599.997', floorWon(100139 * 0.03595), 3599);
+  eq('truncTo 10원 절사', truncTo(12345.67, 10), 12340);
+  eq('getSalaryRawValue 콤마 제거', getSalaryRawValue('3,000,000'), 3000000);
+  eq('getSalaryRawValue 빈 값', getSalaryRawValue(''), 0);
+  eq('getSalaryRawValue 문자', getSalaryRawValue('abc'), 0);
+
+  // ── 간이세액표 ──
+  const T = TAX_TABLES[2026];
+  eq('세액표 77만원 미만 = 0', lookupTableTax(769999, 1, T), 0);
+  eq('세액표 300만원 1인', lookupTableTax(3000000, 1, T), 74350);
+  eq('세액표 300만원 4인', lookupTableTax(3000000, 4, T), 26690);
+  eq('세액표 1,000만원 1인', lookupTableTax(10000000, 1, T), 1507400);
+  eq('세액표 1,200만원 1인 (35% 산식)', lookupTableTax(12000000, 1, T), 1507400 + 25000 + 686000);
+  eq('세액표 2,000만원 1인 (38% 산식)', lookupTableTax(20000000, 1, T), 1507400 + 1397000 + floorWon(6000000 * 0.98 * 0.38));
+  eq('세액표 5,000만원 1인 (42% 산식)', lookupTableTax(50000000, 1, T), 1507400 + 13394600 + floorWon(5000000 * 0.42));
+  eq('자녀공제 1명 (2026.3.1~)', childCredit(1, T), 20830);
+  eq('자녀공제 2명', childCredit(2, T), 45830);
+  eq('자녀공제 3명', childCredit(3, T), 45830 + 33330);
+  eq('자녀공제 4명', childCredit(4, T), 45830 + 33330 * 2);
+  eq('가족 12명 (11명 초과 산식)', lookupTableTax(5000000, 12, T), 87850 - (106600 - 87850));
+  eq('가족 20명 → 음수면 0', lookupTableTax(5000000, 20, T), 0);
+  check('시행일(2026.3.1) 이전 시점은 오류', (() => { try { resolvePolicy('2026-02'); return false; } catch (e) { return true; } })());
+
+  // ── 정방향 (손계산 기대값) ──
+  const f = forward(3000000, opt({}));
+  eq('정방향 과세급여', f.taxable, 2800000);
+  eq('정방향 국민연금 2,800,000×4.75%', f.pension, 133000);
+  eq('정방향 건강보험 2,800,000×3.595%', f.health, 100660);
+  eq('정방향 장기요양 100,660×13.14% (10원 절사)', f.ltc, 13220);
+  eq('정방향 고용보험 2,800,000×0.9%', f.employment, 25200);
+  eq('정방향 소득세 = 세액표(280만, 1인)', f.incomeTax, lookupTableTax(2800000, 1, T));
+  eq('정방향 지방소득세 = 소득세×10% 10원 절사', f.localTax, truncTo(f.incomeTax * 0.1, 10));
+  eq('정방향 실수령 = 세전 − 공제', f.net, 3000000 - (133000 + 100660 + 13220 + 25200 + f.incomeTax + f.localTax));
+
+  // 소득세 비율 80/120%
+  const f80 = forward(5000000, opt({ taxRatio: 0.8 }));
+  eq('소득세 80%', f80.incomeTax, truncTo(lookupTableTax(4800000, 1, T) * 0.8, 10));
+  const f120 = forward(5000000, opt({ taxRatio: 1.2, family: 3, children: 2 }));
+  eq('소득세 120% + 자녀 2명', f120.incomeTax, truncTo(Math.max(0, lookupTableTax(4800000, 3, T) - 45830) * 1.2, 10));
+
+  // ── 경계: 국민연금 상·하한 ──
+  const hiBand = forward(6590000 + 200000 + 100000, opt({ ym: '2026-07' }));
+  eq('국민연금 상한 (7월~) 659만원', hiBand.pensionBase, 6590000);
+  eq('국민연금 상한 보험료 (공단 예시 313,025원)', hiBand.pension, 313025);
+  eq('국민연금 하한 보험료 (공단 예시 19,475원)', forward(300000, opt({ ym: '2026-07', nonTaxable: 0 })).pension, 19475);
+  const ex = forward(3512990, opt({ ym: '2026-07', nonTaxable: 0 }));
+  eq('국민연금 기준소득월액 천원 미만 절사 (공단 예시 3,512,990 → 3,512,000)', ex.pensionBase, 3512000);
+  eq('국민연금 3,512,000 × 4.75% = 166,820', ex.pension, 166820);
+  eq('건강보험 보험료 하한 (근로자 10,080원)', forward(250000, opt({ nonTaxable: 0 })).health, 10080);
+  eq('건강보험 보수월액 하한 280,383원 적용', forward(250000, opt({ nonTaxable: 0 })).healthBase, 280383);
+  eq('건강보험 보험료 상한 (근로자 4,591,740원)', forward(200000000, opt({})).health, 4591740);
+  eq('건강보험 보수월액 상한 127,725,730원 적용', forward(200000000, opt({})).healthBase, 127725730);
+  eq('장기요양 = 건보료 × 0.9448% ÷ 7.19% (10원 절사)', forward(3000000, opt({})).ltc, truncTo(100660 * 0.009448 / 0.0719, 10));
+  const hiBand1 = forward(6590000 + 200000, opt({ ym: '2026-03' }));
+  eq('국민연금 상한 (3~6월) 637만원', hiBand1.pensionBase, 6370000);
+  const lowBand = forward(300000, opt({ nonTaxable: 0 }));
+  eq('국민연금 하한 40만원 적용', lowBand.pensionBase, 400000);
+
+  // ── 경계: 비과세가 급여보다 큰 경우 ──
+  const big = forward(150000, opt({ nonTaxable: 200000 }));
+  eq('비과세 > 급여: 과세급여 0', big.taxable, 0);
+  eq('비과세 > 급여: 공제 0', big.deductionTotal, 0);
+  eq('비과세 > 급여: 실수령 = 세전', big.net, 150000);
+
+  // ── 0·음수·빈 입력 검증 ──
+  const vi = (o) => Object.assign({ targetNet: 3000000, nonTaxable: 0, family: 1, children: 0, accidentRatePercent: 0.9 }, o);
+  check('검증: 목표 0 → 오류', validateInput(vi({ targetNet: 0 })).targetNet);
+  check('검증: 목표 음수 → 오류', validateInput(vi({ targetNet: -1 })).targetNet);
+  check('검증: 목표 NaN → 오류', validateInput(vi({ targetNet: NaN })).targetNet);
+  check('검증: 자녀 수 > 가족−1 → 오류', validateInput(vi({ family: 2, children: 2 })).children);
+  check('검증: 산재 요율 음수 → 오류', validateInput(vi({ accidentRatePercent: -1 })).accident);
+  check('검증: 정상 입력 → 오류 없음', Object.keys(validateInput(vi({}))).length === 0);
+
+  // ── 왕복 테스트: forward(reverse(net)).net >= net 이고 최소 gross ──
+  const MIN_CHECK = 80000; // 역산 결과 아래 8만원(보정 탐색 폭 6만원보다 넓게) 구간에 더 작은 해가 없는지 전수 확인
+  function assertMinimal(name, target, o) {
+    const r = reverse(target, o);
+    const ok = forward(r.gross, o).net >= target;
+    let smaller = null;
+    for (let g = Math.max(target, r.minGross - MIN_CHECK); g < r.minGross; g++) {
+      if (forward(g, o).net >= target) { smaller = g; break; }
+    }
+    check(`${name} 목표 ${target.toLocaleString()} → 세전 ${r.gross.toLocaleString()} (+${r.diff}원)`,
+      ok && smaller === null && r.diff >= 0,
+      smaller !== null ? `더 작은 해 ${smaller}` : (ok ? '' : 'net 미달'));
+    return r;
+  }
+  [2000000, 2500000, 3000000, 5000000, 7000000, 12000000].forEach(n => {
+    assertMinimal('왕복(1인)', n, opt({}));
+    assertMinimal('왕복(4인·자녀2·7월~)', n, opt({ family: 4, children: 2, ym: '2026-07' }));
+  });
+  [2000000, 3000000, 7000000].forEach(n => {
+    assertMinimal('왕복(80%)', n, opt({ taxRatio: 0.8 }));
+    assertMinimal('왕복(120%)', n, opt({ taxRatio: 1.2 }));
+  });
+  // 국민연금 상한 근처 / 하한 미만 / 비과세가 목표보다 큰 경우
+  assertMinimal('상한 근처', 5900000, opt({ ym: '2026-07' }));
+  assertMinimal('상한 근처', 6000000, opt({ ym: '2026-07' }));
+  assertMinimal('하한 미만', 350000, opt({ nonTaxable: 0 }));
+  assertMinimal('비과세 > 목표', 150000, opt({}));
+  // 간이세액표 구간 경계를 촘촘히 훑기 (구간 폭 5천/1만/2만원 모두 포함)
+  let sweepFail = 0;
+  for (let n = 900000; n <= 4000000; n += 31579) {
+    const o = opt({});
+    const r = reverse(n, o);
+    if (forward(r.gross, o).net < n) { sweepFail++; continue; }
+    for (let g = Math.max(n, r.minGross - 40000); g < r.minGross; g++) {
+      if (forward(g, o).net >= n) { sweepFail++; break; }
+    }
+  }
+  eq('구간 경계 스윕 (90만~400만, 99개) 실패 수', sweepFail, 0);
+
+  // ── 지급 단위 올림 ──
+  [10, 100, 1000].forEach(u => {
+    const o = opt({ roundUnit: u });
+    const r = reverse(3333333, o);
+    check(`${u}원 단위 올림: 세전 ${r.gross.toLocaleString()}`, r.gross % u === 0 && r.result.net >= 3333333 && r.gross >= r.minGross);
+  });
+
+  // ── 급여명세서 샘플 3건 (도겸 제공, 2026년 10월분) — 4대보험 원 단위 일치 ──
+  [
+    // p: 국민연금은 공단 기준(기준소득월액 천원 절사, 원 미만 절사)으로 계산한 값 — 샘플 엑셀(123,060 등)은 10원 절사 근사라 공단 기준과 다름
+    { gross: 2790900, family: 1, children: 0, p: 123025, h: 93140,  l: 12230, e: 23310 },
+    { gross: 3664610, family: 2, children: 0, p: 164540, h: 124550, l: 16360, e: 31180 },
+    { gross: 5308460, family: 3, children: 1, p: 242630, h: 183640, l: 24130, e: 45970 },
+  ].forEach((s, i) => {
+    const r = forward(s.gross, opt({ ym: '2026-10', family: s.family, children: s.children }));
+    check(`명세서 샘플${i + 1} 건강·장기요양·고용 일치 + 국민연금 공단 기준 (세전 ${s.gross.toLocaleString()})`,
+      r.pension === s.p && r.health === s.h && r.ltc === s.l && r.employment === s.e,
+      `계산기 ${r.pension}/${r.health}/${r.ltc}/${r.employment} vs 명세서 ${s.p}/${s.h}/${s.l}/${s.e}`);
+  });
+  // 간이세액표(2026.3.1) 기준 소득세 — 샘플 엑셀은 연환산 근사식이라 소득세는 비교 대상 아님
+  eq('샘플3 소득세 = 세액표(510만, 3인) − 자녀1명', forward(5308460, opt({ ym: '2026-10', family: 3, children: 1 })).incomeTax, 250750 - 20830);
+
+  // ── 회사 부담 ──
+  const e = employerCost(f, opt({ companySize: 'under150', accidentRatePercent: 0.9 }));
+  eq('회사 국민연금', e.pension, 133000);
+  eq('회사 건강보험', e.health, 100660);
+  eq('회사 실업급여 0.9%', e.unemployment, 25200);
+  eq('회사 고용안정·직능 0.25%', e.employmentExtra, 7000);
+  eq('회사 산재 0.9%', e.accident, 25200);
+  eq('총 인건비 = 세전 + 회사부담', e.totalCost, 3000000 + e.insuranceTotal);
+
+  // ── 출력 ──
+  const failed = results.filter(r => !r.ok);
+  if (typeof document !== 'undefined' && document.getElementById('log')) {
+    document.getElementById('summary').innerHTML = failed.length
+      ? `<span class="fail">FAIL ${failed.length} / ${results.length}</span>`
+      : `<span class="pass">ALL PASS ${results.length} / ${results.length}</span>`;
+    document.getElementById('log').innerHTML = results.map(r =>
+      `<li class="${r.ok ? 'pass' : 'fail'}">${r.ok ? '✔' : '✘'} ${r.name}${r.ok ? '' : ' — ' + r.detail}</li>`).join('');
+  }
+  if (typeof console !== 'undefined') {
+    console.log(`[tests] ${results.length - failed.length}/${results.length} passed`);
+    failed.forEach(r => console.log('  FAIL', r.name, r.detail));
+  }
+  if (typeof globalThis !== 'undefined') globalThis.__TEST_FAILED__ = failed.length;
+})();
+</script>
+</body>
+</html>
