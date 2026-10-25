@@ -8,6 +8,13 @@
     - BUG FIX: 할증발행채 이자 분개 사채할증발행차금 차변/대변 위치 오류
     - BUG FIX: 시나리오 비교 탭 순액법·총액법 장부금액 불일치
     - IMPROVEMENT: IRR 뉴턴-랩슨 복수 초기값으로 수렴 실패 방지
+    - BUG FIX: 기준일 조회 미지급이자(표면이자 기준)·마지막 기 장부금액 보간 오류
+    - BUG FIX: 일반사채 보장수익률 시 상환할증금 계정 누락
+    - BUG FIX: 부채 PV > 발행금액 시 음수 비용배부 → 부채요소를 발행금액 한도로 인식 + 경고
+    - BUG FIX: 분개 탭 마지막 기 이자 분개 누락, 원 단위 절사 누적차 마지막 기 정리
+    - BUG FIX: BS 표시 박스가 발행비용 반영 전 금액 표시
+    - BUG FIX: 만기일-지급주기 불일치 시 기간 임의 반올림 → 오류 안내, 월말 지급일 밀림
+    - IRR 수렴 실패 시 5% 대체 대신 이분법 재시도 후 오류 안내
     ═══════════════════════════════════════════════════════════ */
     const { useState, useMemo } = React;
 
@@ -16,16 +23,34 @@
     const v = Number(n ?? 0);
     if (!isFinite(v)) return 0;
     // 정책: 원 단위 절사(소수점 이하 버림). 음수는 절대값 증가를 막기 위해 0 방향 절사.
-    return v >= 0 ? Math.floor(v) : Math.ceil(v);
+    // "+ 0": 부동소수 오차로 생긴 −0을 0으로 정리 ("-0원" 표시 방지)
+    return (v >= 0 ? Math.floor(v) : Math.ceil(v)) + 0;
     };
     const KRW = n => new Intl.NumberFormat("ko-KR").format(toWon(n));
     const PCT  = n => ((n ?? 0) * 100).toFixed(4) + "%";
     const PCT2 = n => ((n ?? 0) * 100).toFixed(2) + "%";
     const freqMap = { yearly: 1, quarterly: 4, monthly: 12 };
+    /* 월 더하기: 대상 월에 같은 날짜가 없으면 그 달 말일로 맞춤.
+    발행일이 월말이면 매 지급일도 월말(월말 규칙). UTC 기준으로 계산해 시간대 영향 없음. */
+    const daysInMonth = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
     function addMonths(d, mo) {
-    const x = new Date(d);
-    x.setMonth(x.getMonth() + mo);
-    return x.toISOString().slice(0, 10);
+    const [y, m, day] = String(d).slice(0, 10).split("-").map(Number);
+    const total = (m - 1) + mo;
+    const ty = y + Math.floor(total / 12), tm = ((total % 12) + 12) % 12;
+    const isMonthEnd = day === daysInMonth(y, m - 1);
+    const td = isMonthEnd ? daysInMonth(ty, tm) : Math.min(day, daysInMonth(ty, tm));
+    return `${ty}-${String(tm + 1).padStart(2, "0")}-${String(td).padStart(2, "0")}`;
+    }
+    /* 발행일~만기일 기수 산정. 만기일이 지급주기에 정확히 맞지 않으면 오류. */
+    function countPeriods(issueDate, maturityDate, mpp) {
+    const [y1, m1] = String(issueDate).split("-").map(Number);
+    const [y2, m2] = String(maturityDate).split("-").map(Number);
+    const months = (y2 - y1) * 12 + (m2 - m1);
+    if (!(months > 0) || new Date(maturityDate) <= new Date(issueDate)) throw new Error("만기일은 발행일 이후여야 합니다");
+    if (months % mpp !== 0 || addMonths(issueDate, months) !== maturityDate) {
+        throw new Error(`만기일(${maturityDate})이 발행일(${issueDate})부터 이자지급주기(${mpp}개월) 단위로 떨어지지 않습니다. 불완전 기간(stub)은 지원하지 않으니 만기일 또는 지급주기를 조정해 주세요.`);
+    }
+    return months / mpp;
     }
 
     /* ── IRR (뉴턴-랩슨, 복수 초기값) ── */
@@ -48,7 +73,18 @@
         }
         if (ok && r > -1 && r < 50 && isFinite(r)) return r;
     }
-    return 0.05;
+    // 뉴턴법 실패 시 이분법으로 재시도 (NPV는 r에 대해 단조 감소: 최초 유출 후 유입만 있는 구조)
+    const npv = r => cfs.reduce((s, c, t) => s + c / Math.pow(1 + r, t), 0);
+    let lo = -0.99, hi = 10;
+    if (npv(lo) * npv(hi) < 0) {
+        for (let i = 0; i < 300; i++) {
+        const mid = (lo + hi) / 2, v = npv(mid);
+        if (Math.abs(v) < 0.01 || hi - lo < 1e-14) return mid;
+        if (npv(lo) * v < 0) hi = mid; else lo = mid;
+        }
+        return (lo + hi) / 2;
+    }
+    throw new Error("유효이자율(EIR)을 계산할 수 없습니다. 발행금액·이자율·만기 조건을 확인해 주세요.");
     }
     const toAnnual   = (r, freq) => Math.pow(1 + r, freqMap[freq]) - 1;
     const toPeriodic = (r, freq) => Math.pow(1 + r, 1 / freqMap[freq]) - 1;
@@ -143,12 +179,22 @@
     };
     }
 
+    /* ── 미지원 구조: 의무상환 없음 + 비재량 배당 복합상품 ──
+        상환 의무가 없으면 원금 상환 현금흐름이 없고 배당만 계속 지급하는 구조(영구 배당 부채)가 되는데,
+        본 계산기는 만기 원금 상환을 전제로 부채요소를 계산하므로 지원하지 않음 */
+    const UNSUPPORTED_NON_REDEEMABLE_MSG =
+        "의무상환 조건이 없고 배당이 비재량적(고정·변동)인 복합상품은 지원하지 않습니다. " +
+        "원금 상환 없이 배당만 계속 지급하는 구조라 만기 상환을 전제로 한 이 계산기로는 부채요소를 계산할 수 없습니다. " +
+        "의무상환 조건을 체크하거나 배당 유형을 '재량적 배당'으로 바꿔 주세요.";
+    const isUnsupportedNonRedeemable = f => !f.hasMandatoryRedemption && f.dividendType !== "discretionary";
+
     /* ── IFRS 9 계산 엔진 ──
     BUG FIX: gross = 투자자 지급 총액(비용 차감 전)으로 통일
         순액법: issuePrice = 회사 수취액(순액) → gross = issuePrice + issuanceCost
         총액법: issuePrice = 투자자 지급 총액   → gross = issuePrice
     두 방법 모두 net(장부금액) = gross - issuanceCost 로 동일해야 함. ── */
     function runCalc(f) {
+    if (isUnsupportedNonRedeemable(f)) throw new Error(UNSUPPORTED_NON_REDEEMABLE_MSG);
     const cls = classify(f);
     const isEmbeddedDerivativeCase = !!(
         f.hasMandatoryRedemption &&
@@ -159,16 +205,23 @@
         throw new Error("RCPS/CB Type D(변동 전환권, 내재파생 FVTPL) 구조는 별도 모듈 대상입니다. 현재 계산기에서는 지원하지 않습니다.");
     }
     const n = freqMap[f.frequency], mpp = 12 / n;
-    const periods = Math.round(
-        (new Date(f.maturityDate) - new Date(f.issueDate)) / (365.25 * 864e5) * n
-    );
-    if (periods <= 0) throw new Error("만기일은 발행일 이후여야 합니다");
+    const periods = countPeriods(f.issueDate, f.maturityDate, mpp);
+
+    /* 입력값 검증 */
+    const finite = v => typeof v === "number" && isFinite(v);
+    if (!finite(f.faceValue) || f.faceValue <= 0) throw new Error("액면금액은 0보다 커야 합니다.");
+    if (!finite(f.issuePrice) || f.issuePrice <= 0) throw new Error("발행금액은 0보다 커야 합니다.");
+    if (!finite(f.issuanceCost) || f.issuanceCost < 0) throw new Error("발행비용은 0 이상이어야 합니다.");
+    if (!finite(f.couponRate) || f.couponRate < 0) throw new Error("표면이자율은 0% 이상이어야 합니다.");
+    if (!finite(f.marketRate) || f.marketRate <= -1) throw new Error("시장이자율이 올바르지 않습니다.");
+    if (f.hasGuaranteeYield && (!finite(f.guaranteeRate) || f.guaranteeRate < 0)) throw new Error("보장수익률은 0% 이상이어야 합니다.");
 
     // FIXED: gross = 총발행금액(투자자 지급 기준), net = 회사 순수취액
     const gross = f.issuanceCostMethod === "net"
         ? f.issuePrice + f.issuanceCost  // 순액법: 입력값에 비용 복원
         : f.issuePrice;                   // 총액법: 입력값 = 총액
     const net = gross - f.issuanceCost;
+    if (net <= 0) throw new Error(`발행비용(${KRW(f.issuanceCost)}원)이 총발행금액(${KRW(gross)}원) 이상입니다.`);
 
     const couponPP  = f.faceValue * f.couponRate / n;
     const years     = periods / n;
@@ -233,8 +286,15 @@
         ? toPeriodicSimple(f.marketRate, f.frequency)
         : toPeriodic(f.marketRate, f.frequency);
     const pmkt      = marketPeriodic;
-    const liabGross = flows.reduce((s, c, i) => s + c / Math.pow(1 + pmkt, i + 1), 0);
-    const eqGross   = Math.max(0, gross - liabGross);
+    const liabPV    = flows.reduce((s, c, i) => s + c / Math.pow(1 + pmkt, i + 1), 0);
+    // 부채 현재가치가 총발행금액 이상이면 자본요소는 0, 총발행금액 전액을 부채요소로 인식
+    // (자본요소는 음수가 될 수 없고, 부채를 수취액보다 크게 인식하지 않음)
+    const liabCapped = liabPV >= gross;
+    const liabGross = liabCapped ? gross : liabPV;
+    const eqGross   = gross - liabGross;
+    const warnings  = liabCapped ? [
+        `부채요소 현재가치(${KRW(liabPV)}원)가 총발행금액(${KRW(gross)}원) 이상입니다. 자본요소(전환권대가)를 0으로 보고 총발행금액 전액을 부채요소로 인식했습니다. 시장이자율이 표면·보장수익률보다 낮지 않은지 확인해 주세요.`
+    ] : [];
     const liabCost  = gross > 0 ? f.issuanceCost * liabGross / gross : 0;
     const eqCost    = f.issuanceCost - liabCost;
     const liabNet   = liabGross - liabCost;
@@ -245,7 +305,7 @@
     return {
         cls, n, mpp, periods, gross, net, fv: f.faceValue,
         couponPP, guarLumpSum, cashPP, flows,
-        liab: liabNet, eq: eqNet, liabGross, eqGross, liabCost, eqCost,
+        liab: liabNet, eq: eqNet, liabGross, eqGross, liabCost, eqCost, liabPV, warnings,
         pmkt, annMkt: f.marketRate, eir: eirP, annEIR, periodRateMode: f.periodRateMode,
         sched: buildSched(liabNet, flows, eirP, f.issueDate, mpp, couponPP),
         issuanceCostMethod: f.issuanceCostMethod, issuanceCost: f.issuanceCost
@@ -271,17 +331,24 @@
     const asOf = new Date(asOfDate), issue = new Date(issueDate);
     if (asOf <= issue) return { ca: sched[0].open, accrued: 0, note: "발행일" };
     const last = sched[sched.length - 1];
-    if (asOf >= new Date(last.date)) return { ca: last.close, accrued: 0, note: "만기 이후" };
+    if (asOf >= new Date(last.date)) return { ca: last.close, accrued: 0, note: "만기 상환 완료" };
     for (let i = 0; i < sched.length; i++) {
         const pe = new Date(sched[i].date), ps = i === 0 ? issue : new Date(sched[i - 1].date);
-        if (asOf <= pe) {
+        // 지급일 당일은 이자 지급이 끝난 시점 → 다음 기 0% 경과로 처리 (미지급이자 0)
+        if (asOf < pe) {
         const fr = (asOf - ps) / (pe - ps);
+        const row = sched[i];
+        const coupon = row.couponOnly ?? row.cash;
+        // 장부금액: 기초 + 경과분 상각액 (만기 상환 현금은 지급일에만 반영되므로 보간에서 제외)
+        // 미지급이자: 표면이자 경과분 (이자비용 경과분 = 상각 경과분 + 미지급이자)
         return {
-            ca:      sched[i].open + (sched[i].close - sched[i].open) * fr,
-            accrued: sched[i].intr * fr,
+            ca:      row.open + (row.intr - coupon) * fr,
+            accrued: coupon * fr,
             fr, period: i + 1,
             ps: ps.toISOString().slice(0, 10), pe: sched[i].date,
-            note: `제${i + 1}기 중 (${(fr * 100).toFixed(1)}% 경과, Actual/Actual)`
+            note: fr === 0
+                ? `제${i}기 이자 지급일 (지급 완료, 미지급이자 없음)`
+                : `제${i + 1}기 중 (${(fr * 100).toFixed(1)}% 경과, Actual/Actual)`
         };
         }
     }
@@ -290,7 +357,7 @@
 
     /* ── 분개 생성
     HYBRID (복합금융상품) 한국 CB 실무 구조:
-        전환권조정 = 상환할증금 + 전환권대가 (부채 차감 계정)
+        전환권조정 = 액면 + 상환할증금 − 부채요소 장부금액 (부채 차감 계정)
         BS: 전환사채(액면) + 상환할증금 − 전환권조정 = 부채요소 장부금액(PV)
 
     발행:  Dr) 현금, 전환권조정  /  Cr) 전환사채, 상환할증금, 전환권대가
@@ -320,13 +387,19 @@
 
     /* ── 발행 분개 ── */
     if (cls.type === "LIABILITY") {
-        /* 일반사채: 사채할인(할증)발행차금 사용 */
-        const disc = fv - liab;
+        /* 일반사채: 사채할인(할증)발행차금 사용. 보장수익률이 있으면 상환할증금을 별도 부채로 인식하고
+           그만큼 할인발행차금에 포함 → 사채 + 상환할증금 − 할인발행차금 = 장부금액 */
+        const disc = fv + guarLumpSum - liab;
         jnl.push({
         date: issueDate, title: "사채 발행",
         dr: [{ a: "현금및현금성자산", v: net }, ...(disc > 0 ? [{ a: "사채할인발행차금", v: disc }] : [])],
-        cr: [{ a: "사채", v: fv },              ...(disc < 0 ? [{ a: "사채할증발행차금", v: -disc }] : [])],
-        note: costNote + ` | 할인(+)/할증(−) ${KRW(disc)}원`
+        cr: [
+            { a: "사채", v: fv },
+            ...(guarLumpSum > 0 ? [{ a: "상환할증금", v: guarLumpSum }] : []),
+            ...(disc < 0 ? [{ a: "사채할증발행차금", v: -disc }] : []),
+        ],
+        note: costNote + ` | 할인(+)/할증(−) ${KRW(disc)}원` +
+            (guarLumpSum > 0 ? ` (= 액면 ${KRW(fv)} + 상환할증금 ${KRW(guarLumpSum)} − 장부금액 ${KRW(liab)})` : "")
         });
 
     } else if (cls.type === "EQUITY") {
@@ -385,7 +458,7 @@
             ],
             note: [
             `순액법: 순수취액 ${KRW(net)}원 (= 총발행 ${KRW(gross)}원 − 발행비용 ${KRW(issuanceCost)}원)`,
-            `조정계정 ${KRW(convAdjNet)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가순액(${KRW(eqNet_)}) + 발행비용부채배부(${KRW(liabCost)}) | 별도 수수료 분개 없음`,
+            `조정계정 ${KRW(convAdjNet)}원 = 액면 + 상환할증금 − 부채요소 장부금액 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가(${KRW(eqGross)})${fv !== gross ? ` + 액면−총발행(${KRW(fv - gross)})` : ""} + 발행비용 부채배부(${KRW(liabCost)}) | 별도 수수료 분개 없음`,
             `BS: ${KRW(fv)}원(액면) + 상환할증금(${KRW(guarLumpSum)}) − 조정계정(${KRW(convAdjNet)}) = ${KRW(fv + guarLumpSum - convAdjNet)} (≈ 부채순액 ${KRW(res.liab)})`,
             ].join(" | ")
         });
@@ -413,70 +486,84 @@
             ],
             note: [
             `총액법: 총발행금액 ${KRW(gross)}원 수취 후 발행비용 ${KRW(issuanceCost)}원 별도 지급`,
-            `조정계정 ${KRW(convAdjGross)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가(${KRW(eqGross)})`,
+            `조정계정 ${KRW(convAdjGross)}원 = 상환할증금(${KRW(guarLumpSum)}) + 전환권대가(${KRW(eqGross)})${fv !== gross ? ` + 액면−총발행(${KRW(fv - gross)})` : ""}`,
             `BS 잠정: ${KRW(fv)}원(액면) + 상환할증금(${KRW(guarLumpSum)}) − 조정계정(${KRW(convAdjGross)}) = ${KRW(liabGross)} (발행비용 안분 전)`,
             ].join(" | ")
         });
 
-        if (issuanceCost > 0) jnl.push({
+        if (issuanceCost > 0) {
+            /* 원 단위 확정 금액으로 배부. 할증(전환권할증발행차금)이 있으면 부채 배부분으로 먼저 할증을 줄이고,
+               남는 금액만 전환권조정으로 인식 → 두 계정이 동시에 잔액을 갖지 않음 */
+            const liabW = toWon(liabCost);
+            const eqW = toWon(issuanceCost) - liabW;
+            // 발행 분개 원 단위 절사 후 할증 계정 확정액 (절사 잔차는 마지막 대변 라인인 할증 계정에 반영됨)
+            const premW = convAdjGross < 0 ? toWon(gross) - fv - toWon(guarLumpSum) - toWon(eqGross) : 0;
+            const toPrem = Math.min(premW, liabW);
+            const toAdj = liabW - toPrem;
+            jnl.push({
             date: issueDate, title: "발행비용 안분 배부 (IAS 32.38)",
             dr: [
-            { a: `${conversionAdjAccount} (부채요소 배부)`, v: liabCost },
-            { a: `${equityOptionAccount} 차감 (자본요소 배부)`, v: eqCost },
+                ...(toPrem > 0 ? [{ a: `${conversionPremiumAccount} (부채요소 배부)`, v: toPrem }] : []),
+                ...(toAdj > 0 || toPrem === 0 ? [{ a: `${conversionAdjAccount} (부채요소 배부)`, v: toAdj }] : []),
+                { a: `${equityOptionAccount} 차감 (자본요소 배부)`, v: eqW },
             ],
-            cr: [{ a: "현금및현금성자산", v: issuanceCost }],
-            note: `부채 ${KRW(liabCost)}원 (${((liabCost/issuanceCost)*100).toFixed(1)}%) + 자본 ${KRW(eqCost)}원 (${((eqCost/issuanceCost)*100).toFixed(1)}%) | 발행비용 안분 후 전환권조정 최종: ${KRW(convAdjGross + liabCost)}원 | BS 최종 부채순액: ${KRW(res.liab)}원`
-        });
+            cr: [{ a: "현금및현금성자산", v: toWon(issuanceCost) }],
+            note: `부채 ${KRW(liabCost)}원 (${((liabCost/issuanceCost)*100).toFixed(1)}%) + 자본 ${KRW(eqCost)}원 (${((eqCost/issuanceCost)*100).toFixed(1)}%)` +
+                (toPrem > 0 ? ` | 부채 배부분 중 ${KRW(toPrem)}원은 ${conversionPremiumAccount} 감소로 처리` : "") +
+                ` | 발행비용 안분 후 조정계정 최종: ${KRW(convAdjGross + liabCost)}원 (음수 = 할증) | BS 최종 부채순액: ${KRW(res.liab)}원`
+            });
+        }
         }
     }
 
-    /* ── 이자비용 분개 (최대 4기까지 표시) ── */
-    const schedToShow = sched ?? [];
-    const maxShow = 4; // 분개 탭 최대 표시 기수 (장기채 가독성)
-    schedToShow.slice(0, maxShow).forEach(row => {
-        if (cls.type === "HYBRID") {
-        /* HYBRID: 전환권조정 상각
-            Dr) 이자비용       = 기초CA × EIR
-            Cr) 현금           = 액면쿠폰 (couponOnly — 원금·상환할증금 제외)
-                전환권조정 상각 = 이자비용 − 쿠폰 (= row.amort)
-            → 매기 상각 후 만기 시 전환권조정 잔액 ≈ 0 ── */
-        const isAdjDiscount = row.amort >= 0;
-        jnl.push({
-            date: row.date, title: `이자비용 인식 — ${conversionAdjBaseLabel} 상각 (제${row.period}기)`,
-            dr: [
-            { a: "이자비용", v: row.intr },
-            ...(!isAdjDiscount ? [{ a: conversionPremiumAmortAccount, v: Math.abs(row.amort) }] : [])
-            ],
-            cr: [
-            // FIXED: row.couponOnly (쿠폰만) — row.cash 는 만기기에 원금+상환할증금 포함으로 불균형 발생
-            { a: "현금및현금성자산", v: row.couponOnly },
-            ...(isAdjDiscount ? [{ a: conversionAdjAmortAccount, v: row.amort }] : []),
-            ],
-            note: `기초CA(${KRW(row.open)}) × EIR(${PCT(res.eir)}) = ${KRW(row.intr)} | 쿠폰 ${KRW(row.couponOnly)} | ${conversionAdjBaseLabel} 상각 ${KRW(row.amort)}`
-        });
-        } else {
-        /* LIABILITY: 사채할인(할증)발행차금 상각 */
-        const isDiscount = row.amort >= 0;
-        jnl.push({
-            date: row.date, title: `이자비용 인식 (제${row.period}기)`,
-            dr: [
-            { a: "이자비용", v: row.intr },
-            ...(!isDiscount ? [{ a: "사채할증발행차금 상각", v: Math.abs(row.amort) }] : [])
-            ],
-            cr: [
-            { a: "현금및현금성자산", v: row.couponOnly ?? row.cash },
-            ...(isDiscount  ? [{ a: "사채할인발행차금 상각", v: row.amort }] : [])
-            ],
-            note: `기초CA(${KRW(row.open)}) × EIR(${PCT(res.eir)}) = ${KRW(row.intr)} | 현금 ${KRW(row.couponOnly ?? row.cash)} | 상각 ${KRW(row.amort)}`
-        });
-        }
+    /* 발행 분개는 먼저 원 단위로 확정 → 확정된 조정계정(전환권조정/할인·할증발행차금) 잔액을 상각 목표로 사용 */
+    const issueJnl = applyJournalRounding(jnl);
+    const rest = [];
+    const H = cls.type === "HYBRID";
+    const startsWith = (s, p) => String(s || "").startsWith(p);
+    const adjPrefix  = H ? conversionAdjAccount : "사채할인발행차금";
+    const premPrefix = H ? conversionPremiumAccount : "사채할증발행차금";
+    // 부호: (+) 차감계정(할인) 잔액, (−) 가산계정(할증) 잔액
+    const isAdjLine = x => startsWith(x.a, adjPrefix) || startsWith(x.a, premPrefix);
+    const adjBalance = issueJnl.reduce((s, e) =>
+        s + (e.dr || []).filter(isAdjLine).reduce((t, x) => t + x.v, 0)
+          - (e.cr || []).filter(isAdjLine).reduce((t, x) => t + x.v, 0), 0);
+
+    /* ── 이자비용 분개 ──
+        Dr) 이자비용 = 기초CA × EIR / Cr) 현금 = 표면이자(쿠폰만), 조정계정 상각 = 이자비용 − 쿠폰
+        원 단위 확정값으로 생성하고, 절사 누적차는 마지막 기 상각액에서 정리 → 만기 시 조정계정 잔액 0 */
+    const schedRows = sched ?? [];
+    const N = schedRows.length;
+    let cumAmort = 0;
+    const intRows = schedRows.map((row, i) => {
+        const c = toWon(row.couponOnly ?? row.cash);
+        const aNormal = toWon(row.intr) - c;
+        const a = i === N - 1 ? adjBalance - cumAmort : aNormal;
+        cumAmort += a;
+        return { row, c, a, intr: c + a, roundingFix: a - aNormal };
     });
-    if (schedToShow.length > maxShow) {
-        jnl.push({
-        date: "…", title: `이자비용 인식 (제${maxShow + 1}기 ~ 제${schedToShow.length - 1}기 생략)`,
+    const amortAcc   = H ? conversionAdjAmortAccount     : "사채할인발행차금 상각";
+    const premAmortAcc = H ? conversionPremiumAmortAccount : "사채할증발행차금 상각";
+    const intEntry = ({ row, c, a, intr, roundingFix }) => ({
+        date: row.date,
+        title: H ? `이자비용 인식 — ${conversionAdjBaseLabel} 상각 (제${row.period}기)` : `이자비용 인식 (제${row.period}기)`,
+        dr: [{ a: "이자비용", v: intr }, ...(a < 0 ? [{ a: premAmortAcc, v: -a }] : [])],
+        cr: [{ a: "현금및현금성자산", v: c }, ...(a >= 0 ? [{ a: amortAcc, v: a }] : [])],
+        note: `기초CA(${KRW(row.open)}) × EIR(${PCT(res.eir)}) = ${KRW(row.intr)} | 쿠폰 ${KRW(c)} | 상각 ${KRW(a)}` +
+            (roundingFix !== 0 ? ` | 원 단위 절사 누적차 ${roundingFix}원을 마지막 기에서 정리 → 조정계정 잔액 0` : "")
+    });
+    const maxShow = 4; // 앞쪽 표시 기수 (장기채 가독성). 마지막 기는 항상 표시
+    if (N <= maxShow + 1) {
+        intRows.forEach(r => rest.push(intEntry(r)));
+    } else {
+        intRows.slice(0, maxShow).forEach(r => rest.push(intEntry(r)));
+        const from = maxShow + 1, to = N - 1;
+        rest.push({
+        date: "…", title: from === to ? `이자비용 인식 (제${from}기 생략)` : `이자비용 인식 (제${from}기 ~ 제${to}기 생략)`,
         dr: [], cr: [],
         note: `동일 방식으로 상각 반복. 상각표 탭에서 전 기간 확인 가능.`
         });
+        rest.push(intEntry(intRows[N - 1]));
     }
 
     /* ── 만기 상환 ── */
@@ -487,7 +574,7 @@
         if (cls.type === "HYBRID") {
         /* HYBRID: 전환사채(액면) + 상환할증금 각각 제거
             만기 시 전환권조정 잔액 ≈ 0 (EIR 상각 완료) ── */
-        jnl.push({
+        rest.push({
             date: last.date, title: "만기 상환",
             dr: [
             { a: liabilityFaceAccount, v: fv },
@@ -495,21 +582,26 @@
             ],
             cr: [{ a: "현금및현금성자산", v: totalRedemption }],
             note: guarLumpSum > 0
-            ? `${isRCPS ? "상환전환우선주" : "전환사채"} 액면(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) = 총상환 ${KRW(totalRedemption)}원 | ${conversionAdjBaseLabel} 잔액 ≈ 0 (EIR 상각 완료)`
-            : `${isRCPS ? "상환전환우선주" : "전환사채"} 액면 ${KRW(fv)}원 상환 | ${conversionAdjBaseLabel} 잔액 ≈ 0`
+            ? `${isRCPS ? "상환전환우선주" : "전환사채"} 액면(${KRW(fv)}) + 상환할증금(${KRW(guarLumpSum)}) = 총상환 ${KRW(totalRedemption)}원 | ${conversionAdjBaseLabel} 잔액 0 (EIR 상각 완료)`
+            : `${isRCPS ? "상환전환우선주" : "전환사채"} 액면 ${KRW(fv)}원 상환 | ${conversionAdjBaseLabel} 잔액 0`
         });
         } else {
-        jnl.push({
+        rest.push({
             date: last.date, title: "만기 상환",
-            dr: [{ a: "사채", v: totalRedemption }],
+            dr: [
+            { a: "사채", v: fv },
+            ...(guarLumpSum > 0 ? [{ a: "상환할증금", v: guarLumpSum }] : []),
+            ],
             cr: [{ a: "현금및현금성자산", v: totalRedemption }],
             note: guarLumpSum > 0
-            ? `액면 ${KRW(fv)}원 + 상환할증금 ${KRW(guarLumpSum)}원 = 총상환 ${KRW(totalRedemption)}원`
-            : `만기 장부금액(${KRW(last.open)}) ≈ 액면금액(${KRW(fv)}) — 완전 상각 완료`
+            ? `액면 ${KRW(fv)}원 + 상환할증금 ${KRW(guarLumpSum)}원 = 총상환 ${KRW(totalRedemption)}원 | 사채할인발행차금 잔액 0 (상각 완료)`
+            : `액면 ${KRW(fv)}원 상환 | 사채할인(할증)발행차금 잔액 0 (상각 완료)`
         });
         }
     }
-    return applyJournalRounding(jnl);
+    // 0원 라인은 표시하지 않음 (예: 보장수익률 없을 때 상환할증금 0)
+    const dropZero = e => ({ ...e, dr: e.dr.filter(x => x.v !== 0), cr: e.cr.filter(x => x.v !== 0) });
+    return [...issueJnl, ...applyJournalRounding(rest)].map(dropZero);
     }
 
     /* ── 상품유형별 입력 정규화 ── */
@@ -609,6 +701,21 @@
     );
     }
 
+    /* ── 전환권조정 구성 (발행비용 반영 후 최종 잔액) ──
+        전환권조정 = 액면 + 상환할증금 − 부채요소 장부금액
+                  = 상환할증금 + 전환권대가(총액) + (액면 − 총발행금액) + 발행비용 부채배부 ── */
+    function convAdjBreakdown(res) {
+    const gLS = res.guarLumpSum ?? 0;
+    const convAdj = res.fv + gLS - res.liab;
+    const parts = [
+        ["상환할증금", gLS],
+        ["전환권대가(총액)", res.eqGross],
+        ...(Math.abs(res.fv - res.gross) >= 1 ? [["액면−총발행금액", res.fv - res.gross]] : []),
+        ...(res.liabCost >= 1 ? [["발행비용 부채배부", res.liabCost]] : []),
+    ];
+    return { gLS, convAdj, parts };
+    }
+
     /* ── TAB: 분류 결과 ── */
     function ClassTab({ res }) {
     const cs = CLS[res.cls.type], H = res.cls.type === "HYBRID";
@@ -680,31 +787,38 @@
             ));
             })()}
         </div>
+        {H && res.warnings?.length > 0 && (
+            <div style={{ ...card, background: "var(--color-background-warning)", border: "0.5px solid var(--color-border-warning, #E0B44A)" }}>
+            {res.warnings.map((w, i) => (
+                <div key={i} style={{ fontSize: 12, color: "var(--color-text-warning)", lineHeight: 1.6 }}>⚠ {w}</div>
+            ))}
+            </div>
+        )}
         {H && (
             <div style={{ ...card, background: "#EEEDFE", border: "0.5px solid #AFA9EC" }}>
-            <div style={{ fontSize: 12, fontWeight: 500, color: "#3C3489", marginBottom: 5 }}>잔여접근법 계산 근거 (IAS 32.31) — 수정 완료</div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: "#3C3489", marginBottom: 5 }}>잔여접근법 계산 근거 (IAS 32.31)</div>
             <div style={{ fontSize: 12, color: "#534AB7", lineHeight: 1.9 }}>
-                ① 부채요소 = 미래현금흐름을 시장이자율({PCT2(res.annMkt)})로 할인한 현재가치 = <strong>{KRW(res.liabGross)}원</strong><br />
-                ② 자본요소 = 총발행금액({KRW(res.gross)}) − 부채요소 공정가치({KRW(res.liabGross)}) = <strong>{KRW(res.eqGross)}원</strong><br />
+                ① 부채요소 = 미래현금흐름을 시장이자율({PCT2(res.annMkt)})로 할인한 현재가치 = <strong>{KRW(res.liabPV ?? res.liabGross)}원</strong>
+                {res.liabPV > res.liabGross && <> → 총발행금액 한도로 <strong>{KRW(res.liabGross)}원</strong> 인식</>}<br />
+                ② 자본요소 = 총발행금액({KRW(res.gross)}) − 부채요소({KRW(res.liabGross)}) = <strong>{KRW(res.eqGross)}원</strong><br />
                 ③ 발행비용 비율 안분 (IAS 32.38) → 부채 <strong>{KRW(res.liabCost)}원</strong> / 자본 <strong>{KRW(res.eqCost)}원</strong>
             </div>
             </div>
         )}
         {H && (() => {
-            const gLS = res.guarLumpSum ?? 0;
-            const convAdj = res.fv + gLS + res.eqGross - res.gross;
+            const { gLS, convAdj, parts } = convAdjBreakdown(res);
             return (
             <div style={{ ...card, background: "#E3F2FD", border: "0.5px solid #90CAF9" }}>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 구조 — {hybridAdjLabel} 계정</div>
+                <div style={{ fontSize: 12, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 구조 — {hybridAdjLabel} 계정 (발행비용 반영 후)</div>
                 <div style={{ fontSize: 12, color: "var(--color-text-secondary)", marginBottom: 10, lineHeight: 1.6 }}>
-                {hybridAdjLabel} = 상환할증금 + 전환권대가(총액) = 부채 차감 계정<br />
-                BS 장부금액 = {hybridFaceLabel}(액면) + 상환할증금 − {hybridAdjLabel} = 부채요소 PV
+                {hybridAdjLabel} = {parts.map(p => p[0]).join(" + ")} = 부채 차감 계정<br />
+                BS 장부금액 = {hybridFaceLabel}(액면) + 상환할증금 − {hybridAdjLabel} = 부채요소 장부금액
                 </div>
                 {[
                 [`${hybridFaceLabel} (액면)`, KRW(res.fv) + "원", false],
                 ["+ 상환할증금",    KRW(gLS) + "원", false],
                 [`− ${hybridAdjLabel}`,   `(${KRW(convAdj)})원`, true],
-                ["= 부채요소 장부금액", KRW(res.fv + gLS - convAdj) + "원", false],
+                ["= 부채요소 장부금액", KRW(res.liab) + "원", false],
                 ].map(([l, v, red], i, arr) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderTop: i === arr.length - 1 ? "1px solid #90CAF9" : "none", fontSize: 13 }}>
                     <span style={{ color: red ? "var(--color-text-danger)" : "var(--color-text-secondary)" }}>{l}</span>
@@ -712,7 +826,7 @@
                 </div>
                 ))}
                 <div style={{ marginTop: 8, fontSize: 11, color: "#1565C0", background: "#BBDEFB", padding: "4px 8px", borderRadius: "var(--border-radius-sm)" }}>
-                {hybridAdjLabel} ({KRW(convAdj)}원)은 매기 EIR 상각 → 만기 시 잔액 ≈ 0
+                {hybridAdjLabel} ({KRW(convAdj)}원)은 매기 EIR 상각 → 만기 시 잔액 0
                 </div>
             </div>
             );
@@ -758,13 +872,12 @@
             <StatCard label="유효이자율 EIR (연)" value={PCT(res.annEIR)} sub={`기간이자율: ${PCT(res.eir)}`} />
             <StatCard label="총 이자비용"         value={KRW(totIntr)  + "원"} />
             <StatCard label={isHybrid ? "총 쿠폰지급" : "총 현금지급"} value={KRW(totCash) + "원"} />
-            <StatCard label={isHybrid ? "전환권조정 총상각" : "총 상각액"}
+            <StatCard label={isHybrid ? `${hybridAdjLabel} 총상각` : "총 상각액"}
             value={KRW(totAmort) + "원"}
-            sub={isHybrid ? `만기 총지급: ${KRW(totCashAll)}원 (쿠폰+원금)` : (totAmort > 0 ? "할인발행(+)" : "할증발행(−)")} />
+            sub={isHybrid ? `총 현금지급: ${KRW(totCashAll)}원 (쿠폰+만기상환)` : (totAmort > 0 ? "할인발행(+)" : "할증발행(−)")} />
         </div>
         {isHybrid && (() => {
-            const gLS = res.guarLumpSum ?? 0;
-            const convAdj = res.fv + gLS + res.eqGross - res.gross;
+            const { gLS, convAdj, parts } = convAdjBreakdown(res);
             return (
             <div style={{ ...card, background: "#E3F2FD", border: "0.5px solid #90CAF9", marginBottom: 12 }}>
                 <div style={{ fontSize: 11, fontWeight: 500, color: "#1565C0", marginBottom: 6 }}>재무상태표 표시 — {hybridAdjLabel} 계정 구조</div>
@@ -773,12 +886,12 @@
                     {hybridFaceLabel}(액면) {KRW(res.fv)}원<br />
                     + 상환할증금 {KRW(gLS)}원<br />
                     − <strong>{hybridAdjLabel} {KRW(convAdj)}원</strong><br />
-                    = 부채요소 PV ≈ {KRW(res.fv + gLS - convAdj)}원
+                    = 부채요소 장부금액 {KRW(res.liab)}원
                 </div>
                 <div>
-                    {hybridAdjLabel} = 상환할증금({KRW(gLS)}) + 전환권대가({KRW(res.eqGross)})<br />
+                    {hybridAdjLabel} = {parts.map(([l, v]) => `${l}(${KRW(v)})`).join(" + ")}<br />
                     = <strong>{KRW(convAdj)}원</strong><br />
-                    → 매기 EIR 상각 → 만기 시 잔액 ≈ 0
+                    → 매기 EIR 상각 → 만기 시 잔액 0
                 </div>
                 </div>
             </div>
@@ -880,9 +993,11 @@
             <div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginBottom: 12 }}>
                 <StatCard label="장부금액 (상각후원가)"  value={KRW(asOfRes.ca)             + "원"} sub={asOfRes.note} />
-                <StatCard label="미지급이자 (발생이자)"  value={KRW(asOfRes.accrued)        + "원"} />
+                <StatCard label="미지급이자 (발생이자)"  value={KRW(asOfRes.accrued)        + "원"} sub="표면이자 경과분" />
                 <StatCard label="재무상태표 계상액"       value={KRW(asOfRes.ca + asOfRes.accrued) + "원"} sub="CA + 미지급이자" />
-                <StatCard label="해당 이자지급기"         value={`제${asOfRes.period}기`} sub={`${asOfRes.ps} ~ ${asOfRes.pe}`} />
+                <StatCard label="해당 이자지급기"
+                value={asOfRes.period ? `제${asOfRes.period}기` : "—"}
+                sub={asOfRes.period ? `${asOfRes.ps} ~ ${asOfRes.pe}` : asOfRes.note} />
             </div>
             <div style={{ ...card, background: "var(--color-background-info)", border: "0.5px solid var(--color-border-info)" }}>
                 <div style={{ fontSize: 12, fontWeight: 500, color: "var(--color-text-info)", marginBottom: 6 }}>재무제표 주석 데이터 (기준일: {asOfDate})</div>
@@ -908,6 +1023,14 @@
     BUG FIX: 동일 경제적 실질 기준으로 grossProceeds를 역산하여 두 방법 모두
     동일한 장부금액이 나오도록 정상화. ── */
     function ScenarioTab({ form }) {
+    let err = null;
+    try { runCalc(prepForm(form)); } catch (e) { err = e.message; }
+    if (err) return (
+        <div style={{ ...card, color: "var(--color-text-danger)", fontSize: 13 }}>현재 입력 조건으로 시나리오를 계산할 수 없습니다: {err}</div>
+    );
+    return <ScenarioBody form={form} />;
+    }
+    function ScenarioBody({ form }) {
     const pf = useMemo(() => prepForm(form), [form]);
 
     // FIXED: 현재 입력 방식에서 총발행금액(투자자 지급) 역산
@@ -1029,7 +1152,8 @@
         } catch (e) { alert("계산 오류: " + e.message); }
     }
 
-    const asOfRes = useMemo(() => result ? getAsOf(result.sched, form.issueDate, asOfDate) : null, [result, asOfDate, form.issueDate]);
+    // 기준일 조회는 계산 실행 당시 입력값 기준 (계산 후 입력을 바꿔도 결과와 어긋나지 않도록)
+    const asOfRes = useMemo(() => result ? getAsOf(result.sched, result.form.issueDate, asOfDate) : null, [result, asOfDate]);
     const jnl     = useMemo(() => result ? makeJournals(result, prepForm(result.form || form)) : [], [result, form]);
     const normalizedPreviewForm = normalizeFormByInstrumentType(form);
     const preview = classify({
@@ -1170,6 +1294,11 @@
                         <div style={{ fontSize: 9, color: "var(--color-text-tertiary)", marginBottom: 2 }}>예상 분류 (실시간)</div>
                         <div style={{ fontSize: 12, fontWeight: 500, color: pcs.text }}>{preview.label}</div>
                         <div style={{ fontSize: 9, color: "var(--color-text-secondary)", marginTop: 2, lineHeight: 1.4 }}>{preview.steps[0]}</div>
+                        {isUnsupportedNonRedeemable(normalizedPreviewForm) && (
+                        <div style={{ fontSize: 10, color: "var(--color-text-danger)", marginTop: 6, lineHeight: 1.4, fontWeight: 500 }}>
+                            ⚠ 계산 미지원: 의무상환 없음 + 비재량 배당 구조입니다. 의무상환 조건을 체크하거나 배당 유형을 '재량적 배당'으로 바꿔 주세요.
+                        </div>
+                        )}
                     </div>
                     </div>
                 </div>
@@ -1204,7 +1333,7 @@
                 {tab === "classify"  && <ClassTab  res={result} />}
                 {tab === "schedule"  && <SchedTab  res={result} />}
                 {tab === "journal"   && <div>{jnl.map((j, i) => <JournalEntry key={i} j={j} />)}</div>}
-                {tab === "asof"      && <AsOfTab   res={result} form={form} asOfDate={asOfDate} setAsOfDate={setAsOfDate} asOfRes={asOfRes} />}
+                {tab === "asof"      && <AsOfTab   res={result} form={result.form || form} asOfDate={asOfDate} setAsOfDate={setAsOfDate} asOfRes={asOfRes} />}
                 {tab === "scenario"  && <ScenarioTab form={form} />}
                 </div>
             );
