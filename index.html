@@ -128,6 +128,7 @@
             overflow: hidden; cursor: pointer;
             transition: transform .22s ease, box-shadow .22s ease, border-color .22s;
             display: flex; flex-direction: column;
+            color: inherit; text-decoration: none;
         }
         .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: transparent; }
 
@@ -219,6 +220,20 @@
             .card-thumb { height: 80px; }
         }
     </style>
+    <!-- SEO:START (scripts/seo.mjs 가 생성 — 직접 수정하지 마세요) -->
+    <meta name="description" content="연봉 실수령액, 4대보험, 퇴직금, 소득세, 이자, 환율, 나이, D-DAY, BMI 등 자주 쓰는 무료 계산기를 한곳에 모았습니다. 회원가입 없이 바로 계산하세요.">
+    <link rel="canonical" href="https://www.allcalcu.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="올계산 allcalcu">
+    <meta property="og:title" content="올계산 - 무료 온라인 계산기 모음 (급여·세금·이자·환율·건강)">
+    <meta property="og:description" content="연봉 실수령액, 4대보험, 퇴직금, 소득세, 이자, 환율, 나이, D-DAY, BMI 등 자주 쓰는 무료 계산기를 한곳에 모았습니다. 회원가입 없이 바로 계산하세요.">
+    <meta property="og:url" content="https://www.allcalcu.com/">
+    <meta property="og:image" content="https://www.allcalcu.com/favicon.png">
+    <meta property="og:locale" content="ko_KR">
+    <meta name="twitter:card" content="summary">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"올계산 allcalcu","alternateName":["올계산","allcalcu","Caboo 계산기 모음"],"url":"https://www.allcalcu.com/","inLanguage":"ko"}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"ItemList","name":"올계산 계산기 목록","itemListElement":[{"@type":"ListItem","position":1,"name":"베이직1 계산기","url":"https://www.allcalcu.com/calculator_Basic_A/"},{"@type":"ListItem","position":2,"name":"베이직2 계산기","url":"https://www.allcalcu.com/calculator_Basic_B/"},{"@type":"ListItem","position":3,"name":"디데이 계산기","url":"https://www.allcalcu.com/calculator_D-day/"},{"@type":"ListItem","position":4,"name":"증감율 계산기","url":"https://www.allcalcu.com/calculator_Change_rate/"},{"@type":"ListItem","position":5,"name":"나이 계산기","url":"https://www.allcalcu.com/calculator_Age/"},{"@type":"ListItem","position":6,"name":"할인 계산기","url":"https://www.allcalcu.com/calculator_Discount/"},{"@type":"ListItem","position":7,"name":"단위 변환 계산기","url":"https://www.allcalcu.com/calculator_UnitConversion/"},{"@type":"ListItem","position":8,"name":"세계 시간 계산기","url":"https://www.allcalcu.com/calculator_WorldTime/"},{"@type":"ListItem","position":9,"name":"통화 환율 계산기","url":"https://www.allcalcu.com/calculator_ExchangeRate/"},{"@type":"ListItem","position":10,"name":"카메라 환율 계산기","url":"https://www.allcalcu.com/calculator_CameraExchangeRate/"},{"@type":"ListItem","position":11,"name":"비즈니스 계산기","url":"https://www.allcalcu.com/calculator_Business/"},{"@type":"ListItem","position":12,"name":"사채·전환사채 계산기","url":"https://www.allcalcu.com/calculator_Financial/"},{"@type":"ListItem","position":13,"name":"이자 계산기","url":"https://www.allcalcu.com/calculator_Interest/"},{"@type":"ListItem","position":14,"name":"양력·음력 변환기","url":"https://www.allcalcu.com/calculator_DualCalendar/"},{"@type":"ListItem","position":15,"name":"증권거래세 계산기","url":"https://www.allcalcu.com/calculator_Investment/"},{"@type":"ListItem","position":16,"name":"소득세 계산기","url":"https://www.allcalcu.com/calculator_TaxPlatform/"},{"@type":"ListItem","position":17,"name":"퇴직급여 계산기","url":"https://www.allcalcu.com/calculator_Retire/"},{"@type":"ListItem","position":18,"name":"4대 보험 계산기","url":"https://www.allcalcu.com/calculator_4insurance/"},{"@type":"ListItem","position":19,"name":"네트제 급여 계산기","url":"https://www.allcalcu.com/calculator_NetPay/"},{"@type":"ListItem","position":20,"name":"급여 노무 계산기 플랫폼","url":"https://www.allcalcu.com/calculator_PayLab/"},{"@type":"ListItem","position":21,"name":"비만도(BMI) 계산기","url":"https://www.allcalcu.com/calculator_BMI/"},{"@type":"ListItem","position":22,"name":"배란일 계산기","url":"https://www.allcalcu.com/calculator_LunaCycle/"},{"@type":"ListItem","position":23,"name":"칼로리 & 다이어트 계산기","url":"https://www.allcalcu.com/calculator_Calorie/"}]}</script>
+    <!-- SEO:END -->
 </head>
 <body>
 
@@ -251,7 +266,298 @@
 </div>
 
 <!-- MAIN -->
-<main class="main" id="main-container"></main>
+<main class="main" id="main-container">
+        <!-- 아래 카드는 scripts/seo.mjs 가 생성 (검색엔진용 정적 링크) -->
+        <section class="category-section basic-section" data-category="basic">
+            <div class="section-head">
+                <div class="section-color-bar"></div>
+                <h2>기본 계산기</h2>
+                <span class="section-count">10/10 사용 가능</span>
+            </div>
+            <div class="card-grid">
+                    <a class="card ready" data-id="1" href="calculator_Basic_A/">
+                        <div class="card-thumb">🧮<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">베이직1 계산기</div>
+                            <div class="card-desc">5가지 컬러 테마로 기본 사칙연산과 평형 계산 제공</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="2" href="calculator_Basic_B/">
+                        <div class="card-thumb">🔢<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">베이직2 계산기</div>
+                            <div class="card-desc">슬림 디자인의 기본 계산기. 5가지 색상 테마 지원</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="3" href="calculator_D-day/">
+                        <div class="card-thumb">📅<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">디데이 계산기</div>
+                            <div class="card-desc">중요한 날까지 남은 일수를 실시간으로 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="4" href="calculator_Change_rate/">
+                        <div class="card-thumb">📈<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">증감율 계산기</div>
+                            <div class="card-desc">두 값 사이의 증가·감소 비율을 즉시 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="5" href="calculator_Age/">
+                        <div class="card-thumb">👶<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">나이 계산기</div>
+                            <div class="card-desc">생년월일 입력으로 만 나이·세는 나이 동시 확인</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="16" href="calculator_Discount/">
+                        <div class="card-thumb">🏷️<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">할인 계산기</div>
+                            <div class="card-desc">할인 금액·할인율·원래 가격을 3가지 방식으로 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="19" href="calculator_UnitConversion/">
+                        <div class="card-thumb">📐<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">단위 변환 계산기</div>
+                            <div class="card-desc">길이·무게·온도·넓이 등 다양한 단위를 즉시 변환</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="20" href="calculator_WorldTime/">
+                        <div class="card-thumb">🌍<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">세계 시간 계산기</div>
+                            <div class="card-desc">세계 도시별 현재 시각과 시차를 한눈에 비교</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="21" href="calculator_ExchangeRate/">
+                        <div class="card-thumb">💱<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">통화 환율 계산기</div>
+                            <div class="card-desc">실시간 환율로 달러·엔·유로 등을 원화로 환산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="22" href="calculator_CameraExchangeRate/">
+                        <div class="card-thumb">📷<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">카메라 환율 계산기</div>
+                            <div class="card-desc">가격표·지폐를 카메라로 비추면 원화로 바로 환산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">기본 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+            </div>
+        </section>
+        <section class="category-section advanced-section" data-category="advanced">
+            <div class="section-head">
+                <div class="section-color-bar"></div>
+                <h2>고급 계산기</h2>
+                <span class="section-count">5/5 사용 가능</span>
+            </div>
+            <div class="card-grid">
+                    <a class="card ready" data-id="6" href="calculator_Business/">
+                        <div class="card-thumb">🏢<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">비즈니스 계산기</div>
+                            <div class="card-desc">부가세·마진·손익분기점·가산세·감가상각·재무비율 계산기</div>
+                            <div class="card-footer">
+                                <span class="card-tag">고급 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="7" href="calculator_Financial/">
+                        <div class="card-thumb">💼<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">사채·전환사채 계산기</div>
+                            <div class="card-desc">사채 발행가액, 이자율, 전환사채 관련 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">고급 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="8" href="calculator_Interest/">
+                        <div class="card-thumb">💰<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">이자 계산기</div>
+                            <div class="card-desc">단리·복리 이자와 원리금 상환 스케줄 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">고급 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="9" href="calculator_DualCalendar/">
+                        <div class="card-thumb">🌙<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">양력·음력 변환기</div>
+                            <div class="card-desc">양력↔음력 날짜를 간편하게 상호 변환</div>
+                            <div class="card-footer">
+                                <span class="card-tag">고급 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="18" href="calculator_Investment/">
+                        <div class="card-thumb">📊<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">증권거래세 계산기</div>
+                            <div class="card-desc">주식 매도 시 증권거래세·양도소득세 즉시 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">고급 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+            </div>
+        </section>
+        <section class="category-section salary-section" data-category="salary">
+            <div class="section-head">
+                <div class="section-color-bar"></div>
+                <h2>급여 계산기</h2>
+                <span class="section-count">5/5 사용 가능</span>
+            </div>
+            <div class="card-grid">
+                    <a class="card ready" data-id="10" href="calculator_TaxPlatform/">
+                        <div class="card-thumb">💵<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">소득세 계산기</div>
+                            <div class="card-desc">연봉·시급 입력으로 세후 실수령액 즉시 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">급여 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="11" href="calculator_Retire/">
+                        <div class="card-thumb">🏦<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">퇴직급여 계산기</div>
+                            <div class="card-desc">퇴직금 및 퇴직연금(DB·DC) 예상액 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">급여 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="12" href="calculator_4insurance/">
+                        <div class="card-thumb">🏥<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">4대 보험 계산기</div>
+                            <div class="card-desc">국민연금·건강·고용·산재보험 부담금 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">급여 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="23" href="calculator_NetPay/">
+                        <div class="card-thumb">🧾<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">네트제 급여 계산기</div>
+                            <div class="card-desc">세후 실수령액으로 필요한 세전 급여·회사 총 인건비 역산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">급여 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="17" href="calculator_PayLab/">
+                        <div class="card-thumb">🧾<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">급여 노무 계산기 플랫폼</div>
+                            <div class="card-desc">평균임금·통상임금·연차수당 등 급여·노무 항목을 통합 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">급여 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+            </div>
+        </section>
+        <section class="category-section health-section" data-category="health">
+            <div class="section-head">
+                <div class="section-color-bar"></div>
+                <h2>건강 계산기</h2>
+                <span class="section-count">3/3 사용 가능</span>
+            </div>
+            <div class="card-grid">
+                    <a class="card ready" data-id="13" href="calculator_BMI/">
+                        <div class="card-thumb">⚖️<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">비만도(BMI) 계산기</div>
+                            <div class="card-desc">키·몸무게로 비만도 측정 및 표준 체중 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">건강 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="14" href="calculator_LunaCycle/">
+                        <div class="card-thumb">📆<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">배란일 계산기</div>
+                            <div class="card-desc">생리 주기 기반 배란일·임신 가능일 예측</div>
+                            <div class="card-footer">
+                                <span class="card-tag">건강 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+                    <a class="card ready" data-id="15" href="calculator_Calorie/">
+                        <div class="card-thumb">🔥<span class="status-badge badge-ready">사용 가능</span></div>
+                        <div class="card-body">
+                            <div class="card-title">칼로리 &amp; 다이어트 계산기</div>
+                            <div class="card-desc">BMR + 활동량으로 하루 필요 칼로리와 목표별 식단 계산</div>
+                            <div class="card-footer">
+                                <span class="card-tag">건강 계산기</span>
+                                <span class="card-arrow"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>
+                            </div>
+                        </div>
+                    </a>
+            </div>
+        </section>
+</main>
 
 <!-- FOOTER -->
 <footer>© 2025 계산기 모음 | 모든 계산은 참고용이며 공식 확인을 권장합니다</footer>
@@ -284,39 +590,39 @@ const categories = [
 // ── 계산기 목록 ───────────────────────────────────────
 const calculators = [
     // 기본
-    { id:1,  title:"베이직1 계산기",           desc:"5가지 컬러 테마로 기본 사칙연산과 평형 계산 제공",         detail:"그레이·코랄·퍼플·블루·민트 5가지 색상 테마를 지원합니다. 사칙연산 외 평형 계산과 메모리 기능이 포함되어 있습니다.",                                                                                                                  icon:"🧮", category:"basic",    url:"calculator_Basic_A/index.html",     ready:true  },
-    { id:2,  title:"베이직2 계산기",           desc:"슬림 디자인의 기본 계산기. 5가지 색상 테마 지원",          detail:"심플하고 슬림한 디자인의 기본 계산기입니다. 그레이·코랄·퍼플·블루·민트 색상을 선택할 수 있습니다.",                                                                                                                                    icon:"🔢", category:"basic",    url:"calculator_Basic_B/index.html",     ready:true  },
-    { id:3,  title:"디데이 계산기",            desc:"중요한 날까지 남은 일수를 실시간으로 계산",                 detail:"시작일과 목표일을 설정하면 남은 일·시·분·초를 실시간으로 표시합니다. 여러 이벤트를 동시에 관리할 수 있습니다.",                                                                                                                            icon:"📅", category:"basic",    url:"calculator_D-day/index.html",        ready:true  },
-    { id:4,  title:"증감율 계산기",            desc:"두 값 사이의 증가·감소 비율을 즉시 계산",                   detail:"이전 값과 현재 값을 입력하면 증가율 또는 감소율을 자동으로 계산합니다. 매출·주가·성적 비교에 유용합니다.",                                                                   icon:"📈", category:"basic",    url:"calculator_Change_rate/index.html",  ready:true  },
-    { id:5,  title:"나이 계산기",              desc:"생년월일 입력으로 만 나이·세는 나이 동시 확인",             detail:"생년월일을 입력하면 만 나이와 세는 나이를 동시에 표시합니다. 2023년 만 나이 통일법 기준을 반영합니다.",                                                                                                                                  icon:"👶", category:"basic",    url:"calculator_Age/index.html",         ready:true  },
-    { id:16, title:"할인 계산기",              desc:"할인 금액·할인율·원래 가격을 3가지 방식으로 계산",          detail:"정가+할인율로 최종 가격을 계산하고, 정가+할인가로 할인율을 계산하며, 할인가+할인율로 원래 가격을 역산할 수 있습니다.",                                                                                                                    icon:"🏷️", category:"basic",    url:"calculator_Discount/index.html",    ready:true  },
+    { id:1,  title:"베이직1 계산기",           desc:"5가지 컬러 테마로 기본 사칙연산과 평형 계산 제공",         detail:"그레이·코랄·퍼플·블루·민트 5가지 색상 테마를 지원합니다. 사칙연산 외 평형 계산과 메모리 기능이 포함되어 있습니다.",                                                                                                                  icon:"🧮", category:"basic",    url:"calculator_Basic_A/",     ready:true  },
+    { id:2,  title:"베이직2 계산기",           desc:"슬림 디자인의 기본 계산기. 5가지 색상 테마 지원",          detail:"심플하고 슬림한 디자인의 기본 계산기입니다. 그레이·코랄·퍼플·블루·민트 색상을 선택할 수 있습니다.",                                                                                                                                    icon:"🔢", category:"basic",    url:"calculator_Basic_B/",     ready:true  },
+    { id:3,  title:"디데이 계산기",            desc:"중요한 날까지 남은 일수를 실시간으로 계산",                 detail:"시작일과 목표일을 설정하면 남은 일·시·분·초를 실시간으로 표시합니다. 여러 이벤트를 동시에 관리할 수 있습니다.",                                                                                                                            icon:"📅", category:"basic",    url:"calculator_D-day/",        ready:true  },
+    { id:4,  title:"증감율 계산기",            desc:"두 값 사이의 증가·감소 비율을 즉시 계산",                   detail:"이전 값과 현재 값을 입력하면 증가율 또는 감소율을 자동으로 계산합니다. 매출·주가·성적 비교에 유용합니다.",                                                                   icon:"📈", category:"basic",    url:"calculator_Change_rate/",  ready:true  },
+    { id:5,  title:"나이 계산기",              desc:"생년월일 입력으로 만 나이·세는 나이 동시 확인",             detail:"생년월일을 입력하면 만 나이와 세는 나이를 동시에 표시합니다. 2023년 만 나이 통일법 기준을 반영합니다.",                                                                                                                                  icon:"👶", category:"basic",    url:"calculator_Age/",         ready:true  },
+    { id:16, title:"할인 계산기",              desc:"할인 금액·할인율·원래 가격을 3가지 방식으로 계산",          detail:"정가+할인율로 최종 가격을 계산하고, 정가+할인가로 할인율을 계산하며, 할인가+할인율로 원래 가격을 역산할 수 있습니다.",                                                                                                                    icon:"🏷️", category:"basic",    url:"calculator_Discount/",    ready:true  },
 
-    { id:19, title:"단위 변환 계산기", desc:"길이·무게·온도·넓이 등 다양한 단위를 즉시 변환", detail:"길이·무게·온도·넓이·부피 등 자주 쓰는 단위를 간편하게 변환합니다. 국제 단위(SI)와 영미식 단위를 모두 지원합니다.", icon:"📐", category:"basic", url:"calculator_UnitConversion/index.html", ready:true },
-    { id:20, title:"세계 시간 계산기", desc:"세계 시간 차이를 즉시 계산", detail:"세계 시간 차이를 즉시 계산합니다. 세계 시간 차이를 즉시 계산합니다.", 
+    { id:19, title:"단위 변환 계산기", desc:"길이·무게·온도·넓이 등 다양한 단위를 즉시 변환", detail:"길이·무게·온도·넓이·부피 등 자주 쓰는 단위를 간편하게 변환합니다. 국제 단위(SI)와 영미식 단위를 모두 지원합니다.", icon:"📐", category:"basic", url:"calculator_UnitConversion/", ready:true },
+    { id:20, title:"세계 시간 계산기", desc:"세계 도시별 현재 시각과 시차를 한눈에 비교", detail:"기준 도시를 정하고 비교할 도시를 추가하면 각 도시의 현재 시각과 시차를 한눈에 보여 줍니다. 해외 출장·여행·화상회의 일정 잡기에 유용합니다.",
     
-    icon:"🌍", category:"basic", url:"calculator_WorldTime/index.html", ready:true },
-    { id:21, title:"통화 환율 계산기", desc:"세계 시간 차이를 즉시 계산", detail:"세계 시간 차이를 즉시 계산합니다. 세계 시간 차이를 즉시 계산합니다.", 
-    icon:"💱", category:"basic", url:"calculator_ExchangeRate/index.html", ready:true },
-    { id:22, title:"카메라 환율 계산기", desc:"가격표·지폐를 카메라로 비추면 원화로 바로 환산", detail:"해외여행 중 가격표나 지폐를 카메라로 비추면 금액과 통화를 인식해 내 기준 통화로 환산합니다. 직접 입력, 장바구니 합계, 카드·현금 수수료 반영, 수동 환율 설정을 지원합니다.", icon:"📷", category:"basic", url:"calculator_CameraExchangeRate/index.html", ready:true },
+    icon:"🌍", category:"basic", url:"calculator_WorldTime/", ready:true },
+    { id:21, title:"통화 환율 계산기", desc:"실시간 환율로 달러·엔·유로 등을 원화로 환산", detail:"실시간 환율 기준으로 달러, 엔화, 유로, 위안 등 주요 통화를 원화로 환산합니다. 주요 통화 환율을 한눈에 확인할 수 있습니다.",
+    icon:"💱", category:"basic", url:"calculator_ExchangeRate/", ready:true },
+    { id:22, title:"카메라 환율 계산기", desc:"가격표·지폐를 카메라로 비추면 원화로 바로 환산", detail:"해외여행 중 가격표나 지폐를 카메라로 비추면 금액과 통화를 인식해 내 기준 통화로 환산합니다. 직접 입력, 장바구니 합계, 카드·현금 수수료 반영, 수동 환율 설정을 지원합니다.", icon:"📷", category:"basic", url:"calculator_CameraExchangeRate/", ready:true },
     // 고급
     { id:6,  title:"비즈니스 계산기", desc:"부가세·마진·손익분기점·가산세·감가상각·재무비율 계산기",
     detail:"사업 실무에 필요한 6가지 핵심 계산 도구를 하나로 모았습니다. 부가세 역산, 마진율·마크업 양방향 계산, 손익분기점(BEP) 분석, 국세기본법 기준 가산세(무신고·과소신고·납부지연), 정액법·정률법 감가상각 스케줄, 수익성·안정성·활동성·성장성·시장가치 24개 재무비율을 지원합니다.",                                                                   
     
-    icon:"🏢", category:"advanced", url:"calculator_Business/index.html",                     ready:true },
-    { id:7,  title:"사채·전환사채 계산기",     desc:"사채 발행가액, 이자율, 전환사채 관련 계산",                 detail:"액면금액·표시이자율·유효이자율을 입력하면 발행가액과 기간별 상각표를 자동으로 생성합니다. 회계사 필수 도구.",                                                                                                                                icon:"💼", category:"advanced", url:"calculator_Financial/index.html",                          ready:true },
-    { id:8,  title:"이자 계산기",              desc:"단리·복리 이자와 원리금 상환 스케줄 계산",                   detail:"원금·이자율·기간을 입력하면 단리/복리 이자를 계산하고, 대출 원리금 균등상환 스케줄표를 출력합니다.",                                                                                                                                        icon:"💰", category:"advanced", url:"calculator_Interest/index.html",     ready:true  },
-    { id:9,  title:"양력·음력 변환기",         desc:"양력↔음력 날짜를 간편하게 상호 변환",                       detail:"양력 날짜를 음력으로 또는 음력을 양력으로 변환합니다. 윤달 처리와 24절기 표시 기능을 포함합니다.",                                                                                                                                          icon:"🌙", category:"advanced", url:"calculator_DualCalendar/index.html", ready:true  },
-    { id:18, title:"증권거래세 계산기", desc:"주식 매도 시 증권거래세·양도소득세 즉시 계산", detail:"매도 금액과 거래 유형(코스피·코스닥·비상장)을 입력하면 증권거래세를 자동으로 계산합니다. 2025년 기준 세율을 반영합니다.", icon:"📊", category:"advanced", url:"calculator_Investment/index.html", ready:true },
+    icon:"🏢", category:"advanced", url:"calculator_Business/",                     ready:true },
+    { id:7,  title:"사채·전환사채 계산기",     desc:"사채 발행가액, 이자율, 전환사채 관련 계산",                 detail:"액면금액·표시이자율·유효이자율을 입력하면 발행가액과 기간별 상각표를 자동으로 생성합니다. 회계사 필수 도구.",                                                                                                                                icon:"💼", category:"advanced", url:"calculator_Financial/",                          ready:true },
+    { id:8,  title:"이자 계산기",              desc:"단리·복리 이자와 원리금 상환 스케줄 계산",                   detail:"원금·이자율·기간을 입력하면 단리/복리 이자를 계산하고, 대출 원리금 균등상환 스케줄표를 출력합니다.",                                                                                                                                        icon:"💰", category:"advanced", url:"calculator_Interest/",     ready:true  },
+    { id:9,  title:"양력·음력 변환기",         desc:"양력↔음력 날짜를 간편하게 상호 변환",                       detail:"양력 날짜를 음력으로 또는 음력을 양력으로 변환합니다. 윤달 처리와 24절기 표시 기능을 포함합니다.",                                                                                                                                          icon:"🌙", category:"advanced", url:"calculator_DualCalendar/", ready:true  },
+    { id:18, title:"증권거래세 계산기", desc:"주식 매도 시 증권거래세·양도소득세 즉시 계산", detail:"매도 금액과 거래 유형(코스피·코스닥·비상장)을 입력하면 증권거래세를 자동으로 계산합니다. 2025년 기준 세율을 반영합니다.", icon:"📊", category:"advanced", url:"calculator_Investment/", ready:true },
     // 급여
-    { id:10, title:"소득세 계산기",            desc:"연봉·시급 입력으로 세후 실수령액 즉시 계산",                detail:"연봉 또는 월급을 입력하면 4대 보험료·소득세·주민세를 공제한 실수령액을 계산합니다. 2025년 기준 세율 반영.",                                                                                                                                icon:"💵", category:"salary",   url:"calculator_TaxPlatform/index.html", ready:true  },
-    { id:11, title:"퇴직급여 계산기",          desc:"퇴직금 및 퇴직연금(DB·DC) 예상액 계산",                     detail:"입사일·퇴직일·최종 3개월 평균임금을 입력하면 법정 퇴직금을 계산합니다. DB형/DC형 퇴직연금 비교도 지원합니다.",                                                                                                                            icon:"🏦", category:"salary",   url:"calculator_Retire/index.html",      ready:true  },
-    { id:12, title:"4대 보험 계산기",          desc:"국민연금·건강·고용·산재보험 부담금 계산",                    detail:"월 보수액을 입력하면 국민연금·건강보험·장기요양·고용보험의 근로자 부담금과 회사 부담금을 계산합니다.",                                                                                                                                      icon:"🏥", category:"salary",   url:"calculator_4insurance/index.html",  ready:true  },
-    { id:23, title:"네트제 급여 계산기", desc:"세후 실수령액으로 필요한 세전 급여·회사 총 인건비 역산", detail:"받기로 한 세후 월급(Net)을 입력하면 4대보험과 근로소득 간이세액표를 반영해 회사가 지급해야 할 세전 급여(Gross-up)를 원 단위로 역산합니다. 회사 부담 4대보험·산재를 더한 총 인건비와 연간 환산, 네트제 계약 시 유의사항도 안내합니다.", icon:"🧾", category:"salary", url:"calculator_NetPay/index.html", ready:true },
-    { id:17, title:"급여 노무 계산기 플랫폼",  desc:"평균임금·통상임금·연차수당 등 급여·노무 항목을 통합 계산",  detail:"평균임금, 통상임금, 연차휴가 및 연차수당, 주휴수당, 출산휴가급여와 육아휴직급여 등 다양한 급여·노무 항목을 한 곳에서 간편하게 계산할 수 있습니다. 최신 기준을 반영해 실무에 바로 활용할 수 있는 통합 계산기입니다.",                icon:"🧾", category:"salary",   url:"calculator_PayLab/index.html",      ready:true  },
+    { id:10, title:"소득세 계산기",            desc:"연봉·시급 입력으로 세후 실수령액 즉시 계산",                detail:"연봉 또는 월급을 입력하면 4대 보험료·소득세·주민세를 공제한 실수령액을 계산합니다. 2025년 기준 세율 반영.",                                                                                                                                icon:"💵", category:"salary",   url:"calculator_TaxPlatform/", ready:true  },
+    { id:11, title:"퇴직급여 계산기",          desc:"퇴직금 및 퇴직연금(DB·DC) 예상액 계산",                     detail:"입사일·퇴직일·최종 3개월 평균임금을 입력하면 법정 퇴직금을 계산합니다. DB형/DC형 퇴직연금 비교도 지원합니다.",                                                                                                                            icon:"🏦", category:"salary",   url:"calculator_Retire/",      ready:true  },
+    { id:12, title:"4대 보험 계산기",          desc:"국민연금·건강·고용·산재보험 부담금 계산",                    detail:"월 보수액을 입력하면 국민연금·건강보험·장기요양·고용보험의 근로자 부담금과 회사 부담금을 계산합니다.",                                                                                                                                      icon:"🏥", category:"salary",   url:"calculator_4insurance/",  ready:true  },
+    { id:23, title:"네트제 급여 계산기", desc:"세후 실수령액으로 필요한 세전 급여·회사 총 인건비 역산", detail:"받기로 한 세후 월급(Net)을 입력하면 4대보험과 근로소득 간이세액표를 반영해 회사가 지급해야 할 세전 급여(Gross-up)를 원 단위로 역산합니다. 회사 부담 4대보험·산재를 더한 총 인건비와 연간 환산, 네트제 계약 시 유의사항도 안내합니다.", icon:"🧾", category:"salary", url:"calculator_NetPay/", ready:true },
+    { id:17, title:"급여 노무 계산기 플랫폼",  desc:"평균임금·통상임금·연차수당 등 급여·노무 항목을 통합 계산",  detail:"평균임금, 통상임금, 연차휴가 및 연차수당, 주휴수당, 출산휴가급여와 육아휴직급여 등 다양한 급여·노무 항목을 한 곳에서 간편하게 계산할 수 있습니다. 최신 기준을 반영해 실무에 바로 활용할 수 있는 통합 계산기입니다.",                icon:"🧾", category:"salary",   url:"calculator_PayLab/",      ready:true  },
     // 건강
-    { id:13, title:"비만도(BMI) 계산기",       desc:"키·몸무게로 비만도 측정 및 표준 체중 계산",                 detail:"키와 체중을 입력하면 BMI 지수를 계산하고, 저체중·정상·과체중·비만을 판정합니다. 이상 체중 범위도 함께 안내합니다.",                                                                                                                        icon:"⚖️", category:"health",   url:"calculator_BMI/index.html",         ready:true  },
-    { id:14, title:"배란일 계산기",            desc:"생리 주기 기반 배란일·임신 가능일 예측",                     detail:"마지막 생리 시작일과 주기를 입력하면 배란 예정일과 임신 가능 기간을 계산합니다. 다음 3회 주기까지 예측합니다.",                                                                                                                            icon:"📆", category:"health",   url:"calculator_LunaCycle/index.html",   ready:true  },
-    { id:15, title:"칼로리 & 다이어트 계산기", desc:"BMR + 활동량으로 하루 필요 칼로리와 목표별 식단 계산",       detail:"성별·나이·키·몸무게와 활동량을 입력하면 기초대사량(BMR)과 하루 필요 칼로리를 계산합니다. 감량·유지·증량 목표별 권장 칼로리와 목표 대비 섭취 그래프를 제공합니다.",                                                                      icon:"🔥", category:"health",   url:"calculator_Calorie/index.html",     ready:true  },
+    { id:13, title:"비만도(BMI) 계산기",       desc:"키·몸무게로 비만도 측정 및 표준 체중 계산",                 detail:"키와 체중을 입력하면 BMI 지수를 계산하고, 저체중·정상·과체중·비만을 판정합니다. 이상 체중 범위도 함께 안내합니다.",                                                                                                                        icon:"⚖️", category:"health",   url:"calculator_BMI/",         ready:true  },
+    { id:14, title:"배란일 계산기",            desc:"생리 주기 기반 배란일·임신 가능일 예측",                     detail:"마지막 생리 시작일과 주기를 입력하면 배란 예정일과 임신 가능 기간을 계산합니다. 다음 3회 주기까지 예측합니다.",                                                                                                                            icon:"📆", category:"health",   url:"calculator_LunaCycle/",   ready:true  },
+    { id:15, title:"칼로리 & 다이어트 계산기", desc:"BMR + 활동량으로 하루 필요 칼로리와 목표별 식단 계산",       detail:"성별·나이·키·몸무게와 활동량을 입력하면 기초대사량(BMR)과 하루 필요 칼로리를 계산합니다. 감량·유지·증량 목표별 권장 칼로리와 목표 대비 섭취 그래프를 제공합니다.",                                                                      icon:"🔥", category:"health",   url:"calculator_Calorie/",     ready:true  },
 ];
 
 // ── 렌더링 ──────────────────────────────────────────────
@@ -332,8 +638,10 @@ function renderCard(calc) {
         ? `<span class="status-badge badge-ready">사용 가능</span>`
         : `<span class="status-badge badge-soon">준비 중</span>`;
 
+    // 검색엔진이 따라갈 수 있도록 <a href> 로 그린다 (클릭하면 아래 핸들러가 모달을 연다)
+    // scripts/seo.mjs 의 cardHtml 과 같은 마크업을 유지할 것
     return `
-        <div class="card ${calc.ready ? 'ready' : 'soon'}" data-id="${calc.id}" role="button" tabindex="0">
+        <a class="card ${calc.ready ? 'ready' : 'soon'}" data-id="${calc.id}" href="${calc.url}">
             <div class="card-thumb">${thumb}${badge}</div>
             <div class="card-body">
                 <div class="card-title">${calc.title}</div>
@@ -347,7 +655,7 @@ function renderCard(calc) {
                     </span>
                 </div>
             </div>
-        </div>`;
+        </a>`;
 }
 
 function renderAll(list, activeCategory) {
@@ -439,15 +747,12 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 document.addEventListener('click', e => {
     const card = e.target.closest('.card');
     if (!card) return;
+    // 새 탭 열기(Ctrl·Cmd·Shift·휠 클릭)는 링크 기본 동작에 맡기고, 일반 클릭만 모달로 연다
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
     const id   = parseInt(card.dataset.id);
     const calc = calculators.find(c => c.id === id);
     if (calc) openModal(calc);
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-        const card = document.activeElement.closest('.card');
-        if (card) card.click();
-    }
 });
 </script>
 </body>
